@@ -6,7 +6,7 @@ repren
 **Your simple search-and-replace swiss army knife, when your editor, awk, perl,
 or sed won't do. (Diesel power optional.)**
 
-You know the drill. It's happened so may times. Since the acquisition,
+You know the drill. It's happened so many times. Since the acquisition,
 Frobinators are now Glurps, and in version 3.0, WhizzleSticks are being
 replaced by AcmeExtrudedPlasticFunProviders. But now there are 2000 Java files,
 some JavaScript, maybe a little C++ and YAML, and of course documentation, that
@@ -22,8 +22,36 @@ corner cases and won't have you writing throw-away bash scripts you'd be
 embarrassed to show your mother, and digging through the dark corners of the
 sed man page. It tries to cover a lot of use cases, and to do it simply.
 
+### Installation
+
+No dependencies except Python 2.7+. One file. Just download and run.
+
 
 ### Synopsis
+
+Run `repren.py -h`:
+
+    Usage: repren.py -p <pattern-file> {-f|-s|-F} [options] [path ...]
+    
+    repren: Multi-pattern string replacement and file renaming
+    
+    Options:
+      --version             show program's version number and exit
+      -h, --help            show this help message and exit
+      -f, --renames         do file renames (search/replace on full pathnames)
+      -s, --contents        do search/replace on file contents
+      -F, --full            do renames and search/replace
+      -i, --insensitive     match case-insensitively
+      -c, --preserve-case   do case-preserving magic to transform all case
+                            variants (see below)
+      -b, --word-breaks     require word breaks (regex \b) around all matches
+      -p PATTERNS, --patterns=PATTERNS
+                            file with replacement patterns (see below)
+      -x OMIT_PAT, --exclude=OMIT_PAT
+                            file/directory name regex to exclude
+      -t, --parse-only      parse patterns only
+      -n, --dry-run         dry run: just log matches without changing files
+
 
 Repren is a simple utility for rewriting text file contents according to a set
 of regular expression patterns, or to rename or move files according to
@@ -77,6 +105,3 @@ Notes:
   adjusted with `--exclude`. Files ending in `.orig` are always ignored.
 
 
-### Installation
-
-One file. No dependencies. Tested on Python 2.7.
