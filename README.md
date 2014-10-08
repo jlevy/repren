@@ -3,8 +3,7 @@ repren
 
 ### Multi-pattern string replacement and file renaming
 
-**Your simple search-and-replace swiss army knife, when your editor, awk, perl,
-or sed won't do.**
+**A command-line search-and-replace swiss army knife**
 
 You know the drill. In version 3.0, Frobinators are now Glurps, and
 WhizzleSticks are being replaced by AcmeExtrudedPlasticFunProviders. But now
@@ -77,8 +76,16 @@ replacements recursively to all files in the supplied paths that are not in the
 exclude pattern. If no arguments are supplied, it reads from stdin and writes
 to stdout.
 
-Patterns must be supplied in a text file, of the form <regex><tab><replacement>,
-one per line. Empty lines and #-prefixed comments are OK.
+Patterns must be supplied in a text file, with one or more replacements consisting
+of regular expression and replacement. For example:
+
+    # Sample pattern file
+    frobinator<tab>glurp
+    WhizzleStick<tab>AcmeExtrudedPlasticFunProvider
+    figure ([0-9+])<tab>Figure \1
+
+(Where `<tab>` is an actual tab character.) Each line is a replacement.
+Empty lines and #-prefixed comments are ignored.
 
 Examples (here `patfile` is a patterns file):
 
@@ -116,7 +123,7 @@ Notes:
 - If patterns have special charaters, `--literal` may help.
 - The case-preserving option works by adding all case variants to the pattern
   replacements, e.g. if the pattern file has foo_bar -> xxx_yyy, the
-  replacements fooBar -> xxxYYY, FooBar -> XxxYyy, FOO_BAR -> XXX_YYY are also
+  replacements fooBar -> xxxYyy, FooBar -> XxxYyy, FOO_BAR -> XXX_YYY are also
   made. Assumes each pattern has one casing convention. (Plain ASCII names only.)
 - The same logic applies to filenames, with patterns applied to the full file
   path with slashes replaced and then and parent directories created as needed,
