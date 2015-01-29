@@ -20,15 +20,21 @@ the dark corners of the sed man page and writing bash scripts that would scare y
 
 Repren is a simple upgrade that tries to cover a lot of use cases, and to do it simply.
 
+
 ### Installation
 
-One file. No dependencies except Python 2.7+.
+One file. No dependencies except Python 2.7+. Just copy the
+[repren](https://raw.githubusercontent.com/jlevy/repren/master/repren)
+file somewhere, make it executable.
 
-Just copy the [repren](https://raw.githubusercontent.com/jlevy/repren/master/repren) file somewhere, make it executable, and run.
+For example:
+
+    sudo sh -c 'curl https://raw.githubusercontent.com/jlevy/repren/master/repren > /usr/local/bin/repren; chmod a+x /usr/local/bin/repren'
+
 
 ### Try it
 
-Let's do a simple replacement. (Tab separartes the parts, Ctrl-D ends the file creation.)
+Let's try a simple replacement. (Tab separartes the parts, Ctrl-D ends the file creation.)
 
     bash-3.2$ cat > /tmp/replacements
     frobinator-server<Tab>glurp-server
@@ -112,13 +118,16 @@ simultaneously renaming the Java files according to the same pattern. It's more
 powerful than usual options like `perl -pie`, `rpl`, or `sed`:
 
 - It can also rename files, including moving files and creating directories.
-- It performs group renamings (e.g. rename "foo" as "bar", and "bar" as "foo"
-  at once, without requiring a temporary intermediate rename).
+- It supports fully expressive regular expression substitutions.
+- It performs group renamings, i.e. rename "foo" as "bar", and "bar" as "foo"
+  at once, without requiring a temporary intermediate rename.
+- It is careful. It has a nondestructive mode, and prints clear stats on its
+  changes. It leaves backups. File operations are done atomically, so
+  interruptions never leave a previously existing file truncated or partly
+  edited.
 - It supports "magic" case-preserving renames that let you find and rename
   identifiers with case variants (lowerCamel, UpperCamel, lower_underscore, and
   UPPER_UNDERSCORE) consistently.
-- It has a nondestructive mode, prints stats on its changes, and has a number
-  of other useful options (see usage).
 - It has this nice help page!
 
 If file paths are provided, repren replaces those files in place, leaving a
