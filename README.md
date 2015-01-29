@@ -5,25 +5,73 @@ repren
 
 **A command-line search-and-replace swiss army knife**
 
-You know the drill. In version 3.0, Frobinators are now Glurps, and
-WhizzleSticks are being replaced by AcmeExtrudedPlasticFunProviders. But now
-there are 2000 Java files, some JavaScript, a little C++ and YAML, and of
-course documentation, that all have to be updated at once. And there are a few
-different naming conventions in each format. And the files and directories all
-have old names that should be changed, too.
+It's the usual deal. Naming things is one of the hard problems in computer science.
+Frobinators should be called Glurps, and WhizzleSticks are being replaced
+by AcmeExtrudedPlasticFunProviders. But now there are 2000 Java files, some
+JavaScript, a little C++ and YAML, and of course documentation, that all have
+to be updated at once. And there are a few different naming conventions in
+each format. And the files and directories all have old names that should be
+changed, too.
 
 I really don't know why there isn't a single well-known tool for this already.
-The standard tools like sed, awk, vim macros, or even IDE refactoring tools,
-each only solve part of the problem. Well, here is a simple upgrade, that
-handles more of the corner cases and won't have you writing throw-away bash
-scripts that would scare your mother, and digging through the dark corners of
-the sed man page. It tries to cover a lot of use cases, and to do it simply.
+The standard tools like *sed*, *perl*, *awk*, *Vim* macros, or even IDE refactoring
+tools, each only solve part of the problem.  Inevitably you end up digging through
+the dark corners of the sed man page and writing bash scripts that would scare your mother.
+
+Repren is a simple upgrade that tries to cover a lot of use cases, and to do it simply.
 
 ### Installation
 
-No dependencies except Python 2.7+. One file. Just download and run.
+One file. No dependencies except Python 2.7+.
 
-### Synopsis
+Just copy the [repren](https://raw.githubusercontent.com/jlevy/repren/master/repren) file somewhere, make it executable, and run.
+
+### Try it
+
+    bash-3.2$ # Let's do a simple replacement. (Tab separartes the parts, Ctrl-D ends the file creation.)
+    bash-3.2$ cat > /tmp/replacements
+    frobinator-server<Tab>glurp-server
+    <Ctrl-D>
+
+    bash-3.2$ # Now let's see what needs replacement in our working dir.
+    bash-3.2$ repren -p /tmp/replacements --full --dry-run .
+    Dry run: No files will be changed
+    Using 1 patterns:
+      'frobinator-server' -> 'glurp-server'
+    Found 102 files in: .
+    - modify: ./site.yml: 1 matches
+    - rename: ./roles/frobinator-server/defaults/main.yml -> ./roles/glurp-server/defaults/main.yml
+    - rename: ./roles/frobinator-server/files/deploy-frobinator-server.sh -> ./roles/glurp-server/files/deploy-frobinator-server.sh
+    - rename: ./roles/frobinator-server/files/install-graphviz.sh -> ./roles/glurp-server/files/install-graphviz.sh
+    - rename: ./roles/frobinator-server/files/frobinator-purge-old-deployments -> ./roles/glurp-server/files/frobinator-purge-old-deployments
+    - rename: ./roles/frobinator-server/handlers/main.yml -> ./roles/glurp-server/handlers/main.yml
+    - rename: ./roles/frobinator-server/tasks/main.yml -> ./roles/glurp-server/tasks/main.yml
+    - rename: ./roles/frobinator-server/templates/frobinator-webservice.conf.j2 -> ./roles/glurp-server/templates/frobinator-webservice.conf.j2
+    - rename: ./roles/frobinator-server/templates/frobinator-webui.conf.j2 -> ./roles/glurp-server/templates/frobinator-webui.conf.j2
+    Read 102 files (190382 chars), found 2 matches (0 skipped due to overlaps)
+    Dry run: Would have changed 2 files, including 0 renames
+
+    bash-3.2$ # Looks good. Now actually do it.
+    bash-3.2$ repren -p replacements --full .
+    Using 1 patterns:
+      'frobinator-server' -> 'glurp-server'
+    Found 102 files in: .
+    - modify: ./site.yml: 1 matches
+    - rename: ./roles/frobinator-server/defaults/main.yml -> ./roles/glurp-server/defaults/main.yml
+    - rename: ./roles/frobinator-server/files/deploy-frobinator-server.sh -> ./roles/glurp-server/files/deploy-frobinator-server.sh
+    - rename: ./roles/frobinator-server/files/install-graphviz.sh -> ./roles/glurp-server/files/install-graphviz.sh
+    - rename: ./roles/frobinator-server/files/frobinator-purge-old-deployments -> ./roles/glurp-server/files/frobinator-purge-old-deployments
+    - rename: ./roles/frobinator-server/handlers/main.yml -> ./roles/glurp-server/handlers/main.yml
+    - rename: ./roles/frobinator-server/tasks/main.yml -> ./roles/glurp-server/tasks/main.yml
+    - rename: ./roles/frobinator-server/templates/frobinator-webservice.conf.j2 -> ./roles/glurp-server/templates/frobinator-webservice.conf.j2
+    - rename: ./roles/frobinator-server/templates/frobinator-webui.conf.j2 -> ./roles/glurp-server/templates/frobinator-webui.conf.j2
+    Read 102 files (190382 chars), found 2 matches (0 skipped due to overlaps)
+    Changed 2 files, including 0 renames
+
+    bash-3.2$ # All done. If this is in git, git diff to verify then commit.
+
+
+### What else?
 
 Run `repren -h`:
 
