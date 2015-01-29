@@ -28,12 +28,14 @@ Just copy the [repren](https://raw.githubusercontent.com/jlevy/repren/master/rep
 
 ### Try it
 
-    bash-3.2$ # Let's do a simple replacement. (Tab separartes the parts, Ctrl-D ends the file creation.)
+Let's do a simple replacement. (Tab separartes the parts, Ctrl-D ends the file creation.)
+
     bash-3.2$ cat > /tmp/replacements
     frobinator-server<Tab>glurp-server
     <Ctrl-D>
 
-    bash-3.2$ # Now let's see what needs replacement in our working dir.
+Now let's see what needs replacement in our working dir.
+
     bash-3.2$ repren -p /tmp/replacements --full --dry-run .
     Dry run: No files will be changed
     Using 1 patterns:
@@ -51,7 +53,8 @@ Just copy the [repren](https://raw.githubusercontent.com/jlevy/repren/master/rep
     Read 102 files (190382 chars), found 2 matches (0 skipped due to overlaps)
     Dry run: Would have changed 2 files, including 0 renames
 
-    bash-3.2$ # Looks good. Now actually do it.
+Looks good. Now actually do it.
+
     bash-3.2$ repren -p replacements --full .
     Using 1 patterns:
       'frobinator-server' -> 'glurp-server'
@@ -68,7 +71,7 @@ Just copy the [repren](https://raw.githubusercontent.com/jlevy/repren/master/rep
     Read 102 files (190382 chars), found 2 matches (0 skipped due to overlaps)
     Changed 2 files, including 0 renames
 
-    bash-3.2$ # All done. If this is in git, git diff to verify then commit.
+All done. If this is in git, do a git diff to verify, test, then commit it all.
 
 
 ### What else?
