@@ -103,7 +103,7 @@ Notes:
 from __future__ import print_function
 import re, sys, os, shutil, optparse, bisect
 
-VERSION = "0.3.1"
+VERSION = "0.3.2"
 DESCRIPTION = "repren: Multi-pattern string replacement and file renaming"
 
 BACKUP_SUFFIX = ".orig"
@@ -301,7 +301,7 @@ def transform_file(transform, source_path, dest_path, orig_suffix=BACKUP_SUFFIX,
         counts = transform_stream(transform, input, output, by_line=by_line)
 
     # Important: We don't modify original file until the above succeeds without exceptions.
-    if not dry_run and counts.found > 0:
+    if not dry_run and (dest_path != source_path or counts.found > 0):
       move_file(source_path, orig_path, clobber=True)
       move_file(temp_path, dest_path, clobber=False)
     else:
