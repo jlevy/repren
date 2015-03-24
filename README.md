@@ -1,7 +1,7 @@
 repren
 ======
 
-### Multi-pattern string replacement and file renaming
+## Multi-pattern string replacement and file renaming
 
 **A command-line search-and-replace swiss army knife**
 
@@ -21,7 +21,7 @@ the dark corners of the sed man page and writing bash scripts that would scare y
 Repren is a simple upgrade that tries to cover a lot of use cases, and to do it simply.
 
 
-### Installation
+## Installation
 
 One file. No dependencies except Python 2.7+. Just copy the
 [repren](https://raw.githubusercontent.com/jlevy/repren/master/repren)
@@ -32,17 +32,12 @@ For example:
     sudo sh -c 'curl https://raw.githubusercontent.com/jlevy/repren/master/repren > /usr/local/bin/repren; chmod a+x /usr/local/bin/repren'
 
 
-### Try it
+## Try it
 
-Let's try a simple replacement. (Tab separartes the parts, Ctrl-D ends the file creation.)
+Let's try a simple replacement in our working directory (which has a few source
+files):
 
-    bash-3.2$ cat > /tmp/replacements
-    frobinator-server<Tab>glurp-server
-    <Ctrl-D>
-
-Now let's see what needs replacement in our working dir.
-
-    bash-3.2$ repren -p /tmp/replacements --full --dry-run .
+    bash-3.2$ repren --from frobinator-server --to glurp-server --full --dry-run .
     Dry run: No files will be changed
     Using 1 patterns:
       'frobinator-server' -> 'glurp-server'
@@ -61,7 +56,7 @@ Now let's see what needs replacement in our working dir.
 
 Looks good. Now actually do it.
 
-    bash-3.2$ repren -p replacements --full .
+    bash-3.2$ repren --from frobinator-server --to glurp-server --full .
     Using 1 patterns:
       'frobinator-server' -> 'glurp-server'
     Found 102 files in: .
@@ -80,9 +75,7 @@ Looks good. Now actually do it.
 All done. If this is in git, do a git diff to verify, test, then commit it all.
 
 
-### What else?
-
-Run `repren -h`:
+## What else?
 
     Usage: repren -p <pattern-file> [options] [path ...]
 
@@ -91,14 +84,16 @@ Run `repren -h`:
     Options:
       --version             show program's version number and exit
       -h, --help            show this help message and exit
+      --from=FROM_PAT       single replacement: match string
+      --to=TO_PAT           single replacement: replacement string
       -p PATTERNS, --patterns=PATTERNS
-                            file with replacement patterns (see below)
-      -F, --full            do file renames and search/replace on file contents
-      -f, --renames         do file renames only; do not modify file contents
-      -l, --literal         use exact string matching, rather than regular
+                            file with multiple replacement patterns (see below)
+      --full                do file renames and search/replace on file contents
+      --renames             do file renames only; do not modify file contents
+      --literal             use exact string matching, rather than regular
                             expresion matching
       -i, --insensitive     match case-insensitively
-      -c, --preserve-case   do case-preserving magic to transform all case
+      --preserve-case       do case-preserving magic to transform all case
                             variants (see below)
       -b, --word-breaks     require word breaks (regex \b) around all matches
       --exclude=EXCLUDE_PAT
@@ -136,7 +131,7 @@ replacements recursively to all files in the supplied paths that are not in the
 exclude pattern. If no arguments are supplied, it reads from stdin and writes
 to stdout.
 
-Patterns must be supplied in a text file, with one or more replacements consisting
+Patterns can be supplied in a text file, with one or more replacements consisting
 of regular expression and replacement. For example:
 
     # Sample pattern file
@@ -147,10 +142,16 @@ of regular expression and replacement. For example:
 (Where `<tab>` is an actual tab character.) Each line is a replacement.
 Empty lines and #-prefixed comments are ignored.
 
+As a short-cut, a single replacemet can be specified on the command line using
+`--from` (match) and `--to` (replacement).
+
 Examples (here `patfile` is a patterns file):
 
     # Rewrite stdin:
     repren -p patfile < input > output
+
+    # Shortcut with a single pattern replacement (replace foo with bar):
+    repren --from foo --to bar < input > output
 
     # Rewrite a few files in place, also requiring matches be on word breaks:
     repren -p patfile --word-breaks myfile1 myfile2 myfile3
@@ -203,3 +204,10 @@ Notes:
   situations where files have encoding inconsistencies. However, note the
   `--case-preserving` logic only handles casing conversions correctly for plain
   ASCII letters `[a-zA-Z]`.
+
+
+## License
+
+Apache 2
+
+

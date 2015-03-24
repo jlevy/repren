@@ -28,7 +28,7 @@ replacements recursively to all files in the supplied paths that are not in the
 exclude pattern. If no arguments are supplied, it reads from stdin and writes
 to stdout.
 
-Patterns must be supplied in a text file, with one or more replacements consisting
+Patterns can be supplied in a text file, with one or more replacements consisting
 of regular expression and replacement. For example:
 
     # Sample pattern file
@@ -39,10 +39,16 @@ of regular expression and replacement. For example:
 (Where `<tab>` is an actual tab character.) Each line is a replacement.
 Empty lines and #-prefixed comments are ignored.
 
+As a short-cut, a single replacemet can be specified on the command line using
+`--from` (match) and `--to` (replacement).
+
 Examples (here `patfile` is a patterns file):
 
     # Rewrite stdin:
     repren -p patfile < input > output
+
+    # Shortcut with a single pattern replacement (replace foo with bar):
+    repren --from foo --to bar < input > output
 
     # Rewrite a few files in place, also requiring matches be on word breaks:
     repren -p patfile --word-breaks myfile1 myfile2 myfile3
@@ -103,7 +109,7 @@ Notes:
 from __future__ import print_function
 import re, sys, os, shutil, optparse, bisect
 
-VERSION = "0.3.2"
+VERSION = "0.3.3"
 DESCRIPTION = "repren: Multi-pattern string replacement and file renaming"
 
 BACKUP_SUFFIX = ".orig"
@@ -389,12 +395,14 @@ optparse.OptionParser.format_epilog = lambda self, formatter: self.epilog
 if __name__ == '__main__':
   USAGE = "%prog -p <pattern-file> [options] [path ...]"
   parser = optparse.OptionParser(usage=USAGE, description=DESCRIPTION, epilog="\n" + __doc__, version=VERSION)
-  parser.add_option("-p", "--patterns", help = "file with replacement patterns (see below)", dest = "patterns")
-  parser.add_option("-F", "--full", help = "do file renames and search/replace on file contents", dest = "do_full", action = "store_true")
-  parser.add_option("-f", "--renames", help = "do file renames only; do not modify file contents", dest = "do_renames", action = "store_true")
-  parser.add_option("-l", "--literal", help = "use exact string matching, rather than regular expresion matching", dest = "literal", action = "store_true")
+  parser.add_option("--from", help = "single replacement: match string", dest = "from_pat")
+  parser.add_option("--to", help = "single replacement: replacement string", dest = "to_pat")
+  parser.add_option("-p", "--patterns", help = "file with multiple replacement patterns (see below)", dest = "pat_file")
+  parser.add_option("--full", help = "do file renames and search/replace on file contents", dest = "do_full", action = "store_true")
+  parser.add_option("--renames", help = "do file renames only; do not modify file contents", dest = "do_renames", action = "store_true")
+  parser.add_option("--literal", help = "use exact string matching, rather than regular expresion matching", dest = "literal", action = "store_true")
   parser.add_option("-i", "--insensitive", help = "match case-insensitively", dest = "insensitive", action = "store_true")
-  parser.add_option("-c", "--preserve-case", help = "do case-preserving magic to transform all case variants (see below)", dest = "preserve_case", action = "store_true")
+  parser.add_option("--preserve-case", help = "do case-preserving magic to transform all case variants (see below)", dest = "preserve_case", action = "store_true")
   parser.add_option("-b", "--word-breaks", help = "require word breaks (regex \\b) around all matches", dest = "word_breaks", action = "store_true")
   parser.add_option("--exclude", help = "file/directory name regex to exclude", dest = "exclude_pat", default = DEFAULT_EXCLUDE_PAT)
   parser.add_option("--at-once", help = "transform each file's contents at once, instead of line by line", dest = "at_once", action = "store_true")
@@ -411,15 +419,22 @@ if __name__ == '__main__':
 
   # log(None, "Settings: %s" % options)
 
-  if not options.patterns:
-    parser.error("pattern file is required")
+  if options.pat_file:
+    if options.from_pat or options.to_pat:
+      parser.error("cannot use both --patterns and --from/--to")
+  elif not options.from_pat or not options.to_pat:
+    parser.error("must specify --patterns or both --from and --to")
   if options.insensitive and options.preserve_case:
     parser.error("cannot use --insensitive and --preserve-case at once")
 
   by_line = not options.at_once
 
-  with open(options.patterns, "rb") as f:
-    patterns = parse_patterns(f.read(), literal=options.literal, word_breaks=options.word_breaks, insensitive=options.insensitive, preserve_case=options.preserve_case)
+  if options.pat_file:
+    with open(options.pat_file, "rb") as f:
+      pat_str = f.read()
+  else:
+      pat_str = '%s\t%s' % (options.from_pat, options.to_pat)
+  patterns = parse_patterns(pat_str, literal=options.literal, word_breaks=options.word_breaks, insensitive=options.insensitive, preserve_case=options.preserve_case)
 
   if len(patterns) == 0:
     fail("found no parse patterns")
@@ -450,5 +465,4 @@ if __name__ == '__main__':
 #   Log collisions
 #   Separate patterns file for renames and replacements
 #   Quiet and verbose modes (the latter logging each substitution)
-#   Supply patterns directly on command line
 #   Support --preserve-case for Unicode (non-ASCII) characters (messy)
