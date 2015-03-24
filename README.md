@@ -25,9 +25,7 @@ Repren is a simple upgrade that tries to cover a lot of use cases, and to do it 
 
 One file. No dependencies except Python 2.7+. Just copy the
 [repren](https://raw.githubusercontent.com/jlevy/repren/master/repren)
-file somewhere, make it executable.
-
-For example:
+file somewhere and make it executable:
 
     sudo sh -c 'curl https://raw.githubusercontent.com/jlevy/repren/master/repren > /usr/local/bin/repren; chmod a+x /usr/local/bin/repren'
 
