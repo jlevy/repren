@@ -207,6 +207,8 @@ Notes:
   situations where files have encoding inconsistencies. However, note the
   `--case-preserving` logic only handles casing conversions correctly for plain
   ASCII letters `[a-zA-Z]`.
+
+
 ## License
 
 Apache 2
