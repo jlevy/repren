@@ -23,11 +23,13 @@ Repren is a simple upgrade that tries to cover a lot of use cases, and to do it 
 
 ## Installation
 
-One file. No dependencies except Python 2.7+. Just copy the
-[repren](https://raw.githubusercontent.com/jlevy/repren/master/repren)
-file somewhere and make it executable:
+No dependencies except Python 2.7+. It's easiest to install with pip:
 
-    sudo sh -c 'curl https://raw.githubusercontent.com/jlevy/repren/master/repren > /usr/local/bin/repren; chmod a+x /usr/local/bin/repren'
+    sudo pip install repren
+
+Or, since it's just one file, you can copy the
+[repren](https://raw.githubusercontent.com/jlevy/repren/master/repren)
+script somewhere (perhaps within your own project) and make it executable.
 
 
 ## Try it
@@ -84,7 +86,7 @@ All done. If this is in git, do a git diff to verify, test, then commit it all.
       -h, --help            show this help message and exit
       --from=FROM_PAT       single replacement: match string
       --to=TO_PAT           single replacement: replacement string
-      -p PATTERNS, --patterns=PATTERNS
+      -p PAT_FILE, --patterns=PAT_FILE
                             file with multiple replacement patterns (see below)
       --full                do file renames and search/replace on file contents
       --renames             do file renames only; do not modify file contents
@@ -106,7 +108,7 @@ Repren is a simple but flexible command-line tool for rewriting file contents
 according to a set of regular expression patterns, and to rename or move files
 according to patterns. Essentially, it is a general-purpose, brute-force text
 file refactoring tool. For example, repren could rename all occurrences of
-certain class and variable names a set of Java source files, while
+certain class and variable names in a set of Java source files, while
 simultaneously renaming the Java files according to the same pattern. It's more
 powerful than usual options like `perl -pie`, `rpl`, or `sed`:
 
@@ -121,13 +123,15 @@ powerful than usual options like `perl -pie`, `rpl`, or `sed`:
 - It supports "magic" case-preserving renames that let you find and rename
   identifiers with case variants (lowerCamel, UpperCamel, lower_underscore, and
   UPPER_UNDERSCORE) consistently.
-- It has this nice help page!
+- It has this nice documentaion!
 
 If file paths are provided, repren replaces those files in place, leaving a
 backup with extension ".orig". If directory paths are provided, it applies
 replacements recursively to all files in the supplied paths that are not in the
 exclude pattern. If no arguments are supplied, it reads from stdin and writes
 to stdout.
+
+Patterns:
 
 Patterns can be supplied in a text file, with one or more replacements consisting
 of regular expression and replacement. For example:
@@ -143,8 +147,9 @@ Empty lines and #-prefixed comments are ignored.
 As a short-cut, a single replacemet can be specified on the command line using
 `--from` (match) and `--to` (replacement).
 
-Examples (here `patfile` is a patterns file):
+Examples:
 
+    # Here `patfile` is a patterns file.
     # Rewrite stdin:
     repren -p patfile < input > output
 
@@ -202,8 +207,6 @@ Notes:
   situations where files have encoding inconsistencies. However, note the
   `--case-preserving` logic only handles casing conversions correctly for plain
   ASCII letters `[a-zA-Z]`.
-
-
 ## License
 
 Apache 2

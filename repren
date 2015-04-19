@@ -5,7 +5,7 @@ Repren is a simple but flexible command-line tool for rewriting file contents
 according to a set of regular expression patterns, and to rename or move files
 according to patterns. Essentially, it is a general-purpose, brute-force text
 file refactoring tool. For example, repren could rename all occurrences of
-certain class and variable names a set of Java source files, while
+certain class and variable names in a set of Java source files, while
 simultaneously renaming the Java files according to the same pattern. It's more
 powerful than usual options like `perl -pie`, `rpl`, or `sed`:
 
@@ -20,13 +20,15 @@ powerful than usual options like `perl -pie`, `rpl`, or `sed`:
 - It supports "magic" case-preserving renames that let you find and rename
   identifiers with case variants (lowerCamel, UpperCamel, lower_underscore, and
   UPPER_UNDERSCORE) consistently.
-- It has this nice help page!
+- It has this nice documentaion!
 
 If file paths are provided, repren replaces those files in place, leaving a
 backup with extension ".orig". If directory paths are provided, it applies
 replacements recursively to all files in the supplied paths that are not in the
 exclude pattern. If no arguments are supplied, it reads from stdin and writes
 to stdout.
+
+Patterns:
 
 Patterns can be supplied in a text file, with one or more replacements consisting
 of regular expression and replacement. For example:
@@ -42,8 +44,9 @@ Empty lines and #-prefixed comments are ignored.
 As a short-cut, a single replacemet can be specified on the command line using
 `--from` (match) and `--to` (replacement).
 
-Examples (here `patfile` is a patterns file):
+Examples:
 
+    # Here `patfile` is a patterns file.
     # Rewrite stdin:
     repren -p patfile < input > output
 
@@ -109,8 +112,11 @@ Notes:
 from __future__ import print_function
 import re, sys, os, shutil, optparse, bisect
 
-VERSION = "0.3.3"
+# Definitive version. Update with each release.
+VERSION = "0.3.4"
+
 DESCRIPTION = "repren: Multi-pattern string replacement and file renaming"
+LONG_DESCRIPTION = __doc__.split("Patterns:")[0].strip()
 
 BACKUP_SUFFIX = ".orig"
 TEMP_SUFFIX = ".repren.tmp"
