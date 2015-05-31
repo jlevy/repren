@@ -1,5 +1,4 @@
 #!/usr/bin/env python
-
 r'''
 Repren is a simple but flexible command-line tool for rewriting file contents
 according to a set of regular expression patterns, and to rename or move files
@@ -122,14 +121,17 @@ BACKUP_SUFFIX = ".orig"
 TEMP_SUFFIX = ".repren.tmp"
 DEFAULT_EXCLUDE_PAT = r"\."
 
+
 def log(op, msg):
   if op:
     msg = "- %s: %s" % (op, msg)
   print(msg, file=sys.stderr)
 
+
 def fail(msg):
   print("error: " + msg, file=sys.stderr)
   sys.exit(1)
+
 
 class _Tally:
   def __init__(self):
@@ -140,14 +142,16 @@ class _Tally:
     self.files_written = 0
     self.renames = 0
 
+
 global _tally
 _tally = _Tally()
 
+# --- String matching ---
 
-## String matching
 
 def _overlap(match1, match2):
   return match1.start() < match2.end() and match2.start() < match1.end()
+
 
 def _sort_drop_overlaps(matches, source_name=None):
   '''Select and sort a set of disjoint intervals, omitting ones that overlap.'''
@@ -159,17 +163,18 @@ def _sort_drop_overlaps(matches, source_name=None):
       (prev_match, _) = non_overlaps[index - 1]
       if _overlap(prev_match, match):
         log(source_name, "Skipping overlapping match '%s' of '%s' that overlaps '%s' of '%s' on its left" %
-          (match.group(), match.re.pattern, prev_match.group(), prev_match.re.pattern))
+            (match.group(), match.re.pattern, prev_match.group(), prev_match.re.pattern))
         continue
     if index < len(non_overlaps):
       (next_match, _) = non_overlaps[index]
       if _overlap(next_match, match):
         log(source_name, "Skipping overlapping match '%s' of '%s' that overlaps '%s' of '%s' on its right" %
-          (match.group(), match.re.pattern, next_match.group(), next_match.re.pattern))
+            (match.group(), match.re.pattern, next_match.group(), next_match.re.pattern))
         continue
     starts.insert(index, match.start())
     non_overlaps.insert(index, (match, replacement))
   return non_overlaps
+
 
 def _apply_replacements(input, matches):
   out = []
@@ -181,6 +186,7 @@ def _apply_replacements(input, matches):
   out.append(input[pos:])
   return "".join(out)
 
+
 class _MatchCounts:
   def __init__(self, found=0, valid=0):
     self.found = found
@@ -189,6 +195,7 @@ class _MatchCounts:
   def add(self, o):
     self.found += o.found
     self.valid += o.valid
+
 
 def multi_replace(input, patterns, is_path=False, source_name=None):
   '''Replace all occurrences in the input given a list of patterns (regex,
@@ -212,8 +219,7 @@ def multi_replace(input, patterns, is_path=False, source_name=None):
 
   return (result, _MatchCounts(len(matches), len(valid_matches)))
 
-
-## Case handling (only used for case-preserving magic)
+# --- Case handling (only used for case-preserving magic) ---
 
 # TODO: Could handle dash-separated names as well.
 
@@ -224,6 +230,7 @@ _camel_split_pat2 = re.compile("([A-Z])([A-Z][^A-Z])")
 
 _name_pat = re.compile(r"\w+")
 
+
 def _split_name(name):
   '''Split a camel-case or underscore-formatted name into words. Return separator and words.'''
   if name.find("_") >= 0:
@@ -233,35 +240,43 @@ def _split_name(name):
     temp = _camel_split_pat2.sub("\\1\t\\2", temp)
     return ("", temp.split("\t"))
 
+
 def _capitalize(word):
   return word[0].upper() + word[1:].lower()
+
 
 def to_lower_camel(name):
   words = _split_name(name)[1]
   return words[0].lower() + "".join([_capitalize(word) for word in words[1:]])
 
+
 def to_upper_camel(name):
   words = _split_name(name)[1]
   return "".join([_capitalize(word) for word in words])
+
 
 def to_lower_underscore(name):
   words = _split_name(name)[1]
   return "_".join([word.lower() for word in words])
 
+
 def to_upper_underscore(name):
   words = _split_name(name)[1]
   return "_".join([word.upper() for word in words])
 
+
 def _transform_expr(expr, transform):
   return _name_pat.sub(lambda m: transform(m.group()), expr)
+
 
 def all_case_variants(expr):
   '''Return all casing variations of an expression, replacing each name with
   lower- and upper-case camel-case and underscore style names, in fixed order.'''
-  return [_transform_expr(expr, transform) for transform in [to_lower_camel, to_upper_camel, to_lower_underscore, to_upper_underscore]]
+  return [_transform_expr(expr, transform)
+          for transform in [to_lower_camel, to_upper_camel, to_lower_underscore, to_upper_underscore]]
 
+# --- File handling ---
 
-## File handling
 
 def make_parent_dirs(path):
   '''Ensure parent directories of a file are created as needed.'''
@@ -270,17 +285,19 @@ def make_parent_dirs(path):
     os.makedirs(dir)
   return path
 
+
 def move_file(source_path, dest_path, clobber=False):
-   if not clobber:
-     trailing_num = re.compile("(.*)[.]\d+$")
-     i = 1
-     while os.path.exists(dest_path):
-       match = trailing_num.match(dest_path)
-       if match:
-         dest_path = match.group(1)
-       dest_path = "%s.%s" % (dest_path, i)
-       i = i + 1
-   shutil.move(source_path, dest_path)
+  if not clobber:
+    trailing_num = re.compile("(.*)[.]\d+$")
+    i = 1
+    while os.path.exists(dest_path):
+      match = trailing_num.match(dest_path)
+      if match:
+        dest_path = match.group(1)
+      dest_path = "%s.%s" % (dest_path, i)
+      i = i + 1
+  shutil.move(source_path, dest_path)
+
 
 def transform_stream(transform, input, output, by_line=False):
   counts = _MatchCounts()
@@ -298,7 +315,12 @@ def transform_stream(transform, input, output, by_line=False):
     output.write(new_contents)
   return counts
 
-def transform_file(transform, source_path, dest_path, orig_suffix=BACKUP_SUFFIX, temp_suffix=TEMP_SUFFIX, by_line=False, dry_run=False):
+
+def transform_file(transform, source_path, dest_path,
+                   orig_suffix=BACKUP_SUFFIX,
+                   temp_suffix=TEMP_SUFFIX,
+                   by_line=False,
+                   dry_run=False):
   '''Transform full contents of file at source_path in memory with specified
   function, writing dest_path atomically and keeping a backup. Source and
   destination may be the same path.'''
@@ -328,6 +350,7 @@ def transform_file(transform, source_path, dest_path, orig_suffix=BACKUP_SUFFIX,
 
   return counts
 
+
 def rewrite_file(path, patterns, do_renames=False, do_contents=False, by_line=False, dry_run=False):
   dest_path = multi_replace(path, patterns, is_path=True)[0] if do_renames else path
   transform = None
@@ -352,19 +375,26 @@ def walk_files(paths, exclude_pat=DEFAULT_EXCLUDE_PAT):
     else:
       for (root, dirs, files) in os.walk(path):
         # Prune files that are excluded, and always prune backup files.
-        out += [os.path.join(root, f) for f in files if not exclude_re.match(f) and not f.endswith(BACKUP_SUFFIX) and not f.endswith(TEMP_SUFFIX)]
+        out += [os.path.join(root, f) for f in files
+                if not exclude_re.match(f) and not f.endswith(BACKUP_SUFFIX) and not f.endswith(TEMP_SUFFIX)]
         # Prune subdirectories.
         dirs[:] = [d for d in dirs if not exclude_re.match(d)]
   return out
 
-def rewrite_files(root_paths, patterns, do_renames=False, do_contents=False, exclude_pat=DEFAULT_EXCLUDE_PAT, by_line=False, dry_run=False):
+
+def rewrite_files(root_paths, patterns,
+                  do_renames=False,
+                  do_contents=False,
+                  exclude_pat=DEFAULT_EXCLUDE_PAT,
+                  by_line=False,
+                  dry_run=False):
   paths = walk_files(root_paths, exclude_pat=exclude_pat)
   log(None, "Found %s files in: %s" % (len(paths), ", ".join(root_paths)))
   for path in paths:
     rewrite_file(path, patterns, do_renames=do_renames, do_contents=do_contents, by_line=by_line, dry_run=dry_run)
 
+# --- Invocation ---
 
-## Invocation
 
 def parse_patterns(patterns_str, literal=False, word_breaks=False, insensitive=False, preserve_case=False):
   patterns = []
@@ -401,19 +431,43 @@ optparse.OptionParser.format_epilog = lambda self, formatter: self.epilog
 if __name__ == '__main__':
   USAGE = "%prog -p <pattern-file> [options] [path ...]"
   parser = optparse.OptionParser(usage=USAGE, description=DESCRIPTION, epilog="\n" + __doc__, version=VERSION)
-  parser.add_option("--from", help = "single replacement: match string", dest = "from_pat")
-  parser.add_option("--to", help = "single replacement: replacement string", dest = "to_pat")
-  parser.add_option("-p", "--patterns", help = "file with multiple replacement patterns (see below)", dest = "pat_file")
-  parser.add_option("--full", help = "do file renames and search/replace on file contents", dest = "do_full", action = "store_true")
-  parser.add_option("--renames", help = "do file renames only; do not modify file contents", dest = "do_renames", action = "store_true")
-  parser.add_option("--literal", help = "use exact string matching, rather than regular expresion matching", dest = "literal", action = "store_true")
-  parser.add_option("-i", "--insensitive", help = "match case-insensitively", dest = "insensitive", action = "store_true")
-  parser.add_option("--preserve-case", help = "do case-preserving magic to transform all case variants (see below)", dest = "preserve_case", action = "store_true")
-  parser.add_option("-b", "--word-breaks", help = "require word breaks (regex \\b) around all matches", dest = "word_breaks", action = "store_true")
-  parser.add_option("--exclude", help = "file/directory name regex to exclude", dest = "exclude_pat", default = DEFAULT_EXCLUDE_PAT)
-  parser.add_option("--at-once", help = "transform each file's contents at once, instead of line by line", dest = "at_once", action = "store_true")
-  parser.add_option("-t", "--parse-only", help = "parse and show patterns only", dest = "parse_only", action = "store_true")
-  parser.add_option("-n", "--dry-run", help = "dry run: just log matches without changing files", dest = "dry_run", action = "store_true")
+  parser.add_option("--from", help="single replacement: match string", dest="from_pat")
+  parser.add_option("--to", help="single replacement: replacement string", dest="to_pat")
+  parser.add_option("-p", "--patterns", help="file with multiple replacement patterns (see below)", dest="pat_file")
+  parser.add_option("--full",
+                    help="do file renames and search/replace on file contents",
+                    dest="do_full",
+                    action="store_true")
+  parser.add_option("--renames",
+                    help="do file renames only; do not modify file contents",
+                    dest="do_renames",
+                    action="store_true")
+  parser.add_option("--literal",
+                    help="use exact string matching, rather than regular expresion matching",
+                    dest="literal",
+                    action="store_true")
+  parser.add_option("-i", "--insensitive", help="match case-insensitively", dest="insensitive", action="store_true")
+  parser.add_option("--preserve-case",
+                    help="do case-preserving magic to transform all case variants (see below)",
+                    dest="preserve_case",
+                    action="store_true")
+  parser.add_option("-b", "--word-breaks",
+                    help="require word breaks (regex \\b) around all matches",
+                    dest="word_breaks",
+                    action="store_true")
+  parser.add_option("--exclude",
+                    help="file/directory name regex to exclude",
+                    dest="exclude_pat",
+                    default=DEFAULT_EXCLUDE_PAT)
+  parser.add_option("--at-once",
+                    help="transform each file's contents at once, instead of line by line",
+                    dest="at_once",
+                    action="store_true")
+  parser.add_option("-t", "--parse-only", help="parse and show patterns only", dest="parse_only", action="store_true")
+  parser.add_option("-n", "--dry-run",
+                    help="dry run: just log matches without changing files",
+                    dest="dry_run",
+                    action="store_true")
 
   (options, root_paths) = parser.parse_args()
 
@@ -439,19 +493,29 @@ if __name__ == '__main__':
     with open(options.pat_file, "rb") as f:
       pat_str = f.read()
   else:
-      pat_str = '%s\t%s' % (options.from_pat, options.to_pat)
-  patterns = parse_patterns(pat_str, literal=options.literal, word_breaks=options.word_breaks, insensitive=options.insensitive, preserve_case=options.preserve_case)
+    pat_str = '%s\t%s' % (options.from_pat, options.to_pat)
+  patterns = parse_patterns(pat_str,
+                            literal=options.literal,
+                            word_breaks=options.word_breaks,
+                            insensitive=options.insensitive,
+                            preserve_case=options.preserve_case)
 
   if len(patterns) == 0:
     fail("found no parse patterns")
 
-  log(None, ("Using %s patterns:\n  " % len(patterns)) + "\n  ".join(["'%s' -> '%s'" % (regex.pattern, replacement) for (regex, replacement) in patterns]))
+  log(None, ("Using %s patterns:\n  " % len(patterns)) + "\n  ".join(["'%s' -> '%s'" % (regex.pattern, replacement)
+                                                                      for (regex, replacement) in patterns]))
 
   if not options.parse_only:
     if len(root_paths) > 0:
-      rewrite_files(root_paths, patterns, do_renames=options.do_renames, do_contents=options.do_contents, by_line=by_line, dry_run=options.dry_run)
+      rewrite_files(root_paths, patterns,
+                    do_renames=options.do_renames,
+                    do_contents=options.do_contents,
+                    by_line=by_line,
+                    dry_run=options.dry_run)
 
-      log(None, "Read %s files (%s chars), found %s matches (%s skipped due to overlaps)" % (_tally.files, _tally.chars, _tally.valid_matches, _tally.matches - _tally.valid_matches))
+      log(None, "Read %s files (%s chars), found %s matches (%s skipped due to overlaps)" %
+          (_tally.files, _tally.chars, _tally.valid_matches, _tally.matches - _tally.valid_matches))
       change_words = "Dry run: Would have changed" if options.dry_run else "Changed"
       log(None, "%s %s files, including %s renames" % (change_words, _tally.files_written, _tally.renames))
     else:
@@ -462,8 +526,8 @@ if __name__ == '__main__':
       transform = lambda contents: multi_replace(contents, patterns)
       transform_stream(transform, sys.stdin, sys.stdout, by_line=by_line)
 
-      log(None, "Read %s chars, made %s replacements (%s skipped due to overlaps)" % (_tally.chars, _tally.valid_matches, _tally.matches - _tally.valid_matches))
-
+      log(None, "Read %s chars, made %s replacements (%s skipped due to overlaps)" %
+          (_tally.chars, _tally.valid_matches, _tally.matches - _tally.valid_matches))
 
 # TODO:
 #   --undo mode to revert a previous run by using .orig files; --clean mode to remove .orig files
