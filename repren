@@ -112,7 +112,7 @@ from __future__ import print_function
 import re, sys, os, shutil, optparse, bisect
 
 # Definitive version. Update with each release.
-VERSION = "0.3.5"
+VERSION = "0.3.6"
 
 DESCRIPTION = "repren: Multi-pattern string replacement and file renaming"
 LONG_DESCRIPTION = __doc__.split("Patterns:")[0].strip()
@@ -139,7 +139,8 @@ class _Tally:
         self.chars = 0
         self.matches = 0
         self.valid_matches = 0
-        self.files_written = 0
+        self.files_changed = 0
+        self.files_rewritten = 0
         self.renames = 0
 
 
@@ -325,6 +326,8 @@ def transform_file(transform, source_path, dest_path,
   function, writing dest_path atomically and keeping a backup. Source and
   destination may be the same path.'''
     counts = _MatchCounts()
+    global _tally
+    changed = False
     if transform:
         orig_path = source_path + orig_suffix
         temp_path = dest_path + temp_suffix
@@ -341,12 +344,20 @@ def transform_file(transform, source_path, dest_path,
         else:
             os.remove(temp_path)
 
-        global _tally
         _tally.files += 1
         if counts.found > 0:
-            _tally.files_written += 1
+            _tally.files_rewritten += 1
+            changed = True
         if dest_path != source_path:
             _tally.renames += 1
+            changed = True
+    elif dest_path != source_path:
+        move_file(source_path, dest_path, clobber=False)
+        _tally.files += 1
+        _tally.renames += 1
+        changed = True
+    if changed:
+        _tally.files_changed += 1
 
     return counts
 
@@ -520,7 +531,8 @@ if __name__ == '__main__':
             log(None, "Read %s files (%s chars), found %s matches (%s skipped due to overlaps)" %
                 (_tally.files, _tally.chars, _tally.valid_matches, _tally.matches - _tally.valid_matches))
             change_words = "Dry run: Would have changed" if options.dry_run else "Changed"
-            log(None, "%s %s files, including %s renames" % (change_words, _tally.files_written, _tally.renames))
+            log(None, "%s %s files (%s rewritten and %s renamed)" % (change_words, _tally.files_changed,
+                                                                     _tally.files_rewritten, _tally.renames))
         else:
             if options.do_renames:
                 parser.error("can't specify --renames on stdin; give filename arguments")
