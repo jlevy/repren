@@ -525,6 +525,7 @@ if __name__ == '__main__':
             rewrite_files(root_paths, patterns,
                           do_renames=options.do_renames,
                           do_contents=options.do_contents,
+                          exclude_pat=options.exclude_pat,
                           by_line=by_line,
                           dry_run=options.dry_run)
 
