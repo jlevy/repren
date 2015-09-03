@@ -112,7 +112,7 @@ from __future__ import print_function
 import re, sys, os, shutil, optparse, bisect
 
 # Definitive version. Update with each release.
-VERSION = "0.3.7"
+VERSION = "0.3.8"
 
 DESCRIPTION = "repren: Multi-pattern string replacement and file renaming"
 LONG_DESCRIPTION = __doc__.split("Patterns:")[0].strip()
@@ -144,7 +144,6 @@ class _Tally:
         self.renames = 0
 
 
-global _tally
 _tally = _Tally()
 
 # --- String matching ---
@@ -177,14 +176,14 @@ def _sort_drop_overlaps(matches, source_name=None):
     return non_overlaps
 
 
-def _apply_replacements(input, matches):
+def _apply_replacements(input_str, matches):
     out = []
     pos = 0
     for (match, replacement) in matches:
-        out.append(input[pos:match.start()])
+        out.append(input_str[pos:match.start()])
         out.append(match.expand(replacement))
         pos = match.end()
-    out.append(input[pos:])
+    out.append(input_str[pos:])
     return "".join(out)
 
 
@@ -198,7 +197,7 @@ class _MatchCounts:
         self.valid += o.valid
 
 
-def multi_replace(input, patterns, is_path=False, source_name=None):
+def multi_replace(input_str, patterns, is_path=False, source_name=None):
     '''Replace all occurrences in the input given a list of patterns (regex,
   replacement), simultaneously, so that no replacement affects any other. E.g.
   { xxx -> yyy, yyy -> xxx } or { xxx -> yyy, y -> z } are possible. If matches
@@ -207,18 +206,18 @@ def multi_replace(input, patterns, is_path=False, source_name=None):
   '''
     matches = []
     for (regex, replacement) in patterns:
-        for match in regex.finditer(input):
+        for match in regex.finditer(input_str):
             matches.append((match, replacement))
     valid_matches = _sort_drop_overlaps(matches, source_name=source_name)
-    result = _apply_replacements(input, valid_matches)
+    result = _apply_replacements(input_str, valid_matches)
 
     global _tally
     if not is_path:
-        _tally.chars += len(input)
+        _tally.chars += len(input_str)
         _tally.matches += len(matches)
         _tally.valid_matches += len(valid_matches)
 
-    return (result, _MatchCounts(len(matches), len(valid_matches)))
+    return result, _MatchCounts(len(matches), len(valid_matches))
 
 # --- Case handling (only used for case-preserving magic) ---
 
@@ -235,11 +234,11 @@ _name_pat = re.compile(r"\w+")
 def _split_name(name):
     '''Split a camel-case or underscore-formatted name into words. Return separator and words.'''
     if name.find("_") >= 0:
-        return ("_", name.split("_"))
+        return "_", name.split("_")
     else:
         temp = _camel_split_pat1.sub("\\1\t\\2", name)
         temp = _camel_split_pat2.sub("\\1\t\\2", temp)
-        return ("", temp.split("\t"))
+        return "", temp.split("\t")
 
 
 def _capitalize(word):
@@ -281,9 +280,9 @@ def all_case_variants(expr):
 
 def make_parent_dirs(path):
     '''Ensure parent directories of a file are created as needed.'''
-    dir = os.path.dirname(path)
-    if dir and not os.path.isdir(dir):
-        os.makedirs(dir)
+    dirname = os.path.dirname(path)
+    if dirname and not os.path.isdir(dirname):
+        os.makedirs(dirname)
     return path
 
 
@@ -296,24 +295,24 @@ def move_file(source_path, dest_path, clobber=False):
             if match:
                 dest_path = match.group(1)
             dest_path = "%s.%s" % (dest_path, i)
-            i = i + 1
+            i += 1
     shutil.move(source_path, dest_path)
 
 
-def transform_stream(transform, input, output, by_line=False):
+def transform_stream(transform, stream_in, stream_out, by_line=False):
     counts = _MatchCounts()
     if by_line:
-        for line in input:
+        for line in stream_in:
             if transform:
                 (new_line, new_counts) = transform(line)
                 counts.add(new_counts)
             else:
-                new_line = new_line
-            output.write(new_line)
+                new_line = line
+            stream_out.write(new_line)
     else:
-        contents = input.read()
+        contents = stream_in.read()
         (new_contents, new_counts) = transform(contents) if transform else contents
-        output.write(new_contents)
+        stream_out.write(new_contents)
     return counts
 
 
@@ -333,9 +332,9 @@ def transform_file(transform, source_path, dest_path,
         temp_path = dest_path + temp_suffix
         make_parent_dirs(temp_path)
         perms = os.stat(source_path).st_mode & 0o777
-        with open(source_path, "rb") as input:
-            with os.fdopen(os.open(temp_path, os.O_WRONLY | os.O_CREAT, perms), "wb") as output:
-                counts = transform_stream(transform, input, output, by_line=by_line)
+        with open(source_path, "rb") as stream_in:
+            with os.fdopen(os.open(temp_path, os.O_WRONLY | os.O_CREAT, perms), "wb") as stream_out:
+                counts = transform_stream(transform, stream_in, stream_out, by_line=by_line)
 
         # All the above happens in dry-run mode so we get tallies.
         # Important: We don't modify original file until the above succeeds without exceptions.
@@ -368,7 +367,6 @@ def transform_file(transform, source_path, dest_path,
 def rewrite_file(path, patterns, do_renames=False, do_contents=False, by_line=False, dry_run=False):
     dest_path = multi_replace(path, patterns, is_path=True)[0] if do_renames else path
     transform = None
-    counts = _MatchCounts()
     if do_contents:
         transform = lambda contents: multi_replace(contents, patterns, source_name=path)
     counts = transform_file(transform, path, dest_path, by_line=by_line, dry_run=dry_run)
