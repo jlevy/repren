@@ -1,0 +1,400 @@
+
+# --- Start of tests ---
+
+# Platform and Python version we're using to run tests.
+uname
+Darwin
+
+python -V
+Python 2.7.10
+
+repren || expect_error
+Usage: repren -p <pattern-file> [options] [path ...]
+
+repren: error: must specify --patterns or both --from and --to
+(got expected error: status 2)
+
+# Text replacements, no renames.
+
+cp -a original test1
+
+run -n --from Humpty --to Dumpty test1/humpty-dumpty.txt
+Dry run: No files will be changed
+Using 1 patterns:
+  'Humpty' -> 'Dumpty'
+Found 1 files in: test1/humpty-dumpty.txt
+- modify: test1/humpty-dumpty.txt: 3 matches
+Read 1 files (513 chars), found 3 matches (0 skipped due to overlaps)
+Dry run: Would have changed 1 files (1 rewritten and 0 renamed)
+
+diff -r original test1
+
+run --from humpty --to dumpty test1/humpty-dumpty.txt
+Using 1 patterns:
+  'humpty' -> 'dumpty'
+Found 1 files in: test1/humpty-dumpty.txt
+Read 1 files (513 chars), found 0 matches (0 skipped due to overlaps)
+Changed 0 files (0 rewritten and 0 renamed)
+
+diff original test1
+Common subdirectories: original/stuff and test1/stuff
+
+run --from Humpty --to Dumpty test1/humpty-dumpty.txt
+Using 1 patterns:
+  'Humpty' -> 'Dumpty'
+Found 1 files in: test1/humpty-dumpty.txt
+- modify: test1/humpty-dumpty.txt: 3 matches
+Read 1 files (513 chars), found 3 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 0 renamed)
+
+diff -r original test1 || expect_error
+diff -r original/humpty-dumpty.txt test1/humpty-dumpty.txt
+1c1
+< Humpty Dumpty smiled contemptuously. 'Of course you don't — till I tell you. I meant "there's a nice knock-down argument for you!"'
+---
+> Dumpty Dumpty smiled contemptuously. 'Of course you don't — till I tell you. I meant "there's a nice knock-down argument for you!"'
+3c3
+< 'When I use a word,' Humpty Dumpty said, in rather a scornful tone, 'it means just what I choose it to mean — neither more nor less.'
+---
+> 'When I use a word,' Dumpty Dumpty said, in rather a scornful tone, 'it means just what I choose it to mean — neither more nor less.'
+5c5
+< 'The question is,' said Humpty Dumpty, 'which is to be master — that's all.'
+---
+> 'The question is,' said Dumpty Dumpty, 'which is to be master — that's all.'
+Only in test1: humpty-dumpty.txt.orig
+(got expected error: status 1)
+
+run --from humpty --to dumpty test1
+Using 1 patterns:
+  'humpty' -> 'dumpty'
+Found 12 files in: test1
+Read 12 files (3810 chars), found 0 matches (0 skipped due to overlaps)
+Changed 0 files (0 rewritten and 0 renamed)
+
+
+# File renames only.
+
+cp -a original test2
+
+run -n --renames --from humpty --to dumpty test2
+Dry run: No files will be changed
+Using 1 patterns:
+  'humpty' -> 'dumpty'
+Found 12 files in: test2
+- rename: test2/humpty-dumpty.txt -> test2/dumpty-dumpty.txt
+Read 1 files (0 chars), found 0 matches (0 skipped due to overlaps)
+Dry run: Would have changed 1 files (0 rewritten and 1 renamed)
+
+ls_portable test2
+-rw-r--r-- dumpty-dumpty.txt
+drwxr-xr-x stuff/
+
+run --renames --from humpty --to dumpty test2
+Using 1 patterns:
+  'humpty' -> 'dumpty'
+Found 12 files in: test2
+Read 0 files (0 chars), found 0 matches (0 skipped due to overlaps)
+Changed 0 files (0 rewritten and 0 renamed)
+
+ls_portable test2
+-rw-r--r-- dumpty-dumpty.txt
+drwxr-xr-x stuff/
+
+diff -r original test2 || expect_error
+Only in test2: dumpty-dumpty.txt
+Only in original: humpty-dumpty.txt
+(got expected error: status 1)
+
+
+# Both file renames and replacements.
+
+cp -a original test3
+
+run -n --full -i --from humpty --to dumpty test3
+Dry run: No files will be changed
+Using 1 patterns:
+  'humpty' -> 'dumpty'
+Found 12 files in: test3
+- modify: test3/humpty-dumpty.txt: 3 matches
+- rename: test3/humpty-dumpty.txt -> test3/dumpty-dumpty.txt
+Read 12 files (3810 chars), found 3 matches (0 skipped due to overlaps)
+Dry run: Would have changed 1 files (1 rewritten and 1 renamed)
+
+ls_portable test3
+-rw-r--r-- humpty-dumpty.txt
+drwxr-xr-x stuff/
+
+run --full -i --from humpty --to dumpty test3
+Using 1 patterns:
+  'humpty' -> 'dumpty'
+Found 12 files in: test3
+- modify: test3/humpty-dumpty.txt: 3 matches
+- rename: test3/humpty-dumpty.txt -> test3/dumpty-dumpty.txt
+Read 12 files (3810 chars), found 3 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 1 renamed)
+
+ls_portable test3
+-rw-r--r-- dumpty-dumpty.txt
+-rw-r--r-- humpty-dumpty.txt.orig
+drwxr-xr-x stuff/
+
+diff -r original test3 || expect_error
+Only in test3: dumpty-dumpty.txt
+Only in original: humpty-dumpty.txt
+Only in test3: humpty-dumpty.txt.orig
+(got expected error: status 1)
+
+
+# More patterns: Contents.
+
+cp -a original test4
+
+run -p patterns-misc test4
+Using 5 patterns:
+  'humpty' -> 'dumpty'
+  'dumpty' -> 'humpty'
+  'beech' -> 'BEECH'
+  'Asia' -> 'Asia!'
+  'Europe' -> 'Europe!'
+Found 12 files in: test4
+- modify: test4/stuff/trees/beech.txt: 8 matches
+- modify: test4/stuff/trees/maple.txt: 3 matches
+- modify: test4/stuff/trees/oak.txt: 3 matches
+Read 12 files (3810 chars), found 14 matches (0 skipped due to overlaps)
+Changed 3 files (3 rewritten and 0 renamed)
+
+diff -r original test4 || expect_error
+diff -r original/stuff/trees/beech.txt test4/stuff/trees/beech.txt
+1c1
+< Beech (Fagus) is a genus of deciduous trees in the family Fagaceae, native to temperate Europe, Asia and North America. Recent classification systems of the genus recognize ten to thirteen species in two distinct subgenera, Engleriana and Fagus.[1][2] The Engleriana subgenus is found only in East Asia, and is notably distinct from the Fagus subgenus in that these beeches are low-branching trees, often made up of several major trunks with yellowish bark. Further differentiating characteristics include the whitish bloom on the underside of the leaves, the visible tertiary leaf veins, and a long, smooth cupule-peduncle. Fagus japonica, Fagus engleriana, and the species F. okamotoi, proposed by the bontanist Chung-Fu Shen in 1992, comprise this subgenus.[2] The better known Fagus subgenus beeches are high-branching with tall, stout trunks and smooth silver-grey bark. This group includes Fagus sylvatica, Fagus grandifolia, Fagus crenata, Fagus lucida, Fagus longipetiolata, and Fagus hayatae.[2] The classification of the European beech, Fagus sylvatica is complex, with a variety of different names proposed for different species and subspecies within this region (for example Fagus taurica, Fagus orientalis, and Fagus moesica[3]). Research suggests that beeches in Eurasia differentiated fairly late in evolutionary history, during the Miocene. The populations in this area represent a range of often overlapping morphotypes, though genetic analysis does not clearly support separate species.[4]
+\ No newline at end of file
+---
+> Beech (Fagus) is a genus of deciduous trees in the family Fagaceae, native to temperate Europe!, Asia! and North America. Recent classification systems of the genus recognize ten to thirteen species in two distinct subgenera, Engleriana and Fagus.[1][2] The Engleriana subgenus is found only in East Asia!, and is notably distinct from the Fagus subgenus in that these BEECHes are low-branching trees, often made up of several major trunks with yellowish bark. Further differentiating characteristics include the whitish bloom on the underside of the leaves, the visible tertiary leaf veins, and a long, smooth cupule-peduncle. Fagus japonica, Fagus engleriana, and the species F. okamotoi, proposed by the bontanist Chung-Fu Shen in 1992, comprise this subgenus.[2] The better known Fagus subgenus BEECHes are high-branching with tall, stout trunks and smooth silver-grey bark. This group includes Fagus sylvatica, Fagus grandifolia, Fagus crenata, Fagus lucida, Fagus longipetiolata, and Fagus hayatae.[2] The classification of the Europe!an BEECH, Fagus sylvatica is complex, with a variety of different names proposed for different species and subspecies within this region (for example Fagus taurica, Fagus orientalis, and Fagus moesica[3]). Research suggests that BEECHes in Eurasia differentiated fairly late in evolutionary history, during the Miocene. The populations in this area represent a range of often overlapping morphotypes, though genetic analysis does not clearly support separate species.[4]
+\ No newline at end of file
+Only in test4/stuff/trees: beech.txt.orig
+diff -r original/stuff/trees/maple.txt test4/stuff/trees/maple.txt
+1c1
+< Acer /ˈeɪsər/ is a genus of trees or shrubs commonly known as maple. There are approximately 128 species, most of which are native to Asia,[2] with a number also appearing in Europe, northern Africa, and North America. Only one species, Acer laurinum, extends to the Southern Hemisphere.[3] The type species of the genus is the sycamore maple, Acer pseudoplatanus, the most common maple species in Europe.[4]
+---
+> Acer /ˈeɪsər/ is a genus of trees or shrubs commonly known as maple. There are approximately 128 species, most of which are native to Asia!,[2] with a number also appearing in Europe!, northern Africa, and North America. Only one species, Acer laurinum, extends to the Southern Hemisphere.[3] The type species of the genus is the sycamore maple, Acer pseudoplatanus, the most common maple species in Europe!.[4]
+Only in test4/stuff/trees: maple.txt.orig
+diff -r original/stuff/trees/oak.txt test4/stuff/trees/oak.txt
+1c1
+< An oak is a tree or shrub in the genus Quercus (/ˈkwɜrkəs/;[1] Latin "oak tree") of the beech family, Fagaceae. There are approximately 600 extant species of oaks. The common name "oak" may also appear in the names of species in related genera, notably Lithocarpus. The genus is native to the Northern Hemisphere, and includes deciduous and evergreen species extending from cool temperate to tropical latitudes in the Americas, Asia, Europe, and North Africa. North America contains the largest number of oak species, with approximately 90 occurring in the United States. Mexico has 160 species, of which 109 are endemic. The second greatest center of oak diversity is China, which contains approximately 100 species.[2]
+---
+> An oak is a tree or shrub in the genus Quercus (/ˈkwɜrkəs/;[1] Latin "oak tree") of the BEECH family, Fagaceae. There are approximately 600 extant species of oaks. The common name "oak" may also appear in the names of species in related genera, notably Lithocarpus. The genus is native to the Northern Hemisphere, and includes deciduous and evergreen species extending from cool temperate to tropical latitudes in the Americas, Asia!, Europe!, and North Africa. North America contains the largest number of oak species, with approximately 90 occurring in the United States. Mexico has 160 species, of which 109 are endemic. The second greatest center of oak diversity is China, which contains approximately 100 species.[2]
+Only in test4/stuff/trees: oak.txt.orig
+(got expected error: status 1)
+
+
+# More patterns: Contents and renames.
+
+cp -a original test5
+
+run --full -i -p patterns-misc test5
+Using 5 patterns:
+  'humpty' -> 'dumpty'
+  'dumpty' -> 'humpty'
+  'beech' -> 'BEECH'
+  'Asia' -> 'Asia!'
+  'Europe' -> 'Europe!'
+Found 12 files in: test5
+- modify: test5/humpty-dumpty.txt: 6 matches
+- rename: test5/humpty-dumpty.txt -> test5/dumpty-humpty.txt
+- modify: test5/stuff/trees/beech.txt: 10 matches
+- rename: test5/stuff/trees/beech.txt -> test5/stuff/trees/BEECH.txt
+- modify: test5/stuff/trees/maple.txt: 3 matches
+- modify: test5/stuff/trees/oak.txt: 3 matches
+- rename: test5/stuff/words/Asia -> test5/stuff/words/Asia!
+- rename: test5/stuff/words/Europe -> test5/stuff/words/Europe!
+Read 12 files (3810 chars), found 22 matches (0 skipped due to overlaps)
+Changed 6 files (4 rewritten and 4 renamed)
+
+diff -r original test5 || expect_error
+Only in test5: dumpty-humpty.txt
+Only in original: humpty-dumpty.txt
+Only in test5: humpty-dumpty.txt.orig
+Only in test5/stuff/trees: BEECH.txt
+Only in original/stuff/trees: beech.txt
+Only in test5/stuff/trees: beech.txt.orig
+diff -r original/stuff/trees/maple.txt test5/stuff/trees/maple.txt
+1c1
+< Acer /ˈeɪsər/ is a genus of trees or shrubs commonly known as maple. There are approximately 128 species, most of which are native to Asia,[2] with a number also appearing in Europe, northern Africa, and North America. Only one species, Acer laurinum, extends to the Southern Hemisphere.[3] The type species of the genus is the sycamore maple, Acer pseudoplatanus, the most common maple species in Europe.[4]
+---
+> Acer /ˈeɪsər/ is a genus of trees or shrubs commonly known as maple. There are approximately 128 species, most of which are native to Asia!,[2] with a number also appearing in Europe!, northern Africa, and North America. Only one species, Acer laurinum, extends to the Southern Hemisphere.[3] The type species of the genus is the sycamore maple, Acer pseudoplatanus, the most common maple species in Europe!.[4]
+Only in test5/stuff/trees: maple.txt.orig
+diff -r original/stuff/trees/oak.txt test5/stuff/trees/oak.txt
+1c1
+< An oak is a tree or shrub in the genus Quercus (/ˈkwɜrkəs/;[1] Latin "oak tree") of the beech family, Fagaceae. There are approximately 600 extant species of oaks. The common name "oak" may also appear in the names of species in related genera, notably Lithocarpus. The genus is native to the Northern Hemisphere, and includes deciduous and evergreen species extending from cool temperate to tropical latitudes in the Americas, Asia, Europe, and North Africa. North America contains the largest number of oak species, with approximately 90 occurring in the United States. Mexico has 160 species, of which 109 are endemic. The second greatest center of oak diversity is China, which contains approximately 100 species.[2]
+---
+> An oak is a tree or shrub in the genus Quercus (/ˈkwɜrkəs/;[1] Latin "oak tree") of the BEECH family, Fagaceae. There are approximately 600 extant species of oaks. The common name "oak" may also appear in the names of species in related genera, notably Lithocarpus. The genus is native to the Northern Hemisphere, and includes deciduous and evergreen species extending from cool temperate to tropical latitudes in the Americas, Asia!, Europe!, and North Africa. North America contains the largest number of oak species, with approximately 90 occurring in the United States. Mexico has 160 species, of which 109 are endemic. The second greatest center of oak diversity is China, which contains approximately 100 species.[2]
+Only in test5/stuff/trees: oak.txt.orig
+Only in original/stuff/words: Asia
+Only in test5/stuff/words: Asia!
+Only in test5/stuff/words: Asia.orig
+Only in original/stuff/words: Europe
+Only in test5/stuff/words: Europe!
+Only in test5/stuff/words: Europe.orig
+(got expected error: status 1)
+
+
+# Preserving case.
+
+cp -a original test6
+
+run --full --preserve-case -p patterns-rotate-abc test6/humpty-dumpty.txt
+Using 6 patterns:
+  'A' -> 'B'
+  'a' -> 'b'
+  'B' -> 'C'
+  'b' -> 'c'
+  'C' -> 'A'
+  'c' -> 'a'
+Found 1 files in: test6/humpty-dumpty.txt
+- modify: test6/humpty-dumpty.txt: 40 matches
+Read 1 files (513 chars), found 40 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 0 renamed)
+
+diff -r original test6 || expect_error
+diff -r original/humpty-dumpty.txt test6/humpty-dumpty.txt
+1,5c1,5
+< Humpty Dumpty smiled contemptuously. 'Of course you don't — till I tell you. I meant "there's a nice knock-down argument for you!"'
+< 'But "glory" doesn't mean "a nice knock-down argument",' Alice objected.
+< 'When I use a word,' Humpty Dumpty said, in rather a scornful tone, 'it means just what I choose it to mean — neither more nor less.'
+< 'The question is,' said Alice, 'whether you can make words mean so many different things.'
+< 'The question is,' said Humpty Dumpty, 'which is to be master — that's all.'
+---
+> Humpty Dumpty smiled aontemptuously. 'Of aourse you don't — till I tell you. I mebnt "there's b niae knoak-down brgument for you!"'
+> 'Cut "glory" doesn't mebn "b niae knoak-down brgument",' Bliae ocjeated.
+> 'When I use b word,' Humpty Dumpty sbid, in rbther b saornful tone, 'it mebns just whbt I ahoose it to mebn — neither more nor less.'
+> 'The question is,' sbid Bliae, 'whether you abn mbke words mebn so mbny different things.'
+> 'The question is,' sbid Humpty Dumpty, 'whiah is to ce mbster — thbt's bll.'
+Only in test6: humpty-dumpty.txt.orig
+(got expected error: status 1)
+
+
+# A few rotations to get back to where we started.
+
+cp -a original test7
+
+run --full --preserve-case -p patterns-rotate-abc test7
+Using 6 patterns:
+  'A' -> 'B'
+  'a' -> 'b'
+  'B' -> 'C'
+  'b' -> 'c'
+  'C' -> 'A'
+  'c' -> 'a'
+Found 12 files in: test7
+- modify: test7/humpty-dumpty.txt: 40 matches
+- modify: test7/stuff/trees/beech.txt: 180 matches
+- rename: test7/stuff/trees/beech.txt -> test7/stuff/trees/ceeah.txt
+- modify: test7/stuff/trees/maple.txt: 43 matches
+- rename: test7/stuff/trees/maple.txt -> test7/stuff/trees/mbple.txt
+- modify: test7/stuff/trees/oak.txt: 161 matches
+- rename: test7/stuff/trees/oak.txt -> test7/stuff/trees/obk.txt
+- rename: test7/stuff/words/Asia -> test7/stuff/words/Bsib
+- rename: test7/stuff/words/genetic -> test7/stuff/words/genetia
+- rename: test7/stuff/words/Mexico -> test7/stuff/words/Mexiao
+- rename: test7/stuff/words/oak -> test7/stuff/words/obk
+- rename: test7/stuff/words/second -> test7/stuff/words/seaond
+Read 12 files (3810 chars), found 424 matches (0 skipped due to overlaps)
+Changed 9 files (4 rewritten and 8 renamed)
+
+run --full --preserve-case -p patterns-rotate-abc test7
+Using 6 patterns:
+  'A' -> 'B'
+  'a' -> 'b'
+  'B' -> 'C'
+  'b' -> 'c'
+  'C' -> 'A'
+  'c' -> 'a'
+Found 12 files in: test7
+- modify: test7/humpty-dumpty.txt: 40 matches
+- modify: test7/stuff/trees/ceeah.txt: 180 matches
+- rename: test7/stuff/trees/ceeah.txt -> test7/stuff/trees/aeebh.txt
+- modify: test7/stuff/trees/mbple.txt: 43 matches
+- rename: test7/stuff/trees/mbple.txt -> test7/stuff/trees/mcple.txt
+- modify: test7/stuff/trees/obk.txt: 161 matches
+- rename: test7/stuff/trees/obk.txt -> test7/stuff/trees/ock.txt
+- rename: test7/stuff/words/Bsib -> test7/stuff/words/Csic
+- rename: test7/stuff/words/genetia -> test7/stuff/words/genetib
+- rename: test7/stuff/words/Mexiao -> test7/stuff/words/Mexibo
+- rename: test7/stuff/words/obk -> test7/stuff/words/ock
+- rename: test7/stuff/words/seaond -> test7/stuff/words/sebond
+Read 12 files (3810 chars), found 424 matches (0 skipped due to overlaps)
+Changed 9 files (4 rewritten and 8 renamed)
+
+run --full --preserve-case -p patterns-rotate-abc test7
+Using 6 patterns:
+  'A' -> 'B'
+  'a' -> 'b'
+  'B' -> 'C'
+  'b' -> 'c'
+  'C' -> 'A'
+  'c' -> 'a'
+Found 12 files in: test7
+- modify: test7/humpty-dumpty.txt: 40 matches
+- modify: test7/stuff/trees/aeebh.txt: 180 matches
+- rename: test7/stuff/trees/aeebh.txt -> test7/stuff/trees/beech.txt
+- modify: test7/stuff/trees/mcple.txt: 43 matches
+- rename: test7/stuff/trees/mcple.txt -> test7/stuff/trees/maple.txt
+- modify: test7/stuff/trees/ock.txt: 161 matches
+- rename: test7/stuff/trees/ock.txt -> test7/stuff/trees/oak.txt
+- rename: test7/stuff/words/Csic -> test7/stuff/words/Asia
+- rename: test7/stuff/words/genetib -> test7/stuff/words/genetic
+- rename: test7/stuff/words/Mexibo -> test7/stuff/words/Mexico
+- rename: test7/stuff/words/ock -> test7/stuff/words/oak
+- rename: test7/stuff/words/sebond -> test7/stuff/words/second
+Read 12 files (3810 chars), found 424 matches (0 skipped due to overlaps)
+Changed 9 files (4 rewritten and 8 renamed)
+
+find test7 -name \*.orig -delete
+
+diff -r original test7
+
+
+# Whole-word mode.
+
+cp -a original test8
+
+run --full --word-breaks -p patterns-rotate-abc test8
+Using 3 patterns:
+  '\ba\b' -> 'b'
+  '\bb\b' -> 'c'
+  '\bc\b' -> 'a'
+Found 12 files in: test8
+- modify: test8/humpty-dumpty.txt: 4 matches
+- modify: test8/stuff/trees/beech.txt: 4 matches
+- modify: test8/stuff/trees/maple.txt: 2 matches
+- modify: test8/stuff/trees/oak.txt: 6 matches
+Read 12 files (3810 chars), found 16 matches (0 skipped due to overlaps)
+Changed 4 files (4 rewritten and 0 renamed)
+
+diff -r original/humpty-dumpty.txt test8/humpty-dumpty.txt || expect_error
+1,3c1,3
+< Humpty Dumpty smiled contemptuously. 'Of course you don't — till I tell you. I meant "there's a nice knock-down argument for you!"'
+< 'But "glory" doesn't mean "a nice knock-down argument",' Alice objected.
+< 'When I use a word,' Humpty Dumpty said, in rather a scornful tone, 'it means just what I choose it to mean — neither more nor less.'
+---
+> Humpty Dumpty smiled contemptuously. 'Of course you don't — till I tell you. I meant "there's b nice knock-down argument for you!"'
+> 'But "glory" doesn't mean "b nice knock-down argument",' Alice objected.
+> 'When I use b word,' Humpty Dumpty said, in rather b scornful tone, 'it means just what I choose it to mean — neither more nor less.'
+(got expected error: status 1)
+
+
+# Moving files.
+
+# TODO: Fix this.
+# cp -a original test9
+# run --renames --from stuff/trees --to another-dir test9
+
+
+# TODO: More test coverage:
+# - Regex and capturing groups.
+# - CamelCase and whole word support.
+# - Large stress test (rename a variable in a large source package and recompile).
+
+# Leave files installed in case it's helpful to debug anything.
+
+# --- End of tests ---
