@@ -86,15 +86,16 @@ Read 1 files (0 chars), found 0 matches (0 skipped due to overlaps)
 Dry run: Would have changed 1 files (0 rewritten and 1 renamed)
 
 ls_portable test2
--rw-r--r-- dumpty-dumpty.txt
+-rw-r--r-- humpty-dumpty.txt
 drwxr-xr-x stuff/
 
 run --renames --from humpty --to dumpty test2
 Using 1 patterns:
   'humpty' -> 'dumpty'
 Found 12 files in: test2
-Read 0 files (0 chars), found 0 matches (0 skipped due to overlaps)
-Changed 0 files (0 rewritten and 0 renamed)
+- rename: test2/humpty-dumpty.txt -> test2/dumpty-dumpty.txt
+Read 1 files (0 chars), found 0 matches (0 skipped due to overlaps)
+Changed 1 files (0 rewritten and 1 renamed)
 
 ls_portable test2
 -rw-r--r-- dumpty-dumpty.txt

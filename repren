@@ -112,7 +112,7 @@ from __future__ import print_function
 import re, sys, os, shutil, optparse, bisect
 
 # Definitive version. Update with each release.
-VERSION = "0.3.6"
+VERSION = "0.3.7"
 
 DESCRIPTION = "repren: Multi-pattern string replacement and file renaming"
 LONG_DESCRIPTION = __doc__.split("Patterns:")[0].strip()
@@ -337,11 +337,13 @@ def transform_file(transform, source_path, dest_path,
             with os.fdopen(os.open(temp_path, os.O_WRONLY | os.O_CREAT, perms), "wb") as output:
                 counts = transform_stream(transform, input, output, by_line=by_line)
 
+        # All the above happens in dry-run mode so we get tallies.
         # Important: We don't modify original file until the above succeeds without exceptions.
         if not dry_run and (dest_path != source_path or counts.found > 0):
             move_file(source_path, orig_path, clobber=True)
             move_file(temp_path, dest_path, clobber=False)
         else:
+            # If we're not in dry-run mode, or if there were no changes at all, just forget the output.
             os.remove(temp_path)
 
         _tally.files += 1
@@ -352,7 +354,8 @@ def transform_file(transform, source_path, dest_path,
             _tally.renames += 1
             changed = True
     elif dest_path != source_path:
-        move_file(source_path, dest_path, clobber=False)
+        if not dry_run:
+            move_file(source_path, dest_path, clobber=False)
         _tally.files += 1
         _tally.renames += 1
         changed = True
@@ -411,6 +414,7 @@ def parse_patterns(patterns_str, literal=False, word_breaks=False, insensitive=F
     patterns = []
     flags = re.I if insensitive else 0
     for line in patterns_str.splitlines():
+        bits = None
         try:
             bits = line.split('\t')
             if line.strip().startswith("#"):
@@ -432,7 +436,6 @@ def parse_patterns(patterns_str, literal=False, word_breaks=False, insensitive=F
             else:
                 fail("invalid line in pattern file: %s" % bits)
         except Exception as e:
-            raise e
             fail("error parsing pattern: %s: %s" % (e, bits))
     return patterns
 
