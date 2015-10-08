@@ -1,31 +1,61 @@
-repren
-======
+# repren
 
-## Multi-pattern string replacement and file renaming
+![But call me repren for short](images/awkward-150.jpg)
 
-**A command-line search-and-replace swiss army knife**
+## Rename anything
 
-It's the usual deal. Naming things is one of the hard problems in computer science.
-Frobinators should be called Glurps, and WhizzleSticks are being replaced
-by AcmeExtrudedPlasticFunProviders. But now there are 2000 Java files, some
-JavaScript, a little C++ and YAML, and of course documentation, that all have
-to be updated at once. And there are a few different naming conventions in
-each format. And the files and directories all have old names that should be
-changed, too.
+Repren is a simple but flexible, command-line tool for rewriting file contents
+according to a set of regular expression patterns, and renaming or moving files.
+Essentially, it is a general-purpose, brute-force text file refactoring tool.
 
-I really don't know why there isn't a single well-known tool for this already.
-The standard tools like *sed*, *perl*, *awk*, *Vim* macros, or even IDE refactoring
-tools, each only solve part of the problem.  Inevitably you end up digging through
-the dark corners of the sed man page and writing bash scripts that would scare your mother.
+For example, repren can perform a Java refactor that involves renaming the Java class filename, as well as every occurrence of that class name in code or documentation.
+Or it can change the naming scheme for files, so every path like `foo.1.jpg` is renamed `foo-1.jpg`. Or it can move files by rewriting parent directories.
 
-Repren is a simple upgrade that tries to cover a lot of use cases, and to do it simply.
+It's strives to be more powerful and thoughtful than usual options like `perl -pie`, `rpl`, `sed`, or `rename`:
 
+- It can do search-and-replace, file renaming, or both.
+- It allows file renaming on full paths, including moving files, creating directories, or rewriting directory hierarchies.
+- It supports fully expressive regular expressions, with capturing groups and back substitutions.
+- It performs simultaneous group renamings, i.e. rename "foo" as "bar", and "bar" as "foo"
+  at once, without requiring a temporary intermediate rename.
+- It is careful. It has a nondestructive mode, and prints clear stats on its
+  changes. It leaves backups. File operations are done atomically, so
+  interruptions never leave a previously existing file truncated or partly
+  edited.
+- It supports "magic" case-preserving renames that let you find and rename
+  identifiers with case variants (lowerCamel, UpperCamel, lower_underscore, and
+  UPPER_UNDERSCORE) consistently.
+- It has this nice documentaion!
+
+## Usage
+
+Run `repren --help` for full usage and flags.
+
+If file paths are provided, repren replaces those files in place, leaving a
+backup with extension ".orig". If directory paths are provided, it applies
+replacements recursively to all files in the supplied paths that are not in the
+exclude pattern. If no arguments are supplied, it reads from stdin and writes
+to stdout.
+
+## Alternatives
+
+Aren't there standard tools for this already?
+
+It's a bit surprising, but not really.
+Getting the features right is a bit tricky, I guess.
+The [standard](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549#29191549)
+[answers](http://stackoverflow.com/questions/6840332/rename-multiple-files-by-replacing-a-particular-pattern-in-the-filenames-using-a)
+like *sed*, *perl*, *awk*, *rename*, *Vim* macros, or even IDE refactoring
+tools, often cover specific cases, but tend to be error-prone or not offer specific features you probably want.
+Things like nondestructive mode, file renaming as well as search/replace, multiple simultaneous renames/swaps, or renaming enclosing parent directories.
+Also many of these vary by platform, which adds to the corner cases.
+Inevitably you end up digging through the darker corners of some man page or writing ugly scripts that would scare your mother.
 
 ## Installation
 
-No dependencies except Python 2.7+. It's easiest to install with pip:
+No dependencies except Python 2.7+. It's easiest to install with pip (using sudo if desired):
 
-    sudo pip install repren
+    pip install repren
 
 Or, since it's just one file, you can copy the
 [repren](https://raw.githubusercontent.com/jlevy/repren/master/repren)
@@ -34,7 +64,7 @@ script somewhere (perhaps within your own project) and make it executable.
 
 ## Try it
 
-Let's try a simple replacement in our working directory (which has a few source
+Let's try a simple replacement in my working directory (which has a few random source
 files):
 
     bash-3.2$ repren --from frobinator-server --to glurp-server --full --dry-run .
@@ -54,100 +84,34 @@ files):
     Read 102 files (190382 chars), found 2 matches (0 skipped due to overlaps)
     Dry run: Would have changed 2 files, including 0 renames
 
-Looks good. Now actually do it.
+That was a dry run, so if it looks good, it's easy to repeat that a second time, dropping the `--dry-run` flag.
+If this is in git, we'd do a git diff to verify, test, then commit it all.
+If we messed up, there are still .orig files present.
 
-    bash-3.2$ repren --from frobinator-server --to glurp-server --full .
-    Using 1 patterns:
-      'frobinator-server' -> 'glurp-server'
-    Found 102 files in: .
-    - modify: ./site.yml: 1 matches
-    - rename: ./roles/frobinator-server/defaults/main.yml -> ./roles/glurp-server/defaults/main.yml
-    - rename: ./roles/frobinator-server/files/deploy-frobinator-server.sh -> ./roles/glurp-server/files/deploy-frobinator-server.sh
-    - rename: ./roles/frobinator-server/files/install-graphviz.sh -> ./roles/glurp-server/files/install-graphviz.sh
-    - rename: ./roles/frobinator-server/files/frobinator-purge-old-deployments -> ./roles/glurp-server/files/frobinator-purge-old-deployments
-    - rename: ./roles/frobinator-server/handlers/main.yml -> ./roles/glurp-server/handlers/main.yml
-    - rename: ./roles/frobinator-server/tasks/main.yml -> ./roles/glurp-server/tasks/main.yml
-    - rename: ./roles/frobinator-server/templates/frobinator-webservice.conf.j2 -> ./roles/glurp-server/templates/frobinator-webservice.conf.j2
-    - rename: ./roles/frobinator-server/templates/frobinator-webui.conf.j2 -> ./roles/glurp-server/templates/frobinator-webui.conf.j2
-    Read 102 files (190382 chars), found 2 matches (0 skipped due to overlaps)
-    Changed 2 files, including 0 renames
+## Patterns
 
-All done. If this is in git, do a git diff to verify, test, then commit it all.
+Patterns can be supplied using the `--from` and `--to` syntax above, but that only works for a single pattern.
 
-
-## What else?
-
-    Usage: repren -p <pattern-file> [options] [path ...]
-
-    repren: Multi-pattern string replacement and file renaming
-
-    Options:
-      --version             show program's version number and exit
-      -h, --help            show this help message and exit
-      --from=FROM_PAT       single replacement: match string
-      --to=TO_PAT           single replacement: replacement string
-      -p PAT_FILE, --patterns=PAT_FILE
-                            file with multiple replacement patterns (see below)
-      --full                do file renames and search/replace on file contents
-      --renames             do file renames only; do not modify file contents
-      --literal             use exact string matching, rather than regular
-                            expresion matching
-      -i, --insensitive     match case-insensitively
-      --preserve-case       do case-preserving magic to transform all case
-                            variants (see below)
-      -b, --word-breaks     require word breaks (regex \b) around all matches
-      --exclude=EXCLUDE_PAT
-                            file/directory name regex to exclude
-      --at-once             transform each file's contents at once, instead of
-                            line by line
-      -t, --parse-only      parse and show patterns only
-      -n, --dry-run         dry run: just log matches without changing files
-
-
-Repren is a simple but flexible command-line tool for rewriting file contents
-according to a set of regular expression patterns, and to rename or move files
-according to patterns. Essentially, it is a general-purpose, brute-force text
-file refactoring tool. For example, repren could rename all occurrences of
-certain class and variable names in a set of Java source files, while
-simultaneously renaming the Java files according to the same pattern. It's more
-powerful than usual options like `perl -pie`, `rpl`, or `sed`:
-
-- It can also rename files, including moving files and creating directories.
-- It supports fully expressive regular expression substitutions.
-- It performs group renamings, i.e. rename "foo" as "bar", and "bar" as "foo"
-  at once, without requiring a temporary intermediate rename.
-- It is careful. It has a nondestructive mode, and prints clear stats on its
-  changes. It leaves backups. File operations are done atomically, so
-  interruptions never leave a previously existing file truncated or partly
-  edited.
-- It supports "magic" case-preserving renames that let you find and rename
-  identifiers with case variants (lowerCamel, UpperCamel, lower_underscore, and
-  UPPER_UNDERSCORE) consistently.
-- It has this nice documentaion!
-
-If file paths are provided, repren replaces those files in place, leaving a
-backup with extension ".orig". If directory paths are provided, it applies
-replacements recursively to all files in the supplied paths that are not in the
-exclude pattern. If no arguments are supplied, it reads from stdin and writes
-to stdout.
-
-Patterns:
-
-Patterns can be supplied in a text file, with one or more replacements consisting
-of regular expression and replacement. For example:
+In general, you can perform multiple simultaneous replacements by putting them in a text file.
+Each line consists of a regular expression and replacement. For example:
 
     # Sample pattern file
     frobinator<tab>glurp
     WhizzleStick<tab>AcmeExtrudedPlasticFunProvider
     figure ([0-9+])<tab>Figure \1
 
-(Where `<tab>` is an actual tab character.) Each line is a replacement.
+(Where `<tab>` is an actual tab character.)
+
 Empty lines and #-prefixed comments are ignored.
 
-As a short-cut, a single replacemet can be specified on the command line using
-`--from` (match) and `--to` (replacement).
+Capturing groups and back substitutions (such as \1 above) are supported.
 
-Examples:
+You then supply that pattern file with `-p`:
+
+    repren -p pattern-file some-directory
+
+
+## Examples
 
     # Here `patfile` is a patterns file.
     # Rewrite stdin:
@@ -169,7 +133,7 @@ Examples:
     # Same as above, for all case variants:
     repren -p patfile --word-breaks --preserve-case --full mydir1
 
-Notes:
+## Notes
 
 - As with sed, replacements are made line by line by default. Memory
   permitting, replacements may be done on entire files using `--at-once`.
@@ -211,6 +175,4 @@ Notes:
 
 ## License
 
-Apache 2
-
-
+Apache 2.
