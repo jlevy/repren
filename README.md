@@ -92,7 +92,7 @@ If we messed up, there are still .orig files present.
 
 Patterns can be supplied using the `--from` and `--to` syntax above, but that only works for a single pattern.
 
-In general, you can perform multiple simultaneous replacements by putting them in a text file.
+In general, you can perform multiple simultaneous replacements by putting them in a _patterns file_.
 Each line consists of a regular expression and replacement. For example:
 
     # Sample pattern file
@@ -102,14 +102,7 @@ Each line consists of a regular expression and replacement. For example:
 
 (Where `<tab>` is an actual tab character.)
 
-Empty lines and #-prefixed comments are ignored.
-
-Capturing groups and back substitutions (such as \1 above) are supported.
-
-You then supply that pattern file with `-p`:
-
-    repren -p pattern-file some-directory
-
+Empty lines and #-prefixed comments are ignored. Capturing groups and back substitutions (such as \1 above) are supported. 
 
 ## Examples
 
