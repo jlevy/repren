@@ -21,7 +21,8 @@ It's strives to be more powerful and thoughtful than usual options like `perl -p
   changes. It leaves backups. File operations are done atomically, so
   interruptions never leave a previously existing file truncated or partly
   edited.
-- It supports "magic" case-preserving renames that let you find and rename
+- It supports helpful variations like an option to replace on word breaks, so you
+  avoid splitting a word, and "case-preserving" renames that let you find and rename
   identifiers with case variants (lowerCamel, UpperCamel, lower_underscore, and
   UPPER_UNDERSCORE) consistently.
 - It has this nice documentaion!
