@@ -165,6 +165,11 @@ Empty lines and #-prefixed comments are ignored. Capturing groups and back subst
   `--case-preserving` logic only handles casing conversions correctly for plain
   ASCII letters `[a-zA-Z]`.
 
+## Contributing
+
+Contributions and issues welcome! Do understand and run the (manual) regression tests,
+review the output, and commit the clean log changes if you submit a PR. (And mention this
+in the PR.)
 
 ## License
 
