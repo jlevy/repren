@@ -40,7 +40,7 @@ of regular expression and replacement. For example:
 (Where `<tab>` is an actual tab character.) Each line is a replacement.
 Empty lines and #-prefixed comments are ignored.
 
-As a short-cut, a single replacemet can be specified on the command line using
+As a short-cut, a single replacement can be specified on the command line using
 `--from` (match) and `--to` (replacement).
 
 Examples:
