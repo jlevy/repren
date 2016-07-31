@@ -40,7 +40,7 @@ of regular expression and replacement. For example:
 (Where `<tab>` is an actual tab character.) Each line is a replacement.
 Empty lines and #-prefixed comments are ignored.
 
-As a short-cut, a single replacemet can be specified on the command line using
+As a short-cut, a single replacement can be specified on the command line using
 `--from` (match) and `--to` (replacement).
 
 Examples:
@@ -500,7 +500,7 @@ if __name__ == '__main__':
     if options.pat_file:
         if options.from_pat or options.to_pat:
             parser.error("cannot use both --patterns and --from/--to")
-    elif not options.from_pat or not options.to_pat:
+    elif options.from_pat is None or options.to_pat is None:
         parser.error("must specify --patterns or both --from and --to")
     if options.insensitive and options.preserve_case:
         parser.error("cannot use --insensitive and --preserve-case at once")

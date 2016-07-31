@@ -4,8 +4,7 @@
 
 ## Rename anything
 
-Repren is a simple but flexible, command-line tool for rewriting file contents
-according to a set of regular expression patterns, and renaming or moving files.
+Repren is a simple but flexible, command-line tool for rewriting file contents according to a set of regular expression patterns, and renaming or moving files.
 Essentially, it is a general-purpose, brute-force text file refactoring tool.
 
 For example, repren can perform a Java refactor that involves renaming the Java class filename, as well as every occurrence of that class name in code or documentation.
@@ -22,7 +21,8 @@ It's strives to be more powerful and thoughtful than usual options like `perl -p
   changes. It leaves backups. File operations are done atomically, so
   interruptions never leave a previously existing file truncated or partly
   edited.
-- It supports "magic" case-preserving renames that let you find and rename
+- It supports helpful variations like an option to replace on word breaks, so you
+  avoid splitting a word, and "case-preserving" renames that let you find and rename
   identifiers with case variants (lowerCamel, UpperCamel, lower_underscore, and
   UPPER_UNDERSCORE) consistently.
 - It has this nice documentaion!
@@ -43,7 +43,7 @@ Aren't there standard tools for this already?
 
 It's a bit surprising, but not really.
 Getting the features right is a bit tricky, I guess.
-The [standard](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549#29191549)
+The [standard](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549)
 [answers](http://stackoverflow.com/questions/6840332/rename-multiple-files-by-replacing-a-particular-pattern-in-the-filenames-using-a)
 like *sed*, *perl*, *awk*, *rename*, *Vim* macros, or even IDE refactoring
 tools, often cover specific cases, but tend to be error-prone or not offer specific features you probably want.
@@ -92,7 +92,7 @@ If we messed up, there are still .orig files present.
 
 Patterns can be supplied using the `--from` and `--to` syntax above, but that only works for a single pattern.
 
-In general, you can perform multiple simultaneous replacements by putting them in a text file.
+In general, you can perform multiple simultaneous replacements by putting them in a _patterns file_.
 Each line consists of a regular expression and replacement. For example:
 
     # Sample pattern file
@@ -102,14 +102,7 @@ Each line consists of a regular expression and replacement. For example:
 
 (Where `<tab>` is an actual tab character.)
 
-Empty lines and #-prefixed comments are ignored.
-
-Capturing groups and back substitutions (such as \1 above) are supported.
-
-You then supply that pattern file with `-p`:
-
-    repren -p pattern-file some-directory
-
+Empty lines and #-prefixed comments are ignored. Capturing groups and back substitutions (such as \1 above) are supported. 
 
 ## Examples
 
@@ -172,6 +165,11 @@ You then supply that pattern file with `-p`:
   `--case-preserving` logic only handles casing conversions correctly for plain
   ASCII letters `[a-zA-Z]`.
 
+## Contributing
+
+Contributions and issues welcome! Do understand and run the (manual) regression tests,
+review the output, and commit the clean log changes if you submit a PR. (And mention this
+in the PR.)
 
 ## License
 
