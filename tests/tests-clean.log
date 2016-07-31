@@ -6,9 +6,9 @@ uname
 Darwin
 
 python -V
-Python 2.7.10
+Python 2.7.11
 
-repren || expect_error
+run || expect_error
 Usage: repren -p <pattern-file> [options] [path ...]
 
 repren: error: must specify --patterns or both --from and --to

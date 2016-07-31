@@ -39,7 +39,7 @@ uname
 
 python -V
 
-repren || expect_error
+run || expect_error
 
 # Text replacements, no renames.
 

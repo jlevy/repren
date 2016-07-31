@@ -321,15 +321,17 @@ def transform_file(transform, source_path, dest_path,
                    temp_suffix=TEMP_SUFFIX,
                    by_line=False,
                    dry_run=False):
-    '''Transform full contents of file at source_path in memory with specified
-  function, writing dest_path atomically and keeping a backup. Source and
-  destination may be the same path.'''
+    '''Transform full contents of file at source_path with specified function,
+  either line-by-line or at once in memory, writing dest_path atomically and keeping a backup.
+  Source and destination may be the same path.'''
     counts = _MatchCounts()
     global _tally
     changed = False
     if transform:
         orig_path = source_path + orig_suffix
         temp_path = dest_path + temp_suffix
+        # TODO: This will create a directory even in dry_run mode, but perhaps that's acceptable.
+        # https://github.com/jlevy/repren/issues/6
         make_parent_dirs(temp_path)
         perms = os.stat(source_path).st_mode & 0o777
         with open(source_path, "rb") as stream_in:
@@ -342,7 +344,7 @@ def transform_file(transform, source_path, dest_path,
             move_file(source_path, orig_path, clobber=True)
             move_file(temp_path, dest_path, clobber=False)
         else:
-            # If we're not in dry-run mode, or if there were no changes at all, just forget the output.
+            # If we're in dry-run mode, or if there were no changes at all, just forget the output.
             os.remove(temp_path)
 
         _tally.files += 1
@@ -354,6 +356,7 @@ def transform_file(transform, source_path, dest_path,
             changed = True
     elif dest_path != source_path:
         if not dry_run:
+            make_parent_dirs(dest_path)
             move_file(source_path, dest_path, clobber=False)
         _tally.files += 1
         _tally.renames += 1
