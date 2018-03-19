@@ -4,13 +4,13 @@
 
 ## Rename anything
 
-Repren is a simple but flexible, command-line tool for rewriting file contents according to a set of regular expression patterns, and renaming or moving files.
-Essentially, it is a general-purpose, brute-force text file refactoring tool.
-
-For example, repren can perform a Java refactor that involves renaming the Java class filename, as well as every occurrence of that class name in code or documentation.
-Or it can change the naming scheme for files, so every path like `foo.1.jpg` is renamed `foo-1.jpg`. Or it can move files by rewriting parent directories.
-
-It's strives to be more powerful and thoughtful than usual options like `perl -pie`, `rpl`, `sed`, or `rename`:
+Repren is a simple but flexible command-line tool for rewriting file contents
+according to a set of regular expression patterns, and to rename or move files
+according to patterns. Essentially, it is a general-purpose, brute-force text
+file refactoring tool. For example, repren could rename all occurrences of
+certain class and variable names in a set of Java source files, while
+simultaneously renaming the Java files according to the same pattern. It's more
+powerful than usual options like `perl -pie`, `rpl`, or `sed`:
 
 - It can do search-and-replace, file renaming, or both.
 - It allows file renaming on full paths, including moving files, creating directories, or rewriting directory hierarchies.
