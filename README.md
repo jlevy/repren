@@ -54,8 +54,10 @@ Inevitably you end up digging through the darker corners of some man page or wri
 ## Installation
 
 No dependencies except Python 2.7+. It's easiest to install with pip (using sudo if desired):
-
-    pip install repren
+```bash
+sudo python3.7 get-pip.py7;
+sudo pip2.7 install repren # add a hyphen with pip-2.7 if not using Ubuntu or Arch Linux / Manjaro.
+```
 
 Or, since it's just one file, you can copy the
 [repren](https://raw.githubusercontent.com/jlevy/repren/master/repren)
