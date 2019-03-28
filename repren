@@ -411,9 +411,9 @@ def rewrite_files(root_paths, patterns,
 # --- Invocation ---
 
 
-def parse_patterns(patterns_str, literal=False, word_breaks=False, insensitive=False, preserve_case=False):
+def parse_patterns(patterns_str, literal=False, word_breaks=False, insensitive=False, dotall=False, preserve_case=False):
     patterns = []
-    flags = re.I if insensitive else 0
+    flags = (re.IGNORECASE if insensitive else 0) | (re.DOTALL if dotall else 0)
     for line in patterns_str.splitlines():
         bits = None
         try:
@@ -462,6 +462,7 @@ if __name__ == '__main__':
                       dest="literal",
                       action="store_true")
     parser.add_option("-i", "--insensitive", help="match case-insensitively", dest="insensitive", action="store_true")
+    parser.add_option("--dotall", help="match . to newlines", dest="dotall", action="store_true")
     parser.add_option("--preserve-case",
                       help="do case-preserving magic to transform all case variants (see below)",
                       dest="preserve_case",
@@ -516,13 +517,21 @@ if __name__ == '__main__':
                               literal=options.literal,
                               word_breaks=options.word_breaks,
                               insensitive=options.insensitive,
+                              dotall=options.dotall,
                               preserve_case=options.preserve_case)
 
     if len(patterns) == 0:
         fail("found no parse patterns")
 
-    log(None, ("Using %s patterns:\n  " % len(patterns)) + "\n  ".join(["'%s' -> '%s'" % (regex.pattern, replacement)
-                                                                        for (regex, replacement) in patterns]))
+    def format_flags(flags):
+        flags_str = "|".join([s for s in ["IGNORECASE", "DOTALL"] if flags & getattr(re, s)])
+        if flags_str:
+           flags_str += " "
+        return flags_str
+
+    log(None, ("Using %s patterns:\n  " % len(patterns)) +
+               "\n  ".join(["'%s' %s-> '%s'" % (regex.pattern, format_flags(regex.flags), replacement)
+                            for (regex, replacement) in patterns]))
 
     if not options.parse_only:
         if len(root_paths) > 0:
@@ -551,7 +560,6 @@ if __name__ == '__main__':
 
 # TODO:
 #   --undo mode to revert a previous run by using .orig files; --clean mode to remove .orig files
-#   Expose re.MULTILINE flag
 #   Log collisions
 #   Separate patterns file for renames and replacements
 #   Quiet and verbose modes (the latter logging each substitution)
