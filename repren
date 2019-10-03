@@ -119,6 +119,7 @@ LONG_DESCRIPTION = __doc__.split("Patterns:")[0].strip()
 
 BACKUP_SUFFIX = ".orig"
 TEMP_SUFFIX = ".repren.tmp"
+DEFAULT_INCLUDE_PAT = r".+"
 DEFAULT_EXCLUDE_PAT = r"\."
 
 
@@ -379,8 +380,9 @@ def rewrite_file(path, patterns, do_renames=False, do_contents=False, by_line=Fa
         log("rename", "%s -> %s" % (path, dest_path))
 
 
-def walk_files(paths, exclude_pat=DEFAULT_EXCLUDE_PAT):
+def walk_files(paths, include_pat=DEFAULT_INCLUDE_PAT, exclude_pat=DEFAULT_EXCLUDE_PAT):
     out = []
+    include_re = re.compile(include_pat)
     exclude_re = re.compile(exclude_pat)
     for path in paths:
         if not os.path.exists(path):
@@ -391,7 +393,7 @@ def walk_files(paths, exclude_pat=DEFAULT_EXCLUDE_PAT):
             for (root, dirs, files) in os.walk(path):
                 # Prune files that are excluded, and always prune backup files.
                 out += [os.path.join(root, f) for f in files
-                        if not exclude_re.match(f) and not f.endswith(BACKUP_SUFFIX) and not f.endswith(TEMP_SUFFIX)]
+                        if include_re.match(f) and not exclude_re.match(f) and not f.endswith(BACKUP_SUFFIX) and not f.endswith(TEMP_SUFFIX)]
                 # Prune subdirectories.
                 dirs[:] = [d for d in dirs if not exclude_re.match(d)]
     return out
@@ -400,10 +402,11 @@ def walk_files(paths, exclude_pat=DEFAULT_EXCLUDE_PAT):
 def rewrite_files(root_paths, patterns,
                   do_renames=False,
                   do_contents=False,
+                  include_pat=DEFAULT_INCLUDE_PAT,
                   exclude_pat=DEFAULT_EXCLUDE_PAT,
                   by_line=False,
                   dry_run=False):
-    paths = walk_files(root_paths, exclude_pat=exclude_pat)
+    paths = walk_files(root_paths, include_pat=include_pat, exclude_pat=exclude_pat)
     log(None, "Found %s files in: %s" % (len(paths), ", ".join(root_paths)))
     for path in paths:
         rewrite_file(path, patterns, do_renames=do_renames, do_contents=do_contents, by_line=by_line, dry_run=dry_run)
@@ -471,6 +474,10 @@ if __name__ == '__main__':
                       help="require word breaks (regex \\b) around all matches",
                       dest="word_breaks",
                       action="store_true")
+    parser.add_option("--include",
+                      help="file name regex to include",
+                      dest="include_pat",
+                      default=DEFAULT_INCLUDE_PAT)
     parser.add_option("--exclude",
                       help="file/directory name regex to exclude",
                       dest="exclude_pat",
@@ -538,6 +545,7 @@ if __name__ == '__main__':
             rewrite_files(root_paths, patterns,
                           do_renames=options.do_renames,
                           do_contents=options.do_contents,
+                          include_pat=options.include_pat,
                           exclude_pat=options.exclude_pat,
                           by_line=by_line,
                           dry_run=options.dry_run)
