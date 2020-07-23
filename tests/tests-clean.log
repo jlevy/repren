@@ -3,10 +3,10 @@
 
 # Platform and Python version we're using to run tests.
 uname
-Darwin
+Linux
 
 python -V
-Python 2.7.15
+Python 3.8.3
 
 run || expect_error
 Usage: repren -p <pattern-file> [options] [path ...]
@@ -202,8 +202,8 @@ Using 5 patterns:
 Found 12 files in: test5
 - modify: test5/humpty-dumpty.txt: 6 matches
 - rename: test5/humpty-dumpty.txt -> test5/dumpty-humpty.txt
-- rename: test5/stuff/words/Asia -> test5/stuff/words/Asia!
 - rename: test5/stuff/words/Europe -> test5/stuff/words/Europe!
+- rename: test5/stuff/words/Asia -> test5/stuff/words/Asia!
 - modify: test5/stuff/trees/maple.txt: 3 matches
 - modify: test5/stuff/trees/oak.txt: 3 matches
 - modify: test5/stuff/trees/beech.txt: 10 matches
@@ -215,8 +215,8 @@ diff -r original test5 || expect_error
 Only in test5: dumpty-humpty.txt
 Only in original: humpty-dumpty.txt
 Only in test5: humpty-dumpty.txt.orig
-Only in test5/stuff/trees: BEECH.txt
 Only in original/stuff/trees: beech.txt
+Only in test5/stuff/trees: BEECH.txt
 Only in test5/stuff/trees: beech.txt.orig
 diff -r original/stuff/trees/maple.txt test5/stuff/trees/maple.txt
 1c1
@@ -288,10 +288,10 @@ Using 6 patterns:
   'c' -> 'a'
 Found 12 files in: test7
 - modify: test7/humpty-dumpty.txt: 40 matches
-- rename: test7/stuff/words/oak -> test7/stuff/words/obk
-- rename: test7/stuff/words/genetic -> test7/stuff/words/genetia
 - rename: test7/stuff/words/second -> test7/stuff/words/seaond
 - rename: test7/stuff/words/Asia -> test7/stuff/words/Bsib
+- rename: test7/stuff/words/genetic -> test7/stuff/words/genetia
+- rename: test7/stuff/words/oak -> test7/stuff/words/obk
 - rename: test7/stuff/words/Mexico -> test7/stuff/words/Mexiao
 - modify: test7/stuff/trees/maple.txt: 43 matches
 - rename: test7/stuff/trees/maple.txt -> test7/stuff/trees/mbple.txt
@@ -312,15 +312,15 @@ Using 6 patterns:
   'c' -> 'a'
 Found 12 files in: test7
 - modify: test7/humpty-dumpty.txt: 40 matches
-- rename: test7/stuff/words/obk -> test7/stuff/words/ock
 - rename: test7/stuff/words/Bsib -> test7/stuff/words/Csic
+- rename: test7/stuff/words/obk -> test7/stuff/words/ock
 - rename: test7/stuff/words/Mexiao -> test7/stuff/words/Mexibo
-- rename: test7/stuff/words/seaond -> test7/stuff/words/sebond
 - rename: test7/stuff/words/genetia -> test7/stuff/words/genetib
-- modify: test7/stuff/trees/ceeah.txt: 180 matches
-- rename: test7/stuff/trees/ceeah.txt -> test7/stuff/trees/aeebh.txt
+- rename: test7/stuff/words/seaond -> test7/stuff/words/sebond
 - modify: test7/stuff/trees/obk.txt: 161 matches
 - rename: test7/stuff/trees/obk.txt -> test7/stuff/trees/ock.txt
+- modify: test7/stuff/trees/ceeah.txt: 180 matches
+- rename: test7/stuff/trees/ceeah.txt -> test7/stuff/trees/aeebh.txt
 - modify: test7/stuff/trees/mbple.txt: 43 matches
 - rename: test7/stuff/trees/mbple.txt -> test7/stuff/trees/mcple.txt
 Read 12 files (3810 chars), found 424 matches (0 skipped due to overlaps)
@@ -336,17 +336,17 @@ Using 6 patterns:
   'c' -> 'a'
 Found 12 files in: test7
 - modify: test7/humpty-dumpty.txt: 40 matches
-- rename: test7/stuff/words/Csic -> test7/stuff/words/Asia
 - rename: test7/stuff/words/genetib -> test7/stuff/words/genetic
-- rename: test7/stuff/words/Mexibo -> test7/stuff/words/Mexico
 - rename: test7/stuff/words/sebond -> test7/stuff/words/second
 - rename: test7/stuff/words/ock -> test7/stuff/words/oak
-- modify: test7/stuff/trees/ock.txt: 161 matches
-- rename: test7/stuff/trees/ock.txt -> test7/stuff/trees/oak.txt
-- modify: test7/stuff/trees/aeebh.txt: 180 matches
-- rename: test7/stuff/trees/aeebh.txt -> test7/stuff/trees/beech.txt
+- rename: test7/stuff/words/Csic -> test7/stuff/words/Asia
+- rename: test7/stuff/words/Mexibo -> test7/stuff/words/Mexico
 - modify: test7/stuff/trees/mcple.txt: 43 matches
 - rename: test7/stuff/trees/mcple.txt -> test7/stuff/trees/maple.txt
+- modify: test7/stuff/trees/aeebh.txt: 180 matches
+- rename: test7/stuff/trees/aeebh.txt -> test7/stuff/trees/beech.txt
+- modify: test7/stuff/trees/ock.txt: 161 matches
+- rename: test7/stuff/trees/ock.txt -> test7/stuff/trees/oak.txt
 Read 12 files (3810 chars), found 424 matches (0 skipped due to overlaps)
 Changed 9 files (4 rewritten and 8 renamed)
 

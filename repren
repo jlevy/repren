@@ -108,7 +108,9 @@ Notes:
 # Author: jlevy
 # Created: 2014-07-09
 
-from __future__ import print_function
+
+from builtins import zip
+from builtins import object
 import re, sys, os, shutil, optparse, bisect
 
 # Definitive version. Update with each release.
@@ -117,9 +119,9 @@ VERSION = "0.3.10"
 DESCRIPTION = "repren: Multi-pattern string replacement and file renaming"
 LONG_DESCRIPTION = __doc__.split("Patterns:")[0].strip()
 
-BACKUP_SUFFIX = ".orig"
-TEMP_SUFFIX = ".repren.tmp"
-DEFAULT_EXCLUDE_PAT = r"\."
+BACKUP_SUFFIX = b".orig"
+TEMP_SUFFIX = b".repren.tmp"
+DEFAULT_EXCLUDE_PAT = b"\."
 
 
 def log(op, msg):
@@ -133,7 +135,7 @@ def fail(msg):
     sys.exit(1)
 
 
-class _Tally:
+class _Tally(object):
     def __init__(self):
         self.files = 0
         self.chars = 0
@@ -184,10 +186,10 @@ def _apply_replacements(input_str, matches):
         out.append(match.expand(replacement))
         pos = match.end()
     out.append(input_str[pos:])
-    return "".join(out)
+    return b"".join(out)
 
 
-class _MatchCounts:
+class _MatchCounts(object):
     def __init__(self, found=0, valid=0):
         self.found = found
         self.valid = valid
@@ -225,44 +227,45 @@ def multi_replace(input_str, patterns, is_path=False, source_name=None):
 
 # FooBarBaz -> Foo, Bar, Baz
 # XMLFooHTTPBar -> XML, Foo, HTTP, Bar
-_camel_split_pat1 = re.compile("([^A-Z])([A-Z])")
-_camel_split_pat2 = re.compile("([A-Z])([A-Z][^A-Z])")
+_camel_split_pat1 = re.compile(b"([^A-Z])([A-Z])")
+_camel_split_pat2 = re.compile(b"([A-Z])([A-Z][^A-Z])")
 
-_name_pat = re.compile(r"\w+")
+_name_pat = re.compile(b"\w+")
 
 
 def _split_name(name):
     '''Split a camel-case or underscore-formatted name into words. Return separator and words.'''
-    if name.find("_") >= 0:
-        return "_", name.split("_")
+    if name.find(b"_") >= 0:
+        return b"_", name.split(b"_")
     else:
-        temp = _camel_split_pat1.sub("\\1\t\\2", name)
-        temp = _camel_split_pat2.sub("\\1\t\\2", temp)
-        return "", temp.split("\t")
+        temp = _camel_split_pat1.sub(b"\\1\t\\2", name)
+        temp = _camel_split_pat2.sub(b"\\1\t\\2", temp)
+        return b"", temp.split(b"\t")
 
 
 def _capitalize(word):
-    return word[0].upper() + word[1:].lower()
+    word = word.decode()
+    return (word[0].upper() + word[1:].lower()).encode()
 
 
 def to_lower_camel(name):
     words = _split_name(name)[1]
-    return words[0].lower() + "".join([_capitalize(word) for word in words[1:]])
+    return words[0].decode().lower().encode() + b"".join([_capitalize(word) for word in words[1:]])
 
 
 def to_upper_camel(name):
     words = _split_name(name)[1]
-    return "".join([_capitalize(word) for word in words])
+    return b"".join([_capitalize(word) for word in words])
 
 
 def to_lower_underscore(name):
     words = _split_name(name)[1]
-    return "_".join([word.lower() for word in words])
+    return b"_".join([word.lower() for word in words])
 
 
 def to_upper_underscore(name):
     words = _split_name(name)[1]
-    return "_".join([word.upper() for word in words])
+    return b"_".join([word.upper() for word in words])
 
 
 def _transform_expr(expr, transform):
@@ -374,9 +377,9 @@ def rewrite_file(path, patterns, do_renames=False, do_contents=False, by_line=Fa
         transform = lambda contents: multi_replace(contents, patterns, source_name=path)
     counts = transform_file(transform, path, dest_path, by_line=by_line, dry_run=dry_run)
     if counts.found > 0:
-        log("modify", "%s: %s matches" % (path, counts.found))
+        log("modify", "%s: %s matches" % (path.decode(), counts.found))
     if dest_path != path:
-        log("rename", "%s -> %s" % (path, dest_path))
+        log("rename", "%s -> %s" % (path.decode(), dest_path.decode()))
 
 
 def walk_files(paths, exclude_pat=DEFAULT_EXCLUDE_PAT):
@@ -404,7 +407,7 @@ def rewrite_files(root_paths, patterns,
                   by_line=False,
                   dry_run=False):
     paths = walk_files(root_paths, exclude_pat=exclude_pat)
-    log(None, "Found %s files in: %s" % (len(paths), ", ".join(root_paths)))
+    log(None, "Found %s files in: %s" % (len(paths), ", ".join([path.decode() for path in root_paths])))
     for path in paths:
         rewrite_file(path, patterns, do_renames=do_renames, do_contents=do_contents, by_line=by_line, dry_run=dry_run)
 
@@ -417,8 +420,8 @@ def parse_patterns(patterns_str, literal=False, word_breaks=False, insensitive=F
     for line in patterns_str.splitlines():
         bits = None
         try:
-            bits = line.split('\t')
-            if line.strip().startswith("#"):
+            bits = line.split(b'\t')
+            if line.strip().startswith(b"#"):
                 continue
             elif line.strip() and len(bits) == 2:
                 (regex, replacement) = bits
@@ -426,13 +429,13 @@ def parse_patterns(patterns_str, literal=False, word_breaks=False, insensitive=F
                     regex = re.escape(regex)
                 pairs = []
                 if preserve_case:
-                    pairs += zip(all_case_variants(regex), all_case_variants(replacement))
+                    pairs += list(zip(all_case_variants(regex), all_case_variants(replacement)))
                 pairs.append((regex, replacement))
                 # Avoid spurious overlap warnings by removing dups.
                 pairs = sorted(set(pairs))
                 for (regex_variant, replacement_variant) in pairs:
                     if word_breaks:
-                        regex_variant = r'\b' + regex_variant + r'\b'
+                        regex_variant = (r'\b' + regex_variant.decode() + r'\b').encode()
                     patterns.append((re.compile(regex_variant, flags), replacement_variant))
             else:
                 fail("invalid line in pattern file: %s" % bits)
@@ -489,6 +492,7 @@ if __name__ == '__main__':
                       action="store_true")
 
     (options, root_paths) = parser.parse_args()
+    root_paths = [path.encode() for path in root_paths]
 
     if options.dry_run:
         log(None, "Dry run: No files will be changed")
@@ -512,7 +516,7 @@ if __name__ == '__main__':
         with open(options.pat_file, "rb") as f:
             pat_str = f.read()
     else:
-        pat_str = '%s\t%s' % (options.from_pat, options.to_pat)
+        pat_str = b'%s\t%s' % (options.from_pat.encode(), options.to_pat.encode())
     patterns = parse_patterns(pat_str,
                               literal=options.literal,
                               word_breaks=options.word_breaks,
@@ -530,7 +534,7 @@ if __name__ == '__main__':
         return flags_str
 
     log(None, ("Using %s patterns:\n  " % len(patterns)) +
-               "\n  ".join(["'%s' %s-> '%s'" % (regex.pattern, format_flags(regex.flags), replacement)
+        "\n  ".join(["'%s' %s-> '%s'" % (regex.pattern.decode(), format_flags(regex.flags), replacement.decode())
                             for (regex, replacement) in patterns]))
 
     if not options.parse_only:
