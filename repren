@@ -19,7 +19,7 @@ powerful than usual options like `perl -pie`, `rpl`, or `sed`:
 - It supports "magic" case-preserving renames that let you find and rename
   identifiers with case variants (lowerCamel, UpperCamel, lower_underscore, and
   UPPER_UNDERSCORE) consistently.
-- It has this nice documentaion!
+- It has this nice documentation!
 
 If file paths are provided, repren replaces those files in place, leaving a
 backup with extension ".orig". If directory paths are provided, it applies
@@ -80,7 +80,7 @@ Notes:
 - If two patterns have matches that overlap, only one replacement is applied,
   with preference to the pattern appearing first in the patterns file.
 - If one pattern is a subset of another, consider if `--word-breaks` will help.
-- If patterns have special charaters, `--literal` may help.
+- If patterns have special characters, `--literal` may help.
 - The case-preserving option works by adding all case variants to the pattern
   replacements, e.g. if the pattern file has foo_bar -> xxx_yyy, the
   replacements fooBar -> xxxYyy, FooBar -> XxxYyy, FOO_BAR -> XXX_YYY are also
@@ -458,7 +458,7 @@ if __name__ == '__main__':
                       dest="do_renames",
                       action="store_true")
     parser.add_option("--literal",
-                      help="use exact string matching, rather than regular expresion matching",
+                      help="use exact string matching, rather than regular expression matching",
                       dest="literal",
                       action="store_true")
     parser.add_option("-i", "--insensitive", help="match case-insensitively", dest="insensitive", action="store_true")
