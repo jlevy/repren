@@ -11,7 +11,7 @@ dir="$(cd `dirname $0`; pwd)"
 
 full_log=${1:-$dir/tests-full.log}
 clean_log=${2:-$dir/tests-clean.log}
-
+final_diff=$dir/test.diff
 
 echo Cleaning up...
 
@@ -45,5 +45,18 @@ echo
 echo "Full log: $full_log"
 echo "Clean log: $clean_log"
 echo
-echo "Validation is manual. To compare regression test results with previously correct output, run:"
-echo "git diff $clean_log"
+echo "Now diffing: git diff $clean_log > $final_diff"
+
+git diff $clean_log > $final_diff
+
+if [ ! -s "$final_diff" ]; then
+    echo "Success! No differences found."
+    exit 0
+else
+    echo "Warning: Differences detected:"
+    cat $final_diff
+    echo "Review and fix or commit the new $clean_log file if it is correct."
+
+    exit 1
+fi
+
