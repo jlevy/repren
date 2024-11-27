@@ -8,7 +8,7 @@ set -e -o pipefail
 
 prog_name=repren
 base_dir=`dirname $0`
-prog=$base_dir/../repren
+prog=$base_dir/../repren/repren.py
 
 args=
 #args=--debug
@@ -22,9 +22,9 @@ expect_error() {
   echo "(got expected error: status $?)"
 }
 
-# A trick to do ls portably, showing just permissions and file types.
+# A trick to do ls portably, showing just files and types.
 ls_portable() {
-  ls -lF "$@" | tail +2 | awk '{print $1, $NF}'
+  ls -1F "$@"
 }
 
 # This will echo all commands as they are read. Bash commands plus their

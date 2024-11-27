@@ -1,0 +1,92 @@
+[tool.poetry]
+name = "repren"
+# Keep this a dev version, as the dynamic versioning plugin is used for actual release versions:
+version = "0.0.0.dev"
+description = "repren: Multi-pattern string replacement and file renaming"
+authors = ["Joshua Levy <joshua@cal.berkeley.edu>"]
+readme = "README.md"
+license = "MIT"
+repository = "https://github.com/jlevy/repren"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: System Administrators",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: MacOS :: MacOS X",
+    "Operating System :: POSIX",
+    "Operating System :: Unix",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Utilities",
+    "Topic :: Text Processing",
+    "Topic :: Software Development",
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+
+[tool.poetry.group.dev.dependencies]
+black = "^24.10.0"
+pytest = "^8.3.3"
+ruff = "^0.4.10"
+usort = "^1.0.8.post1"
+mypy = "^1.13.0"
+codespell = "^2.3.0"
+rich = "^13.9.3"
+jinja2 = "^3.1.4"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
+
+# Auto-generated version in build, based on tag or commit.
+# https://sam.hooke.me/note/2023/08/poetry-automatically-generated-package-version-from-git-commit/
+[tool.poetry-dynamic-versioning]
+enable = true
+vcs = "git"
+pattern  = "^v?(?P<base>\\d+\\.\\d+\\.\\d+)(-?((?P<stage>[a-zA-Z]+)\\.?(?P<revision>\\d+)?))?"
+format-jinja = """
+    {%- if distance == 0 -%}
+        {{- base -}}
+    {%- else -%}
+        {{- base }}.dev{{ distance }}+{{commit}}
+    {%- endif -%}
+"""
+
+[tool.poetry.scripts]
+repren = "repren:main"
+lint = "devtools.lint:main"
+test = "pytest:main"
+
+[tool.black]
+line-length = 100
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+ignore = ["E402", "E731", "E712"]
+
+[tool.mypy]
+disable_error_code = [
+    "import-untyped",
+]
+
+[tool.codespell]
+# ignore-words-list = "foo,bar"
+# skip = "foo.py,bar.py"
+
+[tool.pytest.ini_options]
+python_files = ["*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+testpaths = [
+    "repren",
+    "tests",
+]
+norecursedirs = []
+filterwarnings = []

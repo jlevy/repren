@@ -6,12 +6,15 @@ uname
 Darwin
 
 python -V
-Python 2.7.15
+Python 3.12.7
 
 run || expect_error
-Usage: repren -p <pattern-file> [options] [path ...]
-
-repren: error: must specify --patterns or both --from and --to
+usage: repren.py [-h] [--version] [--from FROM_PAT] [--to TO_PAT]
+                 [-p PAT_FILE] [--full] [--renames] [--literal] [-i]
+                 [--dotall] [--preserve-case] [-b] [--exclude EXCLUDE_PAT]
+                 [--at-once] [-t] [-n]
+                 [root_paths ...]
+repren.py: error: must specify --patterns or both --from and --to
 (got expected error: status 2)
 
 # Text replacements, no renames.
@@ -86,8 +89,8 @@ Read 1 files (0 chars), found 0 matches (0 skipped due to overlaps)
 Dry run: Would have changed 1 files (0 rewritten and 1 renamed)
 
 ls_portable test2
--rw-r--r-- humpty-dumpty.txt
-drwxr-xr-x stuff/
+humpty-dumpty.txt
+stuff/
 
 run --renames --from humpty --to dumpty test2
 Using 1 patterns:
@@ -98,8 +101,8 @@ Read 1 files (0 chars), found 0 matches (0 skipped due to overlaps)
 Changed 1 files (0 rewritten and 1 renamed)
 
 ls_portable test2
--rw-r--r-- dumpty-dumpty.txt
-drwxr-xr-x stuff/
+dumpty-dumpty.txt
+stuff/
 
 diff -r original test2 || expect_error
 Only in test2: dumpty-dumpty.txt
@@ -122,8 +125,8 @@ Read 12 files (3810 chars), found 3 matches (0 skipped due to overlaps)
 Dry run: Would have changed 1 files (1 rewritten and 1 renamed)
 
 ls_portable test3
--rw-r--r-- humpty-dumpty.txt
-drwxr-xr-x stuff/
+humpty-dumpty.txt
+stuff/
 
 run --full -i --from humpty --to dumpty test3
 Using 1 patterns:
@@ -135,9 +138,9 @@ Read 12 files (3810 chars), found 3 matches (0 skipped due to overlaps)
 Changed 1 files (1 rewritten and 1 renamed)
 
 ls_portable test3
--rw-r--r-- dumpty-dumpty.txt
--rw-r--r-- humpty-dumpty.txt.orig
-drwxr-xr-x stuff/
+dumpty-dumpty.txt
+humpty-dumpty.txt.orig
+stuff/
 
 diff -r original test3 || expect_error
 Only in test3: dumpty-dumpty.txt
