@@ -34,11 +34,6 @@ set -v
 
 # --- Start of tests ---
 
-# Platform and Python version we're using to run tests.
-uname
-
-python -V
-
 run || expect_error
 
 # Text replacements, no renames.

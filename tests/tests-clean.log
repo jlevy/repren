@@ -1,13 +1,6 @@
 
 # --- Start of tests ---
 
-# Platform and Python version we're using to run tests.
-uname
-Darwin
-
-python -V
-Python 3.12.7
-
 run || expect_error
 usage: repren.py [-h] [--version] [--from FROM_PAT] [--to TO_PAT]
                  [-p PAT_FILE] [--full] [--renames] [--literal] [-i]
@@ -161,9 +154,9 @@ Using 5 patterns:
   'Asia' -> 'Asia!'
   'Europe' -> 'Europe!'
 Found 12 files in: test4
+- modify: test4/stuff/trees/beech.txt: 8 matches
 - modify: test4/stuff/trees/maple.txt: 3 matches
 - modify: test4/stuff/trees/oak.txt: 3 matches
-- modify: test4/stuff/trees/beech.txt: 8 matches
 Read 12 files (3810 chars), found 14 matches (0 skipped due to overlaps)
 Changed 3 files (3 rewritten and 0 renamed)
 
@@ -205,12 +198,12 @@ Using 5 patterns:
 Found 12 files in: test5
 - modify: test5/humpty-dumpty.txt: 6 matches
 - rename: test5/humpty-dumpty.txt -> test5/dumpty-humpty.txt
-- rename: test5/stuff/words/Asia -> test5/stuff/words/Asia!
-- rename: test5/stuff/words/Europe -> test5/stuff/words/Europe!
-- modify: test5/stuff/trees/maple.txt: 3 matches
-- modify: test5/stuff/trees/oak.txt: 3 matches
 - modify: test5/stuff/trees/beech.txt: 10 matches
 - rename: test5/stuff/trees/beech.txt -> test5/stuff/trees/BEECH.txt
+- modify: test5/stuff/trees/maple.txt: 3 matches
+- modify: test5/stuff/trees/oak.txt: 3 matches
+- rename: test5/stuff/words/Asia -> test5/stuff/words/Asia!
+- rename: test5/stuff/words/Europe -> test5/stuff/words/Europe!
 Read 12 files (3810 chars), found 22 matches (0 skipped due to overlaps)
 Changed 6 files (4 rewritten and 4 renamed)
 
@@ -291,17 +284,17 @@ Using 6 patterns:
   'c' -> 'a'
 Found 12 files in: test7
 - modify: test7/humpty-dumpty.txt: 40 matches
-- rename: test7/stuff/words/oak -> test7/stuff/words/obk
-- rename: test7/stuff/words/genetic -> test7/stuff/words/genetia
-- rename: test7/stuff/words/second -> test7/stuff/words/seaond
-- rename: test7/stuff/words/Asia -> test7/stuff/words/Bsib
-- rename: test7/stuff/words/Mexico -> test7/stuff/words/Mexiao
+- modify: test7/stuff/trees/beech.txt: 180 matches
+- rename: test7/stuff/trees/beech.txt -> test7/stuff/trees/ceeah.txt
 - modify: test7/stuff/trees/maple.txt: 43 matches
 - rename: test7/stuff/trees/maple.txt -> test7/stuff/trees/mbple.txt
 - modify: test7/stuff/trees/oak.txt: 161 matches
 - rename: test7/stuff/trees/oak.txt -> test7/stuff/trees/obk.txt
-- modify: test7/stuff/trees/beech.txt: 180 matches
-- rename: test7/stuff/trees/beech.txt -> test7/stuff/trees/ceeah.txt
+- rename: test7/stuff/words/Asia -> test7/stuff/words/Bsib
+- rename: test7/stuff/words/Mexico -> test7/stuff/words/Mexiao
+- rename: test7/stuff/words/genetic -> test7/stuff/words/genetia
+- rename: test7/stuff/words/oak -> test7/stuff/words/obk
+- rename: test7/stuff/words/second -> test7/stuff/words/seaond
 Read 12 files (3810 chars), found 424 matches (0 skipped due to overlaps)
 Changed 9 files (4 rewritten and 8 renamed)
 
@@ -315,17 +308,17 @@ Using 6 patterns:
   'c' -> 'a'
 Found 12 files in: test7
 - modify: test7/humpty-dumpty.txt: 40 matches
-- rename: test7/stuff/words/obk -> test7/stuff/words/ock
-- rename: test7/stuff/words/Bsib -> test7/stuff/words/Csic
-- rename: test7/stuff/words/Mexiao -> test7/stuff/words/Mexibo
-- rename: test7/stuff/words/seaond -> test7/stuff/words/sebond
-- rename: test7/stuff/words/genetia -> test7/stuff/words/genetib
 - modify: test7/stuff/trees/ceeah.txt: 180 matches
 - rename: test7/stuff/trees/ceeah.txt -> test7/stuff/trees/aeebh.txt
-- modify: test7/stuff/trees/obk.txt: 161 matches
-- rename: test7/stuff/trees/obk.txt -> test7/stuff/trees/ock.txt
 - modify: test7/stuff/trees/mbple.txt: 43 matches
 - rename: test7/stuff/trees/mbple.txt -> test7/stuff/trees/mcple.txt
+- modify: test7/stuff/trees/obk.txt: 161 matches
+- rename: test7/stuff/trees/obk.txt -> test7/stuff/trees/ock.txt
+- rename: test7/stuff/words/Bsib -> test7/stuff/words/Csic
+- rename: test7/stuff/words/Mexiao -> test7/stuff/words/Mexibo
+- rename: test7/stuff/words/genetia -> test7/stuff/words/genetib
+- rename: test7/stuff/words/obk -> test7/stuff/words/ock
+- rename: test7/stuff/words/seaond -> test7/stuff/words/sebond
 Read 12 files (3810 chars), found 424 matches (0 skipped due to overlaps)
 Changed 9 files (4 rewritten and 8 renamed)
 
@@ -339,17 +332,17 @@ Using 6 patterns:
   'c' -> 'a'
 Found 12 files in: test7
 - modify: test7/humpty-dumpty.txt: 40 matches
-- rename: test7/stuff/words/Csic -> test7/stuff/words/Asia
-- rename: test7/stuff/words/genetib -> test7/stuff/words/genetic
-- rename: test7/stuff/words/Mexibo -> test7/stuff/words/Mexico
-- rename: test7/stuff/words/sebond -> test7/stuff/words/second
-- rename: test7/stuff/words/ock -> test7/stuff/words/oak
-- modify: test7/stuff/trees/ock.txt: 161 matches
-- rename: test7/stuff/trees/ock.txt -> test7/stuff/trees/oak.txt
 - modify: test7/stuff/trees/aeebh.txt: 180 matches
 - rename: test7/stuff/trees/aeebh.txt -> test7/stuff/trees/beech.txt
 - modify: test7/stuff/trees/mcple.txt: 43 matches
 - rename: test7/stuff/trees/mcple.txt -> test7/stuff/trees/maple.txt
+- modify: test7/stuff/trees/ock.txt: 161 matches
+- rename: test7/stuff/trees/ock.txt -> test7/stuff/trees/oak.txt
+- rename: test7/stuff/words/Csic -> test7/stuff/words/Asia
+- rename: test7/stuff/words/Mexibo -> test7/stuff/words/Mexico
+- rename: test7/stuff/words/genetib -> test7/stuff/words/genetic
+- rename: test7/stuff/words/ock -> test7/stuff/words/oak
+- rename: test7/stuff/words/sebond -> test7/stuff/words/second
 Read 12 files (3810 chars), found 424 matches (0 skipped due to overlaps)
 Changed 9 files (4 rewritten and 8 renamed)
 
@@ -369,9 +362,9 @@ Using 3 patterns:
   '\bc\b' -> 'a'
 Found 12 files in: test8
 - modify: test8/humpty-dumpty.txt: 4 matches
+- modify: test8/stuff/trees/beech.txt: 4 matches
 - modify: test8/stuff/trees/maple.txt: 2 matches
 - modify: test8/stuff/trees/oak.txt: 6 matches
-- modify: test8/stuff/trees/beech.txt: 4 matches
 Read 12 files (3810 chars), found 16 matches (0 skipped due to overlaps)
 Changed 4 files (4 rewritten and 0 renamed)
 

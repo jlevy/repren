@@ -625,6 +625,7 @@ def rewrite_files(
     dry_run: bool = False,
 ) -> None:
     paths = walk_files(root_paths, exclude_pat=exclude_pat)
+    paths.sort()  # Ensure deterministic order of file processing.
     log(None, "Found %s files in: %s" % (len(paths), ", ".join(root_paths)))
     for path in paths:
         rewrite_file(
