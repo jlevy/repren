@@ -23,8 +23,9 @@ expect_error() {
 }
 
 # A trick to do ls portably, showing just files and types.
+# Macos appends an @ to permissions, so we strip it.
 ls_portable() {
-  ls -1F "$@"
+  ls -lF "$@" | tail -n +2 | awk '{gsub(/@/, "", $1); print $1, $NF}'
 }
 
 # This will echo all commands as they are read. Bash commands plus their

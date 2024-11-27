@@ -53,12 +53,18 @@ echo "Now diffing: git diff $clean_log > $final_diff"
 git diff $clean_log > $final_diff
 
 if [ ! -s "$final_diff" ]; then
+    echo
     echo "Success! No differences found."
     exit 0
 else
+    echo
     echo "Warning: Differences detected:"
+    echo "----------------------------------------"
     cat $final_diff
-    echo "Review and fix or commit the new $clean_log file if it is correct."
+    echo "----------------------------------------"
+    echo
+    echo "Tests did not pass!"
+    echo "Review the diffs above, then fix or commit the new $clean_log file if it is correct."
 
     exit 1
 fi

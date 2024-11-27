@@ -82,8 +82,8 @@ Read 1 files (0 chars), found 0 matches (0 skipped due to overlaps)
 Dry run: Would have changed 1 files (0 rewritten and 1 renamed)
 
 ls_portable test2
-humpty-dumpty.txt
-stuff/
+-rw-r--r-- humpty-dumpty.txt
+drwxr-xr-x stuff/
 
 run --renames --from humpty --to dumpty test2
 Using 1 patterns:
@@ -94,8 +94,8 @@ Read 1 files (0 chars), found 0 matches (0 skipped due to overlaps)
 Changed 1 files (0 rewritten and 1 renamed)
 
 ls_portable test2
-dumpty-dumpty.txt
-stuff/
+-rw-r--r-- dumpty-dumpty.txt
+drwxr-xr-x stuff/
 
 diff -r original test2 || expect_error
 Only in test2: dumpty-dumpty.txt
@@ -118,8 +118,8 @@ Read 12 files (3810 chars), found 3 matches (0 skipped due to overlaps)
 Dry run: Would have changed 1 files (1 rewritten and 1 renamed)
 
 ls_portable test3
-humpty-dumpty.txt
-stuff/
+-rw-r--r-- humpty-dumpty.txt
+drwxr-xr-x stuff/
 
 run --full -i --from humpty --to dumpty test3
 Using 1 patterns:
@@ -131,9 +131,9 @@ Read 12 files (3810 chars), found 3 matches (0 skipped due to overlaps)
 Changed 1 files (1 rewritten and 1 renamed)
 
 ls_portable test3
-dumpty-dumpty.txt
-humpty-dumpty.txt.orig
-stuff/
+-rw-r--r-- dumpty-dumpty.txt
+-rw-r--r-- humpty-dumpty.txt.orig
+drwxr-xr-x stuff/
 
 diff -r original test3 || expect_error
 Only in test3: dumpty-dumpty.txt
