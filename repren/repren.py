@@ -249,12 +249,12 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
 
 import argparse
 import bisect
+import importlib.metadata
 import os
 import re
 import shutil
 import sys
 from typing import BinaryIO, Callable, List, Match, Optional, Pattern, Tuple, TypeAlias
-import importlib.metadata
 
 # Type aliases for clarity.
 PatternType: TypeAlias = Tuple[Pattern[bytes], bytes]
