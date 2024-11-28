@@ -36,7 +36,7 @@ jobs:
         run: poetry install --no-root
 
       - name: Generate README.md
-        run: python devtools/generate_readme.py
+        run: poetry run python devtools/generate_readme.py
 
       - name: Build package
         run: poetry build
