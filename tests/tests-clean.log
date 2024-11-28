@@ -5,7 +5,7 @@ run || expect_error
 usage: repren.py [-h] [--version] [--from FROM_PAT] [--to TO_PAT]
                  [-p PAT_FILE] [--full] [--renames] [--literal] [-i]
                  [--dotall] [--preserve-case] [-b] [--exclude EXCLUDE_PAT]
-                 [--at-once] [-t] [-n]
+                 [--at-once] [-t] [-n] [-q]
                  [root_paths ...]
 repren.py: error: must specify --patterns or both --from and --to
 (got expected error: status 2)
