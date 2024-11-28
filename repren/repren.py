@@ -121,7 +121,7 @@ Or, since it's just one file, you can copy the
 [repren.py](https://raw.githubusercontent.com/jlevy/repren/master/repren/repren.py) script
 somewhere convenient and make it executable.
 
-## Try it
+## Try It
 
 Let's try a simple replacement in my working directory (which has a few random source
 files):
@@ -409,12 +409,6 @@ def multi_replace(
 
 # --- Case handling (only used for case-preserving magic) ---
 
-# TODO: Could handle dash-separated names as well.
-
-# FooBarBaz -> Foo, Bar, Baz
-# XMLFooHTTPBar -> XML, Foo, HTTP, Bar
-_camel_split_pat1 = re.compile("([^A-Z])([A-Z])")
-_camel_split_pat2 = re.compile("([A-Z])([A-Z][^A-Z])")
 
 _name_pat = re.compile(r"\w+")
 
@@ -424,6 +418,7 @@ def _split_name(name: str) -> Tuple[str, List[str]]:
     Split a CamelCase or underscore-formatted name into words.
     Return separator and list of words.
     """
+    # TODO: Could handle dash-separated names as well.
     if "_" in name:
         # Underscore-separated name
         return "_", name.split("_")

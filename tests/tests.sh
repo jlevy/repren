@@ -22,7 +22,7 @@ expect_error() {
   echo "(got expected error: status $?)"
 }
 
-# A trick to do ls portably, showing just files and types.
+# A trick to do ls portably, showing just files, types, and permissions.
 # Macos appends an @ to permissions, so we strip it.
 ls_portable() {
   ls -lF "$@" | tail -n +2 | awk '{gsub(/@/, "", $1); print $1, $NF}'

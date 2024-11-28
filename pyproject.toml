@@ -43,19 +43,32 @@ jinja2 = "^3.1.4"
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
-# Auto-generated version in build, based on tag or commit.
-# https://sam.hooke.me/note/2023/08/poetry-automatically-generated-package-version-from-git-commit/
+# Auto-generated version for builds based on git tag or commit.
+# Preferred styles of versioning (PEP 440 compliant):
+#
+#   1.2.3               (stable release)
+#   1.2.3a4             (pre-release, no dash or dots)
+#   1.2.3rc1            (release candidate)
+#   1.2.3.dev4+abcdef12 (development build, .dev for dev releases and +commit hash)
+#
+# Tags with a "v" prefix (e.g., v1.2.3) or additional dots (e.g., v1.2.3.rc1) are recognized
+# but normalized to the preferred style for distribution.
+# See: https://sam.hooke.me/note/2023/08/poetry-automatically-generated-package-version-from-git-commit/
 [tool.poetry-dynamic-versioning]
 enable = true
 vcs = "git"
-pattern  = "^v?(?P<base>\\d+\\.\\d+\\.\\d+)(-?((?P<stage>[a-zA-Z]+)\\.?(?P<revision>\\d+)?))?"
+pattern = "^v?(?P<base>\\d+\\.\\d+\\.\\d+)(-?((?P<stage>[a-zA-Z]+)\\.?(?P<revision>\\d+)?))?"
 format-jinja = """
     {%- if distance == 0 -%}
         {{- base -}}
+        {%- if stage -%}
+            {{ stage }}{{ revision | default("") }}
+        {%- endif -%}
     {%- else -%}
         {{- base }}.dev{{ distance }}+{{commit}}
     {%- endif -%}
 """
+
 
 [tool.poetry.scripts]
 repren = "repren:main"
