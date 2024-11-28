@@ -4,8 +4,9 @@
 run || expect_error
 usage: repren.py [-h] [--version] [--from FROM_PAT] [--to TO_PAT]
                  [-p PAT_FILE] [--full] [--renames] [--literal] [-i]
-                 [--dotall] [--preserve-case] [-b] [--exclude EXCLUDE_PAT]
-                 [--at-once] [-t] [-n] [-q]
+                 [--dotall] [--preserve-case] [-b] [--include INCLUDE_PAT]
+                 [--exclude EXCLUDE_PAT] [--at-once] [-t] [--walk-only] [-n]
+                 [-q]
                  [root_paths ...]
 repren.py: error: must specify --patterns or both --from and --to
 (got expected error: status 2)
@@ -378,6 +379,51 @@ diff -r original/humpty-dumpty.txt test8/humpty-dumpty.txt || expect_error
 > 'But "glory" doesn't mean "b nice knock-down argument",' Alice objected.
 > 'When I use b word,' Humpty Dumpty said, in rather b scornful tone, 'it means just what I choose it to mean — neither more nor less.'
 (got expected error: status 1)
+
+
+# Include/exclude patterns.
+
+run --walk-only original
+Found 12 files in: original
+- original/humpty-dumpty.txt
+- original/stuff/trees/beech.txt
+- original/stuff/trees/maple.txt
+- original/stuff/trees/oak.txt
+- original/stuff/words/Asia
+- original/stuff/words/Europe
+- original/stuff/words/Mexico
+- original/stuff/words/United
+- original/stuff/words/genetic
+- original/stuff/words/genus
+- original/stuff/words/oak
+- original/stuff/words/second
+
+run --walk-only --include='.*[.]txt$' original
+Found 4 files in: original
+- original/humpty-dumpty.txt
+- original/stuff/trees/beech.txt
+- original/stuff/trees/maple.txt
+- original/stuff/trees/oak.txt
+
+run --walk-only --exclude='beech|maple' original
+Found 11 files in: original
+- original/humpty-dumpty.txt
+- original/stuff/trees/oak.txt
+- original/stuff/words/.hidden.txt
+- original/stuff/words/Asia
+- original/stuff/words/Europe
+- original/stuff/words/Mexico
+- original/stuff/words/United
+- original/stuff/words/genetic
+- original/stuff/words/genus
+- original/stuff/words/oak
+- original/stuff/words/second
+
+run --walk-only --include='A.*|M.*|oak' --exclude='Mex.*' original
+Found 3 files in: original
+- original/stuff/trees/oak.txt
+- original/stuff/words/Asia
+- original/stuff/words/oak
 
 
 # Moving files.

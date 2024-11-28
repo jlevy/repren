@@ -79,6 +79,10 @@ repren -p patfile --word-breaks --full mydir1
 
 # Same as above, for all case variants:
 repren -p patfile --word-breaks --preserve-case --full mydir1
+
+# Same as above but including only .py files and excluding the tests directory
+# and any files or directories starting with test_:
+repren -p patfile --word-breaks --preserve-case --full --include='.*[.]py$' --exclude='tests|test_.*' mydir1
 ```
 
 ## Usage
@@ -113,7 +117,7 @@ scripts that would scare your mother.
 
 No dependencies except Python 3.10+. It's easiest to install with pip:
 
-```
+```bash
 pip install repren
 ```
 
@@ -281,7 +285,7 @@ LONG_DESCRIPTION: str = __doc__.split("Patterns:")[0].strip()  # type: ignore
 
 BACKUP_SUFFIX: str = ".orig"
 TEMP_SUFFIX: str = ".repren.tmp"
-DEFAULT_EXCLUDE_PAT: str = r"\."
+DEFAULT_EXCLUDE_PAT: str = r"^\."
 
 
 def no_log(msg: str) -> None:
@@ -647,24 +651,34 @@ def rewrite_file(
         log("- rename: %s -> %s" % (path, dest_path))
 
 
-def walk_files(paths: List[str], exclude_pat: str = DEFAULT_EXCLUDE_PAT) -> List[str]:
-    out: List[str] = []
+def walk_files(
+    paths: List[str],
+    include_pat: str = ".*",
+    exclude_pat: str = DEFAULT_EXCLUDE_PAT,
+) -> List[str]:
+    include_re = re.compile(include_pat)
     exclude_re = re.compile(exclude_pat)
+    out: List[str] = []
+
     for path in paths:
-        if not os.path.exists(path):
-            _fail("path not found: %s" % path, None)
         if os.path.isfile(path):
-            out.append(path)
+            f = os.path.basename(path)
+            if include_re.match(f) and not exclude_re.match(f):
+                out.append(path)
         else:
             for root, dirs, files in os.walk(path):
-                out += [
-                    os.path.join(root, f)
-                    for f in files
-                    if not exclude_re.match(f)
-                    and not f.endswith(BACKUP_SUFFIX)
-                    and not f.endswith(TEMP_SUFFIX)
-                ]
+                # Filter directories based on include and exclude patterns
                 dirs[:] = [d for d in dirs if not exclude_re.match(d)]
+                for f in files:
+                    if (
+                        include_re.match(f)
+                        and not exclude_re.match(f)
+                        and not f.endswith(BACKUP_SUFFIX)
+                        and not f.endswith(TEMP_SUFFIX)
+                    ):
+                        out.append(os.path.join(root, f))
+
+    out.sort()  # Ensure deterministic order of file processing.
     return out
 
 
@@ -673,6 +687,7 @@ def rewrite_files(
     patterns: List[PatternType],
     do_renames: bool = False,
     do_contents: bool = False,
+    include_pat: str = ".*",
     exclude_pat: str = DEFAULT_EXCLUDE_PAT,
     by_line: bool = False,
     dry_run: bool = False,
@@ -683,8 +698,11 @@ def rewrite_files(
     changes according to the given list of patterns. Set `log` if you wish to log info
     in `dry_run` mode.
     """
-    paths = walk_files(root_paths, exclude_pat=exclude_pat)
-    paths.sort()  # Ensure deterministic order of file processing.
+    paths = walk_files(
+        root_paths,
+        include_pat=include_pat,
+        exclude_pat=exclude_pat,
+    )
     log("Found %s files in: %s" % (len(paths), ", ".join(root_paths)))
     for path in paths:
         rewrite_file(
@@ -802,8 +820,14 @@ def main() -> None:
         action="store_true",
     )
     parser.add_argument(
+        "--include",
+        help="file name regex to include (default is .* to include all files)",
+        dest="include_pat",
+        default=".*",
+    )
+    parser.add_argument(
         "--exclude",
-        help="file/directory name regex to exclude",
+        help="file or directory name regex to exclude ()",
         dest="exclude_pat",
         default=DEFAULT_EXCLUDE_PAT,
     )
@@ -818,6 +842,15 @@ def main() -> None:
         "--parse-only",
         help="parse and show patterns only",
         dest="parse_only",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--walk-only",
+        help=(
+            "like --dry-run, but only walk and list that will be processed "
+            "(good for confirming your --include and --exclude patterns)"
+        ),
+        dest="walk_only",
         action="store_true",
     )
     parser.add_argument(
@@ -838,15 +871,22 @@ def main() -> None:
 
     options = parser.parse_args()
 
+    # Option setup.
+    options.do_contents = not options.do_renames
+    options.do_renames = options.do_renames or options.do_full
+
     global _fail
     _fail = _fail_exit
     log: LogFunc = print_stderr if not options.quiet else no_log
 
-    if options.dry_run:
-        log("Dry run: No files will be changed")
-
-    options.do_contents = not options.do_renames
-    options.do_renames = options.do_renames or options.do_full
+    if options.walk_only:
+        paths = walk_files(
+            options.root_paths, include_pat=options.include_pat, exclude_pat=options.exclude_pat
+        )
+        log("Found %s files in: %s" % (len(paths), ", ".join(options.root_paths)))
+        for path in paths:
+            log("- %s" % path)
+        return  # We're done!
 
     # log("Settings: %s" % options)
 
@@ -883,6 +923,8 @@ def main() -> None:
             flags_str += " "
         return flags_str
 
+    if options.dry_run:
+        log("Dry run: No files will be changed")
     log(
         ("Using %s patterns:\n  " % len(patterns))
         + "\n  ".join(
@@ -898,45 +940,49 @@ def main() -> None:
         ),
     )
 
-    if not options.parse_only:
-        if len(options.root_paths) > 0:
-            rewrite_files(
-                options.root_paths,
-                patterns,
-                do_renames=options.do_renames,
-                do_contents=options.do_contents,
-                exclude_pat=options.exclude_pat,
-                by_line=by_line,
-                dry_run=options.dry_run,
-                log=log,
-            )
+    if options.parse_only:
+        return  # We're done!
 
-            log(
-                "Read %s files (%s chars), found %s matches (%s skipped due to overlaps)"
-                % (
-                    _tally.files,
-                    _tally.chars,
-                    _tally.valid_matches,
-                    _tally.matches - _tally.valid_matches,
-                ),
-            )
-            change_words = "Dry run: Would have changed" if options.dry_run else "Changed"
-            log(
-                "%s %s files (%s rewritten and %s renamed)"
-                % (change_words, _tally.files_changed, _tally.files_rewritten, _tally.renames),
-            )
-        else:
-            if options.do_renames:
-                parser.error("can't specify --renames on stdin; give filename arguments")
-            if options.dry_run:
-                parser.error("can't specify --dry-run on stdin; give filename arguments")
-            transform = lambda contents: multi_replace(contents, patterns, log=log)
-            transform_stream(transform, sys.stdin.buffer, sys.stdout.buffer, by_line=by_line)
+    # Process files.
+    if len(options.root_paths) > 0:
+        rewrite_files(
+            options.root_paths,
+            patterns,
+            do_renames=options.do_renames,
+            do_contents=options.do_contents,
+            exclude_pat=options.exclude_pat,
+            include_pat=options.include_pat,
+            by_line=by_line,
+            dry_run=options.dry_run,
+            log=log,
+        )
 
-            log(
-                "Read %s chars, made %s replacements (%s skipped due to overlaps)"
-                % (_tally.chars, _tally.valid_matches, _tally.matches - _tally.valid_matches),
-            )
+        log(
+            "Read %s files (%s chars), found %s matches (%s skipped due to overlaps)"
+            % (
+                _tally.files,
+                _tally.chars,
+                _tally.valid_matches,
+                _tally.matches - _tally.valid_matches,
+            ),
+        )
+        change_words = "Dry run: Would have changed" if options.dry_run else "Changed"
+        log(
+            "%s %s files (%s rewritten and %s renamed)"
+            % (change_words, _tally.files_changed, _tally.files_rewritten, _tally.renames),
+        )
+    else:
+        if options.do_renames:
+            parser.error("can't specify --renames on stdin; give filename arguments")
+        if options.dry_run:
+            parser.error("can't specify --dry-run on stdin; give filename arguments")
+        transform = lambda contents: multi_replace(contents, patterns, log=log)
+        transform_stream(transform, sys.stdin.buffer, sys.stdout.buffer, by_line=by_line)
+
+        log(
+            "Read %s chars, made %s replacements (%s skipped due to overlaps)"
+            % (_tally.chars, _tally.valid_matches, _tally.matches - _tally.valid_matches),
+        )
 
 
 if __name__ == "__main__":
@@ -946,4 +992,3 @@ if __name__ == "__main__":
 #   --undo mode to revert a previous run by using .orig files; --clean mode to remove .orig files
 #   Log collisions
 #   Separate patterns file for renames and replacements
-#   Quiet and verbose modes (the latter logging each substitution)

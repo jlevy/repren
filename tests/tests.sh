@@ -137,6 +137,17 @@ run --full --word-breaks -p patterns-rotate-abc test8
 diff -r original/humpty-dumpty.txt test8/humpty-dumpty.txt || expect_error
 
 
+# Include/exclude patterns.
+
+run --walk-only original
+
+run --walk-only --include='.*[.]txt$' original
+
+run --walk-only --exclude='beech|maple' original
+
+run --walk-only --include='A.*|M.*|oak' --exclude='Mex.*' original
+
+
 # Moving files.
 
 # TODO: Fix this.
