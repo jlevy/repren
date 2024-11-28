@@ -55,5 +55,8 @@ jobs:
       - name: Run linting
         run: poetry run python devtools/lint.py
 
-      - name: Run tests
+      - name: Run unit tests
+        run: poetry run pytest
+
+      - name: Run integration tests
         run: ./tests/run.sh

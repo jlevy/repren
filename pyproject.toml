@@ -59,8 +59,6 @@ format-jinja = """
 
 [tool.poetry.scripts]
 repren = "repren:main"
-lint = "devtools.lint:main"
-test = "pytest:main"
 
 [tool.black]
 line-length = 100

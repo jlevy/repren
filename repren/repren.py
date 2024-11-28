@@ -5,9 +5,11 @@
 Repren is a simple but flexible command-line tool for rewriting file contents according to a
 set of regular expression patterns, and to rename or move files according to patterns.
 Essentially, it is a general-purpose, brute-force text file refactoring tool.
+
 For example, repren could rename all occurrences of certain class and variable names in a
 set of Java source files, while simultaneously renaming the Java files according to the same
 pattern.
+
 It's more powerful than usual options like `perl -pie`, `rpl`, or `sed`:
 
 - It can also rename files, including moving files and creating directories.
@@ -30,6 +32,7 @@ It's more powerful than usual options like `perl -pie`, `rpl`, or `sed`:
 
 If file paths are provided, repren replaces those files in place, leaving a backup with
 extension ".orig".
+
 If directory paths are provided, it applies replacements recursively to all files in the
 supplied paths that are not in the exclude pattern.
 If no arguments are supplied, it reads from stdin and writes to stdout.
@@ -219,7 +222,6 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
   e.g. if the pattern file has foo_bar -> xxx_yyy, the replacements fooBar -> xxxYyy, FooBar
   -> XxxYyy, FOO_BAR -> XXX_YYY are also made.
   Assumes each pattern has one casing convention.
-  (Plain ASCII names only.)
 
 - The same logic applies to filenames, with patterns applied to the full file path with
   slashes replaced and then and parent directories created as needed, e.g.
@@ -249,6 +251,7 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
 
 import argparse
 import bisect
+from dataclasses import dataclass
 import importlib.metadata
 import os
 import re
@@ -298,15 +301,15 @@ def safe_decode(b: bytes) -> str:
     return b.decode("utf-8", errors="backslashreplace")
 
 
+@dataclass
 class _Tally:
-    def __init__(self) -> None:
-        self.files: int = 0
-        self.chars: int = 0
-        self.matches: int = 0
-        self.valid_matches: int = 0
-        self.files_changed: int = 0
-        self.files_rewritten: int = 0
-        self.renames: int = 0
+    files: int = 0
+    chars: int = 0
+    matches: int = 0
+    valid_matches: int = 0
+    files_changed: int = 0
+    files_rewritten: int = 0
+    renames: int = 0
 
 
 _tally: _Tally = _Tally()
@@ -370,10 +373,10 @@ def _apply_replacements(input_bytes: bytes, matches: List[PatternPair]) -> bytes
     return b"".join(out)
 
 
+@dataclass
 class _MatchCounts:
-    def __init__(self, found: int = 0, valid: int = 0) -> None:
-        self.found: int = found
-        self.valid: int = valid
+    found: int = 0
+    valid: int = 0
 
     def add(self, o: "_MatchCounts") -> None:
         self.found += o.found
@@ -417,37 +420,57 @@ _name_pat = re.compile(r"\w+")
 
 
 def _split_name(name: str) -> Tuple[str, List[str]]:
-    """Split a camel-case or underscore-formatted name into words. Return separator and words."""
-    if name.find("_") >= 0:
+    """
+    Split a CamelCase or underscore-formatted name into words.
+    Return separator and list of words.
+    """
+    if "_" in name:
+        # Underscore-separated name
         return "_", name.split("_")
     else:
-        temp = _camel_split_pat1.sub("\\1\t\\2", name)
-        temp = _camel_split_pat2.sub("\\1\t\\2", temp)
-        return "", temp.split("\t")
+        # CamelCase or mixed case name
+        words = []
+        current_word = ""
+        i = 0
+        while i < len(name):
+            char = name[i]
+            if i > 0 and char.isupper():
+                if name[i - 1].islower() or (i + 1 < len(name) and name[i + 1].islower()):
+                    # Start a new word
+                    words.append(current_word)
+                    current_word = char
+                else:
+                    current_word += char
+            else:
+                current_word += char
+            i += 1
+        if current_word:
+            words.append(current_word)
+        return "", words
 
 
 def _capitalize(word: str) -> str:
-    return word[0].upper() + word[1:].lower()
+    return word[0].upper() + word[1:].lower() if word else ""  # Handle empty strings safely
 
 
 def to_lower_camel(name: str) -> str:
-    words = _split_name(name)[1]
-    return words[0].lower() + "".join([_capitalize(word) for word in words[1:]])
+    separator, words = _split_name(name)
+    return words[0].lower() + "".join(_capitalize(word) for word in words[1:])
 
 
 def to_upper_camel(name: str) -> str:
-    words = _split_name(name)[1]
-    return "".join([_capitalize(word) for word in words])
+    separator, words = _split_name(name)
+    return "".join(_capitalize(word) for word in words)
 
 
 def to_lower_underscore(name: str) -> str:
-    words = _split_name(name)[1]
-    return "_".join([word.lower() for word in words])
+    separator, words = _split_name(name)
+    return "_".join(word.lower() for word in words)
 
 
 def to_upper_underscore(name: str) -> str:
-    words = _split_name(name)[1]
-    return "_".join([word.upper() for word in words])
+    separator, words = _split_name(name)
+    return "_".join(word.upper() for word in words)
 
 
 def _transform_expr(expr: str, transform: Callable[[str], str]) -> str:
@@ -456,8 +479,10 @@ def _transform_expr(expr: str, transform: Callable[[str], str]) -> str:
 
 
 def all_case_variants(expr: str) -> List[str]:
-    """Return all casing variations of an expression.
-    Note: This operates on strings and is called before pattern compilation."""
+    """
+    Return all casing variations of an expression.
+    Note: This operates on strings and is called before pattern compilation.
+    """
     return [
         _transform_expr(expr, transform)
         for transform in [to_lower_camel, to_upper_camel, to_lower_underscore, to_upper_underscore]
@@ -879,4 +904,3 @@ if __name__ == "__main__":
 #   Log collisions
 #   Separate patterns file for renames and replacements
 #   Quiet and verbose modes (the latter logging each substitution)
-#   Support --preserve-case for Unicode (non-ASCII) characters (messy)
