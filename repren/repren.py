@@ -201,6 +201,9 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
 
 ## Notes
 
+- All pattern matching is via standard
+  [Python regular expressions](https://docs.python.org/3/library/re.html).
+
 - As with sed, replacements are made line by line by default.
   Memory permitting, replacements may be done on entire files using `--at-once`.
 
@@ -847,7 +850,7 @@ def main() -> None:
     parser.add_argument(
         "--walk-only",
         help=(
-            "like --dry-run, but only walk and list that will be processed "
+            "like --dry-run, but only walk directories and list files that will be processed "
             "(good for confirming your --include and --exclude patterns)"
         ),
         dest="walk_only",
@@ -989,6 +992,11 @@ if __name__ == "__main__":
     main()
 
 # TODO:
-#   --undo mode to revert a previous run by using .orig files; --clean mode to remove .orig files
+#   consider using regex for better Unicode support (but only gracefully, such as
+#     with a dynamic import, if those features like Unicode character properties are needed)
+#   --undo mode to revert a previous run by using .orig files
+#   --clean mode to remove .orig files
+#   --orig_suffix to allow for backups besides .orig, including for these use cases
 #   Log collisions
 #   Separate patterns file for renames and replacements
+#   Should --at-once be the default?

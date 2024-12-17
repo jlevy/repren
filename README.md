@@ -88,6 +88,10 @@ repren -p patfile --word-breaks --full mydir1
 
 # Same as above, for all case variants:
 repren -p patfile --word-breaks --preserve-case --full mydir1
+
+# Same as above but including only .py files and excluding the tests directory
+# and any files or directories starting with test_:
+repren -p patfile --word-breaks --preserve-case --full --include='.*[.]py$' --exclude='tests|test_.*' mydir1
 ```
 
 ## Usage
@@ -122,7 +126,7 @@ scripts that would scare your mother.
 
 No dependencies except Python 3.10+. It's easiest to install with pip:
 
-```
+```bash
 pip install repren
 ```
 
@@ -130,7 +134,7 @@ Or, since it's just one file, you can copy the
 [repren.py](https://raw.githubusercontent.com/jlevy/repren/master/repren/repren.py) script
 somewhere convenient and make it executable.
 
-## Try it
+## Try It
 
 Let's try a simple replacement in my working directory (which has a few random source
 files):
