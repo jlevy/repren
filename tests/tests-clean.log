@@ -2,11 +2,10 @@
 # --- Start of tests ---
 
 run || expect_error
-usage: repren.py [-h] [--version] [--from FROM_PAT] [--to TO_PAT]
-                 [-p PAT_FILE] [--full] [--renames] [--literal] [-i]
-                 [--dotall] [--preserve-case] [-b] [--include INCLUDE_PAT]
-                 [--exclude EXCLUDE_PAT] [--at-once] [-t] [--walk-only] [-n]
-                 [-q]
+usage: repren.py [-h] [--version] [--usage] [--from FROM_PAT] [--to TO_PAT]
+                 [-p PAT_FILE] [--full] [--renames] [--literal] [-i] [--dotall]
+                 [--preserve-case] [-b] [--include INCLUDE_PAT] [--exclude EXCLUDE_PAT]
+                 [--at-once] [-t] [--walk-only] [-n] [-q]
                  [root_paths ...]
 repren.py: error: must specify --patterns or both --from and --to
 (got expected error: status 2)
