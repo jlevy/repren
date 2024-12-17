@@ -2,13 +2,13 @@
 """
 ## Rename Anything
 
-Repren is a simple but flexible command-line tool for rewriting file contents according to a
-set of regular expression patterns, and to rename or move files according to patterns.
-Essentially, it is a general-purpose, brute-force text file refactoring tool.
+Repren is a simple but flexible command-line tool for rewriting file contents according
+to a set of regular expression patterns, and to rename or move files according to
+patterns. Essentially, it is a general-purpose, brute-force text file refactoring tool.
 
-For example, repren could rename all occurrences of certain class and variable names in a
-set of Java source files, while simultaneously renaming the Java files according to the same
-pattern.
+For example, repren could rename all occurrences of certain class and variable names in
+a set of Java source files, while simultaneously renaming the Java files according to
+the same pattern.
 
 It's more powerful than usual options like `perl -pie`, `rpl`, or `sed`:
 
@@ -20,12 +20,11 @@ It's more powerful than usual options like `perl -pie`, `rpl`, or `sed`:
   without requiring a temporary intermediate rename.
 
 - It is careful. It has a nondestructive mode, and prints clear stats on its changes.
-  It leaves backups.
-  File operations are done atomically, so interruptions never leave a previously existing
-  file truncated or partly edited.
+  It leaves backups. File operations are done atomically, so interruptions never leave a
+  previously existing file truncated or partly edited.
 
-- It supports "magic" case-preserving renames that let you find and rename identifiers with
-  case variants (lowerCamel, UpperCamel, lower_underscore, and UPPER_UNDERSCORE)
+- It supports "magic" case-preserving renames that let you find and rename identifiers
+  with case variants (lowerCamel, UpperCamel, lower_underscore, and UPPER_UNDERSCORE)
   consistently.
 
 - It has this nice documentation!
@@ -39,8 +38,8 @@ If no arguments are supplied, it reads from stdin and writes to stdout.
 
 ## Examples
 
-Patterns can be supplied in a text file, with one or more replacements consisting of regular
-expression and replacement.
+Patterns can be supplied in a text file, with one or more replacements consisting of
+regular expression and replacement.
 For example:
 
 ```
@@ -90,9 +89,8 @@ repren -p patfile --word-breaks --preserve-case --full --include='.*[.]py$' --ex
 Run `repren --help` for full usage and flags.
 
 If file paths are provided, repren replaces those files in place, leaving a backup with
-extension ".orig".
-If directory paths are provided, it applies replacements recursively to all files in the
-supplied paths that are not in the exclude pattern.
+extension ".orig". If directory paths are provided, it applies replacements recursively
+to all files in the supplied paths that are not in the exclude pattern.
 If no arguments are supplied, it reads from stdin and writes to stdout.
 
 ## Alternatives
@@ -105,13 +103,13 @@ The
 [standard](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549)
 [answers](http://stackoverflow.com/questions/6840332/rename-multiple-files-by-replacing-a-particular-pattern-in-the-filenames-using-a)
 like *sed*, *perl*, *awk*, *rename*, *Vim* macros, or even IDE refactoring tools, often
-cover specific cases, but tend to be error-prone or not offer specific features you probably
-want.
-Things like nondestructive mode, file renaming as well as search/replace, multiple
-simultaneous renames/swaps, or renaming enclosing parent directories.
+cover specific cases, but tend to be error-prone or not offer specific features you
+probably want. Things like nondestructive mode, file renaming as well as search/replace,
+multiple simultaneous renames/swaps, or renaming enclosing parent directories.
 Also many of these vary by platform, which adds to the corner cases.
-Inevitably you end up digging through the darker corners of some man page or writing ugly
-scripts that would scare your mother.
+Inevitably you end up digging through the darker corners of a man page, doing
+semi-automated things in an IDE, or writing hacked scripts that are an embarrassment to
+share.
 
 ## Installation
 
@@ -122,8 +120,8 @@ pip install repren
 ```
 
 Or, since it's just one file, you can copy the
-[repren.py](https://raw.githubusercontent.com/jlevy/repren/master/repren/repren.py) script
-somewhere convenient and make it executable.
+[repren.py](https://raw.githubusercontent.com/jlevy/repren/master/repren/repren.py)
+script somewhere convenient and make it executable.
 
 ## Try It
 
@@ -149,15 +147,15 @@ Read 102 files (190382 chars), found 2 matches (0 skipped due to overlaps)
 Dry run: Would have changed 2 files, including 0 renames
 ```
 
-That was a dry run, so if it looks good, it's easy to repeat that a second time, dropping
-the `--dry-run` flag.
+That was a dry run, so if it looks good, it's easy to repeat that a second time,
+dropping the `--dry-run` flag.
 If this is in git, we'd do a git diff to verify, test, then commit it all.
 If we messed up, there are still .orig files present.
 
 ## Patterns
 
-Patterns can be supplied using the `--from` and `--to` syntax above, but that only works for
-a single pattern.
+Patterns can be supplied using the `--from` and `--to` syntax above, but that only works
+for a single pattern.
 
 In general, you can perform multiple simultaneous replacements by putting them in a
 *patterns file*. Each line consists of a regular expression and replacement.
@@ -210,13 +208,13 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
 - As with sed, replacement text may include backreferences to groups within the regular
   expression, using the usual syntax: \\1, \\2, etc.
 
-- In the pattern file, both the regular expression and the replacement may contain the usual
-  escapes `\\n`, `\\t`, etc.
+- In the pattern file, both the regular expression and the replacement may contain the
+  usual escapes `\\n`, `\\t`, etc.
   (To match a multi-line pattern, containing `\\n`, you must must use `--at-once`.)
 
-- Replacements are all matched on each input file, then all replaced, so it's possible to
-  swap or otherwise change names in ways that would require multiple steps if done one
-  replacement at at a time.
+- Replacements are all matched on each input file, then all replaced, so it's possible
+  to swap or otherwise change names in ways that would require multiple steps if done
+  one replacement at at a time.
 
 - If two patterns have matches that overlap, only one replacement is applied, with
   preference to the pattern appearing first in the patterns file.
@@ -225,34 +223,34 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
 
 - If patterns have special characters, `--literal` may help.
 
-- The case-preserving option works by adding all case variants to the pattern replacements,
-  e.g. if the pattern file has foo_bar -> xxx_yyy, the replacements fooBar -> xxxYyy, FooBar
-  -> XxxYyy, FOO_BAR -> XXX_YYY are also made.
+- The case-preserving option works by adding all case variants to the pattern
+  replacements, e.g. if the pattern file has foo_bar -> xxx_yyy, the replacements fooBar
+  -> xxxYyy, FooBar -> XxxYyy, FOO_BAR -> XXX_YYY are also made.
   Assumes each pattern has one casing convention.
 
 - The same logic applies to filenames, with patterns applied to the full file path with
   slashes replaced and then and parent directories created as needed, e.g.
-  `my/path/to/filename` can be rewritten to `my/other/path/to/otherfile`. (Use caution and
-  test with `-n`, especially when using absolute path arguments!)
+  `my/path/to/filename` can be rewritten to `my/other/path/to/otherfile`. (Use caution
+  and test with `-n`, especially when using absolute path arguments!)
 
 - Files are never clobbered by renames.
   If a target already exists, or multiple files are renamed to the same target, numeric
   suffixes will be added to make the files distinct (".1", ".2", etc.).
 
-- Files are created at a temporary location, then renamed, so original files are left intact
-  in case of unexpected errors.
+- Files are created at a temporary location, then renamed, so original files are left
+  intact in case of unexpected errors.
   File permissions are preserved.
 
 - Backups are created of all modified files, with the suffix ".orig".
 
-- By default, recursive searching omits paths starting with ".". This may be adjusted with
-  `--exclude`. Files ending in `.orig` are always ignored.
+- By default, recursive searching omits paths starting with ".". This may be adjusted
+  with `--exclude`. Files ending in `.orig` are always ignored.
 
 - Data is handled as bytes internally, allowing it to work with any encoding or binary
-  files.
-  File contents are not decoded unless necessary (e.g., for logging).
-  However, patterns are specified as strings in the pattern file and command line arguments,
-  and file paths are handled as strings for filesystem operations.
+  files. File contents are not decoded unless necessary (e.g., for logging).
+  However, patterns are specified as strings in the pattern file and command line
+  arguments, and file paths are handled as strings for filesystem operations.
+
 """
 
 
@@ -284,11 +282,12 @@ except importlib.metadata.PackageNotFoundError:
     VERSION = "0.0.0.dev"
 
 DESCRIPTION: str = "repren: Multi-pattern string replacement and file renaming"
-LONG_DESCRIPTION: str = __doc__.split("Patterns:")[0].strip()  # type: ignore
 
 BACKUP_SUFFIX: str = ".orig"
 TEMP_SUFFIX: str = ".repren.tmp"
 DEFAULT_EXCLUDE_PAT: str = r"^\."
+
+CONSOLE_WIDTH: int = 88
 
 
 def no_log(msg: str) -> None:
@@ -766,14 +765,27 @@ def parse_patterns(
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=DESCRIPTION,
-        epilog=__doc__,
-        formatter_class=argparse.RawDescriptionHelpFormatter,
+        formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(
+            prog=prog, width=CONSOLE_WIDTH
+        ),
+        add_help=False,
+    )
+    parser.add_argument(
+        "-h",
+        "--help",
+        action="help",
+        help="show usage and help page",
     )
     parser.add_argument(
         "--version",
         action="version",
         version=f"%(prog)s {VERSION}",
         help="show program's version number and exit",
+    )
+    parser.add_argument(
+        "--usage",
+        help="show usage",
+        action="store_true",
     )
     parser.add_argument("--from", help="single replacement: match string", dest="from_pat")
     parser.add_argument("--to", help="single replacement: replacement string", dest="to_pat")
@@ -871,6 +883,13 @@ def main() -> None:
         action="store_true",
     )
     parser.add_argument("root_paths", nargs="*", help="root paths to process")
+
+    if "--usage" in sys.argv:
+        parser.print_help()
+        sys.exit(0)
+
+    # For full --help, add the complete documentation.
+    parser.epilog = __doc__
 
     options = parser.parse_args()
 

@@ -1,10 +1,10 @@
 import pytest
 from repren.repren import (
-    to_lower_camel,
-    to_upper_camel,
-    to_lower_underscore,
-    to_upper_underscore,
     _split_name,
+    to_lower_camel,
+    to_lower_underscore,
+    to_upper_camel,
+    to_upper_underscore,
 )
 
 
