@@ -264,6 +264,10 @@ import sys
 from dataclasses import dataclass
 from typing import BinaryIO, Callable, List, Match, Optional, Pattern, Tuple
 
+from rich.console import Console
+
+from repren.readable_argparse import ReadableColorFormatter
+
 # Type aliases for clarity.
 PatternType = Tuple[Pattern[bytes], bytes]
 FileHandle = BinaryIO
@@ -289,19 +293,23 @@ DEFAULT_EXCLUDE_PAT: str = r"^\."
 
 CONSOLE_WIDTH: int = 88
 
+# Create a console instance that will automatically detect if output is to a TTY
+# and disable colors/markup if not (e.g., when piping output)
+_console = Console(stderr=True, force_terminal=None, force_interactive=False)
+
 
 def no_log(msg: str) -> None:
     pass
 
 
 def print_stderr(msg: str) -> None:
-    print(msg, file=sys.stderr)
+    _console.print(msg, highlight=False)
 
 
 def _fail_exit(msg: str, e: Optional[Exception] = None) -> None:
     if e:
         msg = "%s: %s" % (msg, e) if msg else str(e)
-    print("error: " + msg, file=sys.stderr)
+    _console.print(f"[bold red]error:[/bold red] {msg}", highlight=False)
     sys.exit(1)
 
 
@@ -765,9 +773,7 @@ def parse_patterns(
 def main() -> None:
     parser = argparse.ArgumentParser(
         description=DESCRIPTION,
-        formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(
-            prog=prog, width=CONSOLE_WIDTH
-        ),
+        formatter_class=ReadableColorFormatter,
         add_help=False,
     )
     parser.add_argument(
