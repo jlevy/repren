@@ -256,13 +256,18 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
 
 import argparse
 import bisect
+import glob as glob_module
 import importlib.metadata
 import os
 import re
 import shutil
 import sys
 from dataclasses import dataclass
+from pathlib import Path
 from typing import BinaryIO, Callable, List, Match, Optional, Pattern, Tuple
+
+import pathspec
+from pathspec.gitignore import GitIgnoreSpec
 
 # Type aliases for clarity.
 PatternType = Tuple[Pattern[bytes], bytes]
@@ -296,6 +301,168 @@ def no_log(msg: str) -> None:
 
 def print_stderr(msg: str) -> None:
     print(msg, file=sys.stderr)
+
+
+# --- Globbing and gitignore support ---
+
+
+def is_glob_pattern(pattern: str) -> bool:
+    """
+    Check if a string is a glob pattern (contains *, ?, [, or **).
+    """
+    return any(c in pattern for c in ["*", "?", "["]) or "**" in pattern
+
+
+class GitignoreFilter:
+    """
+    Handles gitignore-based file filtering using pathspec library.
+    """
+
+    def __init__(self, base_path: str):
+        """
+        Initialize filter by finding and parsing .gitignore files.
+
+        Args:
+            base_path: Base directory to start searching for .gitignore files
+        """
+        self.base_path = os.path.abspath(base_path)
+        self.specs: List[Tuple[str, GitIgnoreSpec]] = self._load_gitignore_specs()
+
+    def _load_gitignore_specs(self) -> List[Tuple[str, GitIgnoreSpec]]:
+        """
+        Walk up from base_path and load all .gitignore files.
+
+        Returns:
+            List of (directory, GitIgnoreSpec) tuples for hierarchical checking
+        """
+        specs: List[Tuple[str, GitIgnoreSpec]] = []
+        current_path = self.base_path
+
+        # Walk up the directory tree to find all .gitignore files
+        while True:
+            gitignore_path = os.path.join(current_path, ".gitignore")
+            if os.path.isfile(gitignore_path):
+                try:
+                    with open(gitignore_path, "r", encoding="utf-8") as f:
+                        lines = f.read().splitlines()
+                    spec = GitIgnoreSpec.from_lines(lines)
+                    specs.append((current_path, spec))
+                except Exception:
+                    # Ignore errors reading .gitignore files
+                    pass
+
+            # Check if we've reached the root or a git repo boundary
+            parent = os.path.dirname(current_path)
+            if parent == current_path:  # Reached filesystem root
+                break
+            if os.path.exists(os.path.join(current_path, ".git")):  # Git repo root
+                break
+            current_path = parent
+
+        return specs
+
+    def should_ignore(self, path: str) -> bool:
+        """
+        Check if path should be ignored based on gitignore rules.
+
+        Args:
+            path: Absolute or relative path to check
+
+        Returns:
+            True if the path should be ignored, False otherwise
+        """
+        abs_path = os.path.abspath(path)
+
+        # Check each gitignore spec
+        for gitignore_dir, spec in self.specs:
+            # Get path relative to the gitignore's directory
+            try:
+                rel_path = os.path.relpath(abs_path, gitignore_dir)
+            except ValueError:
+                # Different drives on Windows
+                continue
+
+            # Skip if the path is not under this gitignore's directory
+            if rel_path.startswith(".."):
+                continue
+
+            # For directories, append trailing slash for proper gitignore semantics
+            check_path = rel_path
+            if os.path.isdir(abs_path):
+                check_path = rel_path + "/"
+
+            # Check if this path matches the gitignore spec
+            if spec.match_file(check_path):
+                return True
+
+            # Also check without trailing slash for directories
+            if os.path.isdir(abs_path) and spec.match_file(rel_path):
+                return True
+
+        return False
+
+
+def expand_globs(
+    patterns: List[str],
+    respect_gitignore: bool = True,
+) -> List[str]:
+    """
+    Expand glob patterns to file paths, optionally filtering by gitignore.
+
+    Args:
+        patterns: List of glob patterns or explicit file paths
+        respect_gitignore: If True, filter out gitignored files (default: True)
+
+    Returns:
+        Sorted list of unique matching file paths
+    """
+    all_files: List[str] = []
+    seen: set = set()
+
+    # Initialize gitignore filter if needed
+    gitignore_filter: Optional[GitignoreFilter] = None
+    if respect_gitignore:
+        # Use current directory as base for gitignore
+        gitignore_filter = GitignoreFilter(os.getcwd())
+
+    for pattern in patterns:
+        if is_glob_pattern(pattern):
+            # Expand glob pattern
+            matched = glob_module.glob(pattern, recursive=True)
+            for path in matched:
+                abs_path = os.path.abspath(path)
+
+                # Skip if already seen
+                if abs_path in seen:
+                    continue
+
+                # Skip if not a file
+                if not os.path.isfile(abs_path):
+                    continue
+
+                # Always skip .orig and temp files
+                if abs_path.endswith(BACKUP_SUFFIX) or abs_path.endswith(TEMP_SUFFIX):
+                    continue
+
+                # Skip .gitignore files themselves
+                if os.path.basename(abs_path) == ".gitignore":
+                    continue
+
+                # Check gitignore rules
+                if gitignore_filter and gitignore_filter.should_ignore(abs_path):
+                    continue
+
+                seen.add(abs_path)
+                all_files.append(abs_path)
+        else:
+            # Explicit path (not a glob pattern)
+            abs_path = os.path.abspath(pattern)
+            if abs_path not in seen and os.path.isfile(abs_path):
+                # Don't apply gitignore filtering to explicit paths
+                seen.add(abs_path)
+                all_files.append(abs_path)
+
+    return sorted(all_files)
 
 
 def _fail_exit(msg: str, e: Optional[Exception] = None) -> None:
@@ -562,6 +729,7 @@ def transform_stream(
         (new_contents, new_counts) = (
             transform(contents) if transform else (contents, _MatchCounts())
         )
+        counts.add(new_counts)
         stream_out.write(new_contents)
     return counts
 
@@ -574,6 +742,7 @@ def transform_file(
     temp_suffix: str = TEMP_SUFFIX,
     by_line: bool = False,
     dry_run: bool = False,
+    create_backup: bool = True,
 ) -> _MatchCounts:
     """
     Transform full contents of file at source_path with specified function,
@@ -597,7 +766,15 @@ def transform_file(
         # All the above happens in dry-run mode so we get tallies.
         # Important: We don't modify original file until the above succeeds without exceptions.
         if not dry_run and (dest_path != source_path or counts.found > 0):
-            move_file(source_path, orig_path, clobber=True)
+            if create_backup:
+                move_file(source_path, orig_path, clobber=True)
+            else:
+                # No backup, just remove the source if it's different from dest
+                if dest_path != source_path:
+                    os.remove(source_path)
+                else:
+                    # Same path, so we need to remove it to replace with temp
+                    os.remove(source_path)
             move_file(temp_path, dest_path, clobber=False)
         else:
             # If we're in dry-run mode, or if there were no changes at all, just forget the output.
@@ -623,6 +800,46 @@ def transform_file(
     return counts
 
 
+def remove_backups(
+    root_path: str,
+    dry_run: bool = False,
+    log: LogFunc = no_log,
+) -> int:
+    """
+    Remove all .orig backup files in directory tree.
+
+    Args:
+        root_path: Root directory to search
+        dry_run: If True, only log what would be removed
+        log: Logging function
+
+    Returns:
+        Number of files removed (or that would be removed in dry-run)
+    """
+    count = 0
+    root_path = os.path.abspath(root_path)
+
+    if os.path.isfile(root_path):
+        # Single file check
+        if root_path.endswith(BACKUP_SUFFIX):
+            log("- remove backup: %s" % root_path)
+            if not dry_run:
+                os.remove(root_path)
+            count = 1
+    else:
+        # Walk directory tree
+        for dirpath, dirnames, filenames in os.walk(root_path):
+            for filename in filenames:
+                if filename.endswith(BACKUP_SUFFIX):
+                    filepath = os.path.join(dirpath, filename)
+                    log("- remove backup: %s" % filepath)
+                    if not dry_run:
+                        os.remove(filepath)
+                    count += 1
+
+    return count
+
+
 def rewrite_file(
     path: str,
     patterns: List[PatternType],
@@ -630,6 +847,7 @@ def rewrite_file(
     do_contents: bool = False,
     by_line: bool = False,
     dry_run: bool = False,
+    create_backup: bool = True,
     log: LogFunc = no_log,
 ) -> None:
     """
@@ -646,7 +864,7 @@ def rewrite_file(
     transform = None
     if do_contents:
         transform = lambda contents: multi_replace(contents, patterns, source_name=path, log=log)
-    counts = transform_file(transform, path, dest_path, by_line=by_line, dry_run=dry_run)
+    counts = transform_file(transform, path, dest_path, by_line=by_line, dry_run=dry_run, create_backup=create_backup)
     if counts.found > 0:
         log("- modify: %s: %s matches" % (path, counts.found))
     if dest_path != path:
@@ -693,18 +911,33 @@ def rewrite_files(
     exclude_pat: str = DEFAULT_EXCLUDE_PAT,
     by_line: bool = False,
     dry_run: bool = False,
+    create_backup: bool = True,
+    respect_gitignore: bool = True,
     log: LogFunc = no_log,
 ) -> None:
     """
     Walk the given `root_paths`, rewriting and/or renaming files making simultaneous
     changes according to the given list of patterns. Set `log` if you wish to log info
     in `dry_run` mode.
+
+    Supports glob patterns in root_paths (e.g., '*.py', 'src/**/*.md').
     """
-    paths = walk_files(
-        root_paths,
-        include_pat=include_pat,
-        exclude_pat=exclude_pat,
-    )
+    # Check if any paths are glob patterns
+    has_globs = any(is_glob_pattern(path) for path in root_paths)
+
+    if has_globs:
+        # Use glob expansion
+        paths = expand_globs(root_paths, respect_gitignore=respect_gitignore)
+        # Note: glob expansion already filters, so we don't apply include/exclude patterns
+        # If users want both glob and include/exclude, they should use walk_files separately
+    else:
+        # Use traditional walk_files for directories
+        paths = walk_files(
+            root_paths,
+            include_pat=include_pat,
+            exclude_pat=exclude_pat,
+        )
+
     log("Found %s files in: %s" % (len(paths), ", ".join(root_paths)))
     for path in paths:
         rewrite_file(
@@ -714,6 +947,7 @@ def rewrite_files(
             do_contents=do_contents,
             by_line=by_line,
             dry_run=dry_run,
+            create_backup=create_backup,
             log=log,
         )
 
@@ -882,7 +1116,25 @@ def main() -> None:
         dest="quiet",
         action="store_true",
     )
-    parser.add_argument("root_paths", nargs="*", help="root paths to process")
+    parser.add_argument(
+        "--nobackup",
+        help="do not create .orig backup files when modifying files",
+        dest="nobackup",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--rm-backups",
+        help="remove all .orig backup files in the specified directory (can be combined with -n for dry-run)",
+        dest="rm_backups",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--noignore",
+        help="do not respect .gitignore files when using glob patterns",
+        dest="noignore",
+        action="store_true",
+    )
+    parser.add_argument("root_paths", nargs="*", help="root paths to process (supports glob patterns like '*.py' or 'docs/**/*.md')")
 
     if "--usage" in sys.argv:
         parser.print_help()
@@ -900,6 +1152,26 @@ def main() -> None:
     global _fail
     _fail = _fail_exit
     log: LogFunc = print_stderr if not options.quiet else no_log
+
+    # Handle --rm-backups option
+    if options.rm_backups:
+        if len(options.root_paths) == 0:
+            # Default to current directory
+            backup_paths = ["."]
+        else:
+            backup_paths = options.root_paths
+
+        for backup_path in backup_paths:
+            count = remove_backups(backup_path, dry_run=options.dry_run, log=log)
+
+        if options.dry_run:
+            log("Dry run: Would have removed %s backup files" % count)
+        else:
+            log("Removed %s backup files" % count)
+
+        # If only removing backups (no patterns specified), we're done
+        if not options.pat_file and not options.from_pat:
+            return
 
     if options.walk_only:
         paths = walk_files(
@@ -976,6 +1248,8 @@ def main() -> None:
             include_pat=options.include_pat,
             by_line=by_line,
             dry_run=options.dry_run,
+            create_backup=not options.nobackup,
+            respect_gitignore=not options.noignore,
             log=log,
         )
 
