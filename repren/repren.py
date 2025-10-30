@@ -30,7 +30,7 @@ It's more powerful than usual options like `perl -pie`, `rpl`, or `sed`:
 - It has this nice documentation!
 
 If file paths are provided, repren replaces those files in place, leaving a backup with
-extension ".orig".
+extension ".rr.bak" (configurable with --backup-suffix).
 
 If directory paths are provided, it applies replacements recursively to all files in the
 supplied paths that are not in the exclude pattern.
@@ -89,9 +89,9 @@ repren -p patfile --word-breaks --preserve-case --full --include='.*[.]py$' --ex
 Run `repren --help` for full usage and flags.
 
 If file paths are provided, repren replaces those files in place, leaving a backup with
-extension ".orig". If directory paths are provided, it applies replacements recursively
-to all files in the supplied paths that are not in the exclude pattern.
-If no arguments are supplied, it reads from stdin and writes to stdout.
+extension ".rr.bak" (configurable with --backup-suffix). If directory paths are provided,
+it applies replacements recursively to all files in the supplied paths that are not in
+the exclude pattern. If no arguments are supplied, it reads from stdin and writes to stdout.
 
 ## Alternatives
 
@@ -150,7 +150,7 @@ Dry run: Would have changed 2 files, including 0 renames
 That was a dry run, so if it looks good, it's easy to repeat that a second time,
 dropping the `--dry-run` flag.
 If this is in git, we'd do a git diff to verify, test, then commit it all.
-If we messed up, there are still .orig files present.
+If we messed up, there are still .rr.bak backup files present.
 
 ## Patterns
 
@@ -241,10 +241,11 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
   intact in case of unexpected errors.
   File permissions are preserved.
 
-- Backups are created of all modified files, with the suffix ".orig".
+- Backups are created of all modified files, with the suffix ".rr.bak" (configurable
+  with --backup-suffix).
 
 - By default, recursive searching omits paths starting with ".". This may be adjusted
-  with `--exclude`. Files ending in `.orig` are always ignored.
+  with `--exclude`. Backup files are always ignored during directory walks.
 
 - Data is handled as bytes internally, allowing it to work with any encoding or binary
   files. File contents are not decoded unless necessary (e.g., for logging).
@@ -288,7 +289,7 @@ except importlib.metadata.PackageNotFoundError:
 
 DESCRIPTION: str = "repren: Multi-pattern string replacement and file renaming"
 
-BACKUP_SUFFIX: str = ".orig"
+BACKUP_SUFFIX: str = ".rr.bak"
 TEMP_SUFFIX: str = ".repren.tmp"
 DEFAULT_EXCLUDE_PAT: str = r"^\."
 
@@ -803,14 +804,16 @@ def transform_file(
 def remove_backups(
     root_path: str,
     dry_run: bool = False,
+    backup_suffix: str = BACKUP_SUFFIX,
     log: LogFunc = no_log,
 ) -> int:
     """
-    Remove all .orig backup files in directory tree.
+    Remove all backup files in directory tree.
 
     Args:
         root_path: Root directory to search
         dry_run: If True, only log what would be removed
+        backup_suffix: Suffix of backup files to remove (default: .rr.bak)
         log: Logging function
 
     Returns:
@@ -821,7 +824,7 @@ def remove_backups(
 
     if os.path.isfile(root_path):
         # Single file check
-        if root_path.endswith(BACKUP_SUFFIX):
+        if root_path.endswith(backup_suffix):
             log("- remove backup: %s" % root_path)
             if not dry_run:
                 os.remove(root_path)
@@ -830,7 +833,7 @@ def remove_backups(
         # Walk directory tree
         for dirpath, dirnames, filenames in os.walk(root_path):
             for filename in filenames:
-                if filename.endswith(BACKUP_SUFFIX):
+                if filename.endswith(backup_suffix):
                     filepath = os.path.join(dirpath, filename)
                     log("- remove backup: %s" % filepath)
                     if not dry_run:
@@ -848,6 +851,7 @@ def rewrite_file(
     by_line: bool = False,
     dry_run: bool = False,
     create_backup: bool = True,
+    backup_suffix: str = BACKUP_SUFFIX,
     log: LogFunc = no_log,
 ) -> None:
     """
@@ -864,7 +868,7 @@ def rewrite_file(
     transform = None
     if do_contents:
         transform = lambda contents: multi_replace(contents, patterns, source_name=path, log=log)
-    counts = transform_file(transform, path, dest_path, by_line=by_line, dry_run=dry_run, create_backup=create_backup)
+    counts = transform_file(transform, path, dest_path, orig_suffix=backup_suffix, by_line=by_line, dry_run=dry_run, create_backup=create_backup)
     if counts.found > 0:
         log("- modify: %s: %s matches" % (path, counts.found))
     if dest_path != path:
@@ -912,6 +916,7 @@ def rewrite_files(
     by_line: bool = False,
     dry_run: bool = False,
     create_backup: bool = True,
+    backup_suffix: str = BACKUP_SUFFIX,
     respect_gitignore: bool = True,
     log: LogFunc = no_log,
 ) -> None:
@@ -948,6 +953,7 @@ def rewrite_files(
             by_line=by_line,
             dry_run=dry_run,
             create_backup=create_backup,
+            backup_suffix=backup_suffix,
             log=log,
         )
 
@@ -1118,13 +1124,19 @@ def main() -> None:
     )
     parser.add_argument(
         "--nobackup",
-        help="do not create .orig backup files when modifying files",
+        help="do not create backup files when modifying files",
         dest="nobackup",
         action="store_true",
     )
     parser.add_argument(
+        "--backup-suffix",
+        help="suffix for backup files (default: .rr.bak)",
+        dest="backup_suffix",
+        default=BACKUP_SUFFIX,
+    )
+    parser.add_argument(
         "--rm-backups",
-        help="remove all .orig backup files in the specified directory (can be combined with -n for dry-run)",
+        help="remove all backup files in the specified directory (can be combined with -n for dry-run)",
         dest="rm_backups",
         action="store_true",
     )
@@ -1162,7 +1174,7 @@ def main() -> None:
             backup_paths = options.root_paths
 
         for backup_path in backup_paths:
-            count = remove_backups(backup_path, dry_run=options.dry_run, log=log)
+            count = remove_backups(backup_path, dry_run=options.dry_run, backup_suffix=options.backup_suffix, log=log)
 
         if options.dry_run:
             log("Dry run: Would have removed %s backup files" % count)
@@ -1249,6 +1261,7 @@ def main() -> None:
             by_line=by_line,
             dry_run=options.dry_run,
             create_backup=not options.nobackup,
+            backup_suffix=options.backup_suffix,
             respect_gitignore=not options.noignore,
             log=log,
         )
@@ -1287,9 +1300,7 @@ if __name__ == "__main__":
 # TODO:
 #   consider using regex for better Unicode support (but only gracefully, such as
 #     with a dynamic import, if those features like Unicode character properties are needed)
-#   --undo mode to revert a previous run by using .orig files
-#   --clean mode to remove .orig files
-#   --orig_suffix to allow for backups besides .orig, including for these use cases
+#   --undo mode to revert a previous run by using backup files
 #   Log collisions
 #   Separate patterns file for renames and replacements
 #   Should --at-once be the default?

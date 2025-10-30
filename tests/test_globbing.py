@@ -104,17 +104,17 @@ class TestGlobExpansion:
         assert len(result) == 0
 
     def test_orig_files_always_excluded(self, tmp_path: Path):
-        """Test that .orig files are always excluded from glob expansion."""
+        """Test that .rr.bak backup files are always excluded from glob expansion."""
         (tmp_path / "file1.py").touch()
-        (tmp_path / "file2.py.orig").touch()
-        (tmp_path / "file3.txt.orig").touch()
+        (tmp_path / "file2.py.rr.bak").touch()
+        (tmp_path / "file3.txt.rr.bak").touch()
 
         os.chdir(tmp_path)
         result = expand_globs(["*"], respect_gitignore=False)
 
         assert len(result) == 1
         assert str(tmp_path / "file1.py") in result
-        # .orig files should not be included
+        # .rr.bak backup files should not be included
 
 
 class TestGitignoreFilter:

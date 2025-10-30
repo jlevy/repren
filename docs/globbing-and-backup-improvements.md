@@ -4,7 +4,7 @@
 
 This document describes the design for two major improvements to repren:
 1. **Globbing Support**: Add modern glob pattern support with gitignore integration
-2. **Backup Management**: Enhance control over `.orig` backup files
+2. **Backup Management**: Enhance control over `.rr.bak` backup files
 
 ## 1. Globbing Support
 
@@ -97,7 +97,7 @@ repren --from foo --to bar 'src/**/*.py' tests/test_specific.py
 
 1. **No matches**: If a glob pattern matches no files, log a warning
 2. **Gitignore precedence**: Respect `.gitignore` files at all directory levels
-3. **Always ignored**: Continue to always ignore `.orig` and `.repren.tmp` files
+3. **Always ignored**: Continue to always ignore `.rr.bak` and `.repren.tmp` files
 4. **Pattern vs path**: Auto-detect glob patterns vs regular paths
 
 ## 2. Backup Management
@@ -105,20 +105,25 @@ repren --from foo --to bar 'src/**/*.py' tests/test_specific.py
 ### Goals
 
 - Allow users to disable backup file creation
-- Provide utility to clean up existing `.orig` files
+- Provide utility to clean up existing `.rr.bak` files
 - Maintain safety with dry-run compatibility
+- Allow custom backup suffix via `--backup-suffix`
 
 ### Design
 
 #### New Command-line Options
 
-1. **`--nobackup`**: Disable creation of `.orig` backup files
+1. **`--nobackup`**: Disable creation of backup files
    - When enabled, modified files won't create backups
    - Still uses temp files for atomic operations
    - Incompatible with safety-conscious workflows but useful for version-controlled projects
 
-2. **`--rm-backups [DIR]`**: Remove all `.orig` files in specified directory
-   - Recursively finds and removes `.orig` files
+2. **`--backup-suffix SUFFIX`**: Specify custom backup suffix (default: `.rr.bak`)
+   - Allows using custom suffixes like `.backup`, `.bak`, etc.
+   - Avoids collision with other tools' backup files
+
+3. **`--rm-backups [DIR]`**: Remove all backup files in specified directory
+   - Recursively finds and removes backup files (with configured suffix)
    - Compatible with `-n/--dry-run` for preview
    - If DIR not specified, uses current directory
 
@@ -139,7 +144,7 @@ def transform_file(
     Transform file with optional backup creation.
 
     Args:
-        create_backup: If False, skip creating .orig backup files
+        create_backup: If False, skip creating backup files
     """
     # Modify to only create backup if create_backup=True
     pass
@@ -149,10 +154,11 @@ def transform_file(
 def remove_backups(
     root_path: str,
     dry_run: bool = False,
+    backup_suffix: str = BACKUP_SUFFIX,
     log: LogFunc = no_log,
 ) -> int:
     """
-    Remove all .orig backup files in directory tree.
+    Remove all backup files in directory tree.
 
     Args:
         root_path: Root directory to search
@@ -209,7 +215,7 @@ repren --rm-backups --from foo --to bar src/
    - Test directory-level .gitignore files
    - Test nested .gitignore files
    - Test `--noignore` flag
-   - Test that .orig files are always ignored
+   - Test that .rr.bak files are always ignored
 
 3. **Edge cases**:
    - Empty results
@@ -219,13 +225,17 @@ repren --rm-backups --from foo --to bar src/
 ### Backup Management Tests
 
 1. **`--nobackup` flag**:
-   - Verify no .orig files created
+   - Verify no .rr.bak files created
    - Verify temp files still used
    - Verify actual file changes applied
    - Test with `-n` dry-run
 
-2. **`--rm-backups`**:
-   - Verify .orig files removed
+2. **`--backup-suffix` flag**:
+   - Test custom suffix creation
+   - Test removal with custom suffix
+
+3. **`--rm-backups`**:
+   - Verify .rr.bak files removed
    - Verify other files untouched
    - Test dry-run mode
    - Test recursive removal
