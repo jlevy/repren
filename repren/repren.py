@@ -2,35 +2,49 @@
 """
 ## Rename Anything
 
-Repren is a simple but flexible command-line tool for rewriting file contents according
-to a set of regular expression patterns, and to rename or move files according to
-patterns. Essentially, it is a general-purpose, brute-force text file refactoring tool.
+`repren` is a powerful CLI string replacement and file renaming tool for use by agents
+or humans for almost any search-and-replace or renaming task.
 
-For example, repren could rename all occurrences of certain class and variable names in
-a set of Java source files, while simultaneously renaming the Java files according to
-the same pattern.
+It is small, self-contained, self-documenting, and works on Python 3.10-3.14 with zero
+dependencies. Essentially, it is a general-purpose, brute-force text file refactoring
+tool.
 
-It's more powerful than usual options like `perl -pie`, `rpl`, or `sed`:
+For example, repren could rename occurrences of certain names in a set of source files,
+while simultaneously renaming the files and directories according to the same pattern
+and handling all case variations.
 
-- It can also rename files, including moving files and creating directories.
+It’s more powerful than classic options like `perl -pie`, `rpl`, or `sed`:
 
-- It supports fully expressive regular expression substitutions.
+- **Replacements:** It allows rewriting file contents according to one or more literal
+  or regular expression patterns.
 
-- It performs group renamings, i.e. rename "foo" as "bar", and "bar" as "foo" at once,
-  without requiring a temporary intermediate rename.
+- **Renames:** It can also apply the patterns to rename or move files according to
+  replacements on their full paths, creating directories as needed.
 
-- It is careful. It has a nondestructive mode, and prints clear stats on its changes.
+- **Regexes:** It supports fully expressive regular expressions substitutions, including
+  matching groups for back substitutions (like `\1`, `\2`, etc.).
+
+- **Simultaneous renames:** It performs simultaneous renamings: you can make as many
+  replacements as you want and you can rename “foo” as “bar”, and “bar” as “foo” at
+  once, without requiring a temporary intermediate rename.
+
+- **Good hygiene:** It is careful: it has a nondestructive “dry run” mode and prints
+  clear stats on its changes.
   It leaves backups. File operations are done atomically, so interruptions never leave a
   previously existing file truncated or partly edited.
 
-- It supports "magic" case-preserving renames that let you find and rename identifiers
-  with case variants (lowerCamel, UpperCamel, lower_underscore, and UPPER_UNDERSCORE)
-  consistently.
+- **Case preserving options:** It supports “magic” case-preserving renames that let you
+  find and rename identifiers with case variants (lowerCamel, UpperCamel,
+  lower_underscore, and UPPER_UNDERSCORE) consistently.
 
-- It has this nice documentation!
+- **Dry run, backups, and undo:** It has convenient options for dry run, undo (restoring
+  backups), and cleanup (deleting backups).
+
+- **Self-documenting:** It is packaged with its own nice documentation!
+  Run with `--help` for these full docs.
 
 If file paths are provided, repren replaces those files in place, leaving a backup with
-extension ".orig".
+extension “.orig” (controlled by the `--backup-suffix` option).
 
 If directory paths are provided, it applies replacements recursively to all files in the
 supplied paths that are not in the exclude pattern.
@@ -46,7 +60,7 @@ For example:
 # Sample pattern file
 frobinator<tab>glurp
 WhizzleStick<tab>AcmeExtrudedPlasticFunProvider
-figure ([0-9+])<tab>Figure \\1
+figure ([0-9+])<tab>Figure \1
 ```
 
 (Where `<tab>` is an actual tab character.)
@@ -89,15 +103,15 @@ repren -p patfile --word-breaks --preserve-case --full --include='.*[.]py$' --ex
 Run `repren --help` for full usage and flags.
 
 If file paths are provided, repren replaces those files in place, leaving a backup with
-extension ".orig". If directory paths are provided, it applies replacements recursively
+extension “.orig”. If directory paths are provided, it applies replacements recursively
 to all files in the supplied paths that are not in the exclude pattern.
 If no arguments are supplied, it reads from stdin and writes to stdout.
 
 ## Alternatives
 
-Aren't there standard tools for this already?
+Aren’t there standard tools for this already?
 
-It's a bit surprising, but not really.
+It’s a bit surprising, but not really.
 Getting the features right is a bit tricky, I guess.
 The
 [standard](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549)
@@ -113,19 +127,19 @@ share.
 
 ## Installation
 
-No dependencies except Python 3.10+. It's easiest to install with pip:
+No dependencies except Python 3.10+. It’s easiest to install with pip:
 
 ```bash
 pip install repren
 ```
 
-Or, since it's just one file, you can copy the
+Or, since it’s just one file, you can copy the
 [repren.py](https://raw.githubusercontent.com/jlevy/repren/master/repren/repren.py)
 script somewhere convenient and make it executable.
 
 ## Try It
 
-Let's try a simple replacement in my working directory (which has a few random source
+Let’s try a simple replacement in my working directory (which has a few random source
 files):
 
 ```bash
@@ -147,9 +161,9 @@ Read 102 files (190382 chars), found 2 matches (0 skipped due to overlaps)
 Dry run: Would have changed 2 files, including 0 renames
 ```
 
-That was a dry run, so if it looks good, it's easy to repeat that a second time,
+That was a dry run, so if it looks good, it’s easy to repeat that a second time,
 dropping the `--dry-run` flag.
-If this is in git, we'd do a git diff to verify, test, then commit it all.
+If this is in git, we’d do a git diff to verify, test, then commit it all.
 If we messed up, there are still .orig files present.
 
 ## Patterns
@@ -206,15 +220,15 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
   Memory permitting, replacements may be done on entire files using `--at-once`.
 
 - As with sed, replacement text may include backreferences to groups within the regular
-  expression, using the usual syntax: \\1, \\2, etc.
+  expression, using the usual syntax: \1, \2, etc.
 
 - In the pattern file, both the regular expression and the replacement may contain the
   usual escapes `\\n`, `\\t`, etc.
-  (To match a multi-line pattern, containing `\\n`, you must must use `--at-once`.)
+  (To match a multi-line pattern, containing `\\n`, you must use `--at-once`.)
 
-- Replacements are all matched on each input file, then all replaced, so it's possible
+- Replacements are all matched on each input file, then all replaced, so it’s possible
   to swap or otherwise change names in ways that would require multiple steps if done
-  one replacement at at a time.
+  one replacement at a time.
 
 - If two patterns have matches that overlap, only one replacement is applied, with
   preference to the pattern appearing first in the patterns file.
@@ -229,21 +243,21 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
   Assumes each pattern has one casing convention.
 
 - The same logic applies to filenames, with patterns applied to the full file path with
-  slashes replaced and then and parent directories created as needed, e.g.
+  slashes replaced and then parent directories created as needed, e.g.
   `my/path/to/filename` can be rewritten to `my/other/path/to/otherfile`. (Use caution
   and test with `-n`, especially when using absolute path arguments!)
 
 - Files are never clobbered by renames.
   If a target already exists, or multiple files are renamed to the same target, numeric
-  suffixes will be added to make the files distinct (".1", ".2", etc.).
+  suffixes will be added to make the files distinct (".1", “.2”, etc.).
 
 - Files are created at a temporary location, then renamed, so original files are left
   intact in case of unexpected errors.
   File permissions are preserved.
 
-- Backups are created of all modified files, with the suffix ".orig".
+- Backups are created of all modified files, with the suffix “.orig”.
 
-- By default, recursive searching omits paths starting with ".". This may be adjusted
+- By default, recursive searching omits paths starting with “.”. This may be adjusted
   with `--exclude`. Files ending in `.orig` are always ignored.
 
 - Data is handled as bytes internally, allowing it to work with any encoding or binary
@@ -319,7 +333,9 @@ def _get_version() -> str:
 
 VERSION: str = _get_version()
 
-DESCRIPTION: str = "repren: Multi-pattern string replacement and file renaming"
+DESCRIPTION: str = (
+    "Powerful, multi-pattern string replacement and file renaming for agents and humans"
+)
 
 BACKUP_SUFFIX: str = ".orig"
 TEMP_SUFFIX: str = ".repren.tmp"
