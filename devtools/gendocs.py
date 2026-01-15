@@ -52,12 +52,12 @@ def update_readme(repo_root: Path, manual: str) -> bool:
     content = readme_path.read_text()
 
     # README structure:
-    # - Header (# repren, image, ---, announcement, ---)
+    # - Header (# repren, image, * * *, announcement, * * *)
     # - Documentation (## Rename Anything ... through notes)
     # - Footer (## Contributing, ## License, etc.)
     #
-    # Match from after the second "---" to before "\n## Contributing"
-    pattern = r"(---\n\n\n)(## Rename Anything.*?)(\n## Contributing)"
+    # Match from after the second "* * *" to before "\n## Contributing"
+    pattern = r"(\* \* \*\n\n)(## Rename Anything.*?)(\n## Contributing)"
     match = re.search(pattern, content, flags=re.DOTALL)
 
     if not match:
