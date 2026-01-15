@@ -10,6 +10,7 @@ attic/
 # Project-specific
 *.stash.py
 tmp.*
+.claude/
 
 # Vim
 .*.sw?
