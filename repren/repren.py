@@ -253,6 +253,8 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
 
 """
 
+from __future__ import annotations
+
 import argparse
 import bisect
 import importlib.metadata
@@ -263,7 +265,7 @@ import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from re import Match, Pattern
-from typing import BinaryIO
+from typing import BinaryIO, NoReturn
 
 # Type aliases for clarity.
 PatternType = tuple[Pattern[bytes], bytes]
@@ -273,6 +275,37 @@ PatternPair = tuple[MatchType, bytes]
 TransformFunc = Callable[[bytes], tuple[bytes, "_MatchCounts"]]
 LogFunc = Callable[[str], None]
 FailHandler = Callable[[str, Exception | None], None]
+
+
+# --- Exit codes (following Unix conventions) ---
+
+
+EXIT_SUCCESS = 0
+EXIT_ERROR = 1
+EXIT_USAGE = 2
+EXIT_INTERRUPTED = 130  # 128 + SIGINT(2)
+
+
+# --- Custom exceptions ---
+
+
+class CLIError(Exception):
+    """Base exception for CLI errors."""
+
+    message: str
+    exit_code: int
+
+    def __init__(self, message: str, exit_code: int = EXIT_ERROR) -> None:
+        self.message = message
+        self.exit_code = exit_code
+        super().__init__(message)
+
+
+class ValidationError(CLIError):
+    """Input validation or usage error."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, exit_code=EXIT_USAGE)
 
 
 # Get the version from package metadata.
@@ -292,7 +325,25 @@ BACKUP_SUFFIX: str = ".orig"
 TEMP_SUFFIX: str = ".repren.tmp"
 DEFAULT_EXCLUDE_PAT: str = r"^\."
 
-CONSOLE_WIDTH: int = 88
+# Terminal width handling.
+DEFAULT_WIDTH: int = 88
+MIN_WIDTH: int = 40
+MAX_WIDTH: int = 120
+
+
+def _get_terminal_width() -> int:
+    """Get terminal width, clamped to reasonable bounds.
+
+    Uses DEFAULT_WIDTH when not connected to a TTY for consistent output
+    in scripts and CI environments.
+    """
+    if not sys.stdout.isatty():
+        return DEFAULT_WIDTH
+    try:
+        width = shutil.get_terminal_size().columns
+        return min(MAX_WIDTH, max(MIN_WIDTH, width))
+    except Exception:
+        return DEFAULT_WIDTH
 
 
 def no_log(_msg: str) -> None:
@@ -303,19 +354,21 @@ def print_stderr(msg: str) -> None:
     print(msg, file=sys.stderr)
 
 
-def _fail_exit(msg: str, e: Exception | None = None) -> None:
+def _fail_with_exit(msg: str, e: Exception | None = None) -> NoReturn:
+    """Fail by exiting the process (used when running as CLI)."""
     if e:
         msg = f"{msg}: {e}" if msg else str(e)
     print("error: " + msg, file=sys.stderr)
-    sys.exit(1)
+    sys.exit(EXIT_ERROR)
 
 
-def _fail_exception(msg: str, e: Exception | None = None) -> None:
-    raise ValueError(msg) from e
+def _fail_with_exception(msg: str, e: Exception | None = None) -> NoReturn:
+    """Fail by raising an exception (used when used as a library)."""
+    raise CLIError(msg) from e
 
 
 # By default, fail with exceptions in case we want to use this as a library.
-_fail: FailHandler = _fail_exception
+_fail: FailHandler = _fail_with_exception
 
 
 def safe_decode(b: bytes) -> str:
@@ -396,7 +449,7 @@ class _MatchCounts:
     found: int = 0
     valid: int = 0
 
-    def add(self, o: "_MatchCounts") -> None:
+    def add(self, o: _MatchCounts) -> None:
         self.found += o.found
         self.valid += o.valid
 
@@ -759,12 +812,12 @@ def parse_patterns(
     return patterns
 
 
-def main() -> None:
+def _run_cli() -> None:
+    """Main CLI logic, separated for cleaner error handling."""
+    width = _get_terminal_width()
     parser = argparse.ArgumentParser(
         description=DESCRIPTION,
-        formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(
-            prog=prog, width=CONSOLE_WIDTH
-        ),
+        formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(prog=prog, width=width),
         add_help=False,
     )
     parser.add_argument(
@@ -895,7 +948,7 @@ def main() -> None:
     options.do_renames = options.do_renames or options.do_full
 
     global _fail
-    _fail = _fail_exit
+    _fail = _fail_with_exit
     log: LogFunc = print_stderr if not options.quiet else no_log
 
     if options.walk_only:
@@ -990,6 +1043,18 @@ def main() -> None:
             f"Read {_tally.chars} chars, made {_tally.valid_matches} replacements "
             f"({_tally.matches - _tally.valid_matches} skipped due to overlaps)",
         )
+
+
+def main() -> None:
+    """CLI entrypoint with centralized error handling."""
+    try:
+        _run_cli()
+    except CLIError as e:
+        print(f"error: {e.message}", file=sys.stderr)
+        sys.exit(e.exit_code)
+    except KeyboardInterrupt:
+        print("\nInterrupted", file=sys.stderr)
+        sys.exit(EXIT_INTERRUPTED)
 
 
 if __name__ == "__main__":
