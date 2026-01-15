@@ -349,21 +349,21 @@ def clean_backups(
 
 Tasks:
 
-- [ ] Add `--backup-suffix` CLI argument with validation (must start with `.`)
+- [x] Add `--backup-suffix` CLI argument with validation (must start with `.`)
 
-- [ ] Pass suffix through to `transform_file()` calls
+- [x] Pass suffix through to `transform_file()` calls
 
-- [ ] Update `walk_files()` to:
+- [x] Update `walk_files()` to:
   - Use configurable suffix instead of hardcoded `BACKUP_SUFFIX`
   - Also filter explicit file paths (not just directory walks)
   - Return count of skipped backup files
 
-- [ ] Add warning log when backup files are skipped:
+- [x] Add warning log when backup files are skipped:
   `"Skipped N files ending in '{suffix}' (backup files are never processed)"`
 
-- [ ] Add tests for custom suffix functionality
+- [x] Add tests for custom suffix functionality
 
-- [ ] Add tests verifying backup files are skipped with warning
+- [x] Add tests verifying backup files are skipped with warning
 
 ### Phase 2: Implement `--undo` mode
 

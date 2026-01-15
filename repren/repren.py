@@ -676,6 +676,7 @@ def rewrite_file(
     patterns: list[PatternType],
     do_renames: bool = False,
     do_contents: bool = False,
+    backup_suffix: str = BACKUP_SUFFIX,
     by_line: bool = False,
     dry_run: bool = False,
     log: LogFunc = no_log,
@@ -694,7 +695,9 @@ def rewrite_file(
     transform = None
     if do_contents:
         transform = lambda contents: multi_replace(contents, patterns, source_name=path, log=log)
-    counts = transform_file(transform, path, dest_path, by_line=by_line, dry_run=dry_run)
+    counts = transform_file(
+        transform, path, dest_path, orig_suffix=backup_suffix, by_line=by_line, dry_run=dry_run
+    )
     if counts.found > 0:
         log(f"- modify: {path}: {counts.found} matches")
     if dest_path != path:
@@ -705,31 +708,39 @@ def walk_files(
     paths: list[str],
     include_pat: str = ".*",
     exclude_pat: str = DEFAULT_EXCLUDE_PAT,
-) -> list[str]:
+    backup_suffix: str = BACKUP_SUFFIX,
+) -> tuple[list[str], int]:
+    """
+    Walk the given paths and return files matching include/exclude patterns.
+    Filters out backup files (ending with backup_suffix) and temp files.
+
+    Returns a tuple of (list of file paths, count of skipped backup files).
+    """
     include_re = re.compile(include_pat)
     exclude_re = re.compile(exclude_pat)
     out: list[str] = []
+    skipped_backup_count = 0
 
     for path in paths:
         if os.path.isfile(path):
             f = os.path.basename(path)
-            if include_re.match(f) and not exclude_re.match(f):
+            # Also filter explicit file paths that are backup files
+            if path.endswith(backup_suffix) or path.endswith(TEMP_SUFFIX):
+                skipped_backup_count += 1
+            elif include_re.match(f) and not exclude_re.match(f):
                 out.append(path)
         else:
             for root, dirs, files in os.walk(path):
                 # Filter directories based on include and exclude patterns
                 dirs[:] = [d for d in dirs if not exclude_re.match(d)]
                 for f in files:
-                    if (
-                        include_re.match(f)
-                        and not exclude_re.match(f)
-                        and not f.endswith(BACKUP_SUFFIX)
-                        and not f.endswith(TEMP_SUFFIX)
-                    ):
+                    if f.endswith(backup_suffix) or f.endswith(TEMP_SUFFIX):
+                        skipped_backup_count += 1
+                    elif include_re.match(f) and not exclude_re.match(f):
                         out.append(os.path.join(root, f))
 
     out.sort()  # Ensure deterministic order of file processing.
-    return out
+    return out, skipped_backup_count
 
 
 def rewrite_files(
@@ -739,6 +750,7 @@ def rewrite_files(
     do_contents: bool = False,
     include_pat: str = ".*",
     exclude_pat: str = DEFAULT_EXCLUDE_PAT,
+    backup_suffix: str = BACKUP_SUFFIX,
     by_line: bool = False,
     dry_run: bool = False,
     log: LogFunc = no_log,
@@ -748,11 +760,17 @@ def rewrite_files(
     changes according to the given list of patterns. Set `log` if you wish to log info
     in `dry_run` mode.
     """
-    paths = walk_files(
+    paths, skipped_backup_count = walk_files(
         root_paths,
         include_pat=include_pat,
         exclude_pat=exclude_pat,
+        backup_suffix=backup_suffix,
     )
+    if skipped_backup_count > 0:
+        log(
+            f"Skipped {skipped_backup_count} file(s) ending in '{backup_suffix}' "
+            "(backup files are never processed)"
+        )
     log(f"Found {len(paths)} files in: {', '.join(root_paths)}")
     for path in paths:
         rewrite_file(
@@ -760,6 +778,7 @@ def rewrite_files(
             patterns,
             do_renames=do_renames,
             do_contents=do_contents,
+            backup_suffix=backup_suffix,
             by_line=by_line,
             dry_run=dry_run,
             log=log,
@@ -932,6 +951,12 @@ def _run_cli() -> None:
         dest="quiet",
         action="store_true",
     )
+    parser.add_argument(
+        "--backup-suffix",
+        help=f"suffix for backup files (default: {BACKUP_SUFFIX})",
+        dest="backup_suffix",
+        default=BACKUP_SUFFIX,
+    )
     parser.add_argument("root_paths", nargs="*", help="root paths to process")
 
     if "--usage" in sys.argv:
@@ -951,10 +976,22 @@ def _run_cli() -> None:
     _fail = _fail_with_exit
     log: LogFunc = print_stderr if not options.quiet else no_log
 
+    # Validate backup suffix
+    if not options.backup_suffix.startswith("."):
+        parser.error("--backup-suffix must start with '.'")
+
     if options.walk_only:
-        paths = walk_files(
-            options.root_paths, include_pat=options.include_pat, exclude_pat=options.exclude_pat
+        paths, skipped_backup_count = walk_files(
+            options.root_paths,
+            include_pat=options.include_pat,
+            exclude_pat=options.exclude_pat,
+            backup_suffix=options.backup_suffix,
         )
+        if skipped_backup_count > 0:
+            log(
+                f"Skipped {skipped_backup_count} file(s) ending in '{options.backup_suffix}' "
+                "(backup files are never processed)"
+            )
         log(f"Found {len(paths)} files in: {', '.join(options.root_paths)}")
         for path in paths:
             log(f"- {path}")
@@ -1017,6 +1054,7 @@ def _run_cli() -> None:
             do_contents=options.do_contents,
             exclude_pat=options.exclude_pat,
             include_pat=options.include_pat,
+            backup_suffix=options.backup_suffix,
             by_line=by_line,
             dry_run=options.dry_run,
             log=log,

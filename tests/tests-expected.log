@@ -5,7 +5,7 @@ run || expect_error
 usage: repren [-h] [--version] [--usage] [--from FROM_PAT] [--to TO_PAT] [-p PAT_FILE]
               [--full] [--renames] [--literal] [-i] [--dotall] [--preserve-case] [-b]
               [--include INCLUDE_PAT] [--exclude EXCLUDE_PAT] [--at-once] [-t]
-              [--walk-only] [-n] [-q]
+              [--walk-only] [-n] [-q] [--backup-suffix BACKUP_SUFFIX]
               [root_paths ...]
 repren: error: must specify --patterns or both --from and --to
 (got expected error: status 2)
@@ -63,6 +63,7 @@ Only in test1: humpty-dumpty.txt.orig
 run --from humpty --to dumpty test1
 Using 1 patterns:
   'humpty' -> 'dumpty'
+Skipped 1 file(s) ending in '.orig' (backup files are never processed)
 Found 12 files in: test1
 Read 12 files (3810 chars), found 0 matches (0 skipped due to overlaps)
 Changed 0 files (0 rewritten and 0 renamed)
@@ -306,6 +307,7 @@ Using 6 patterns:
   'b' -> 'c'
   'C' -> 'A'
   'c' -> 'a'
+Skipped 9 file(s) ending in '.orig' (backup files are never processed)
 Found 12 files in: test7
 - modify: test7/humpty-dumpty.txt: 40 matches
 - modify: test7/stuff/trees/ceeah.txt: 180 matches
@@ -330,6 +332,7 @@ Using 6 patterns:
   'b' -> 'c'
   'C' -> 'A'
   'c' -> 'a'
+Skipped 17 file(s) ending in '.orig' (backup files are never processed)
 Found 12 files in: test7
 - modify: test7/humpty-dumpty.txt: 40 matches
 - modify: test7/stuff/trees/aeebh.txt: 180 matches
