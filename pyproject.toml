@@ -5,7 +5,7 @@ Repository = "https://github.com/jlevy/repren"
 
 [project]
 name = "repren"
-description = "Powerful, multi-pattern string replacement and file renaming for agents and humans"
+description = "Powerful CLI string replacement and file renaming for agents and humans"
 authors = [
     { name = "Joshua Levy", email = "joshua@cal.berkeley.edu" },
 ]

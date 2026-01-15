@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""
+r"""
 ## Rename Anything
 
 `repren` is a powerful CLI string replacement and file renaming tool for use by agents
@@ -75,27 +75,27 @@ Examples:
 ```bash
 # Here `patfile` is a patterns file.
 # Rewrite stdin:
-repren -p patfile < input > output
+repren --patterns=patfile < input > output
 
 # Shortcut with a single pattern replacement (replace foo with bar):
-repren --from foo --to bar < input > output
+repren --from=foo --to=bar < input > output
 
 # Rewrite a few files in place, also requiring matches be on word breaks:
-repren -p patfile --word-breaks myfile1 myfile2 myfile3
+repren --patterns=patfile --word-breaks myfile1 myfile2 myfile3
 
 # Rewrite whole directory trees. Since this is a big operation, we use
 # `-n` to do a dry run that only prints what would be done:
-repren -n -p patfile --word-breaks --full mydir1
+repren -n --patterns=patfile --word-breaks --full mydir1
 
 # Now actually do it:
-repren -p patfile --word-breaks --full mydir1
+repren --patterns=patfile --word-breaks --full mydir1
 
 # Same as above, for all case variants:
-repren -p patfile --word-breaks --preserve-case --full mydir1
+repren --patterns=patfile --word-breaks --preserve-case --full mydir1
 
 # Same as above but including only .py files and excluding the tests directory
 # and any files or directories starting with test_:
-repren -p patfile --word-breaks --preserve-case --full --include='.*[.]py$' --exclude='tests|test_.*' mydir1
+repren --patterns=patfile --word-breaks --preserve-case --full --include='.*[.]py$' --exclude='tests|test_.*' mydir1
 ```
 
 ## Usage
@@ -143,7 +143,7 @@ Let’s try a simple replacement in my working directory (which has a few random
 files):
 
 ```bash
-$ repren --from frobinator-server --to glurp-server --full --dry-run .
+$ repren --from=frobinator-server --to=glurp-server --full --dry-run .
 Dry run: No files will be changed
 Using 1 patterns:
   'frobinator-server' -> 'glurp-server'
@@ -192,23 +192,81 @@ Capturing groups and back substitutions (such as \1 above) are supported.
 ```
 # Here `patfile` is a patterns file.
 # Rewrite stdin:
-repren -p patfile < input > output
+repren --patterns=patfile < input > output
 
 # Shortcut with a single pattern replacement (replace foo with bar):
-repren --from foo --to bar < input > output
+repren --from=foo --to=bar < input > output
 
 # Rewrite a few files in place, also requiring matches be on word breaks:
-repren -p patfile --word-breaks myfile1 myfile2 myfile3
+repren --patterns=patfile --word-breaks myfile1 myfile2 myfile3
 
 # Rewrite whole directory trees. Since this is a big operation, we use
 # `-n` to do a dry run that only prints what would be done:
-repren -n -p patfile --word-breaks --full mydir1
+repren -n --patterns=patfile --word-breaks --full mydir1
 
 # Now actually do it:
-repren -p patfile --word-breaks --full mydir1
+repren --patterns=patfile --word-breaks --full mydir1
 
 # Same as above, for all case variants:
-repren -p patfile --word-breaks --preserve-case --full mydir1
+repren --patterns=patfile --word-breaks --preserve-case --full mydir1
+```
+
+## Backup Management
+
+Repren provides tools for managing backup files created during operations:
+
+### Undo Changes
+
+If you need to revert changes, use `--undo` with the same patterns as the original
+operation:
+
+```bash
+# Original operation:
+repren --from=OldClass --to=NewClass --full src/
+
+# Undo the changes:
+repren --undo --from=OldClass --to=NewClass --full src/
+```
+
+The undo command:
+- Finds all `.orig` backup files
+- Uses the patterns to determine which files were renamed
+- Restores the original files and removes renamed files
+- Skips with warnings if timestamps look wrong or files are missing
+
+### Clean Backups
+
+When you’re satisfied with your changes, remove backup files:
+
+```bash
+# Remove all .orig backup files:
+repren --clean-backups src/
+
+# Dry run to see what would be removed:
+repren --clean-backups --dry-run src/
+
+# Remove backups with custom suffix:
+repren --clean-backups --backup-suffix=.bak src/
+```
+
+### Complete Workflow
+
+A typical workflow:
+
+```bash
+# 1. Preview changes
+repren --dry-run --from=foo --to=bar --full mydir/
+
+# 2. Execute changes (creates .orig backups)
+repren --from=foo --to=bar --full mydir/
+
+# 3. Review and test your changes
+
+# 4. Either undo if something went wrong:
+repren --undo --from=foo --to=bar --full mydir/
+
+# 4. Or clean up backups when satisfied:
+repren --clean-backups mydir/
 ```
 
 ## Notes
@@ -256,15 +314,16 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
   File permissions are preserved.
 
 - Backups are created of all modified files, with the suffix “.orig”.
+  The suffix can be customized with `--backup-suffix`.
 
 - By default, recursive searching omits paths starting with “.”. This may be adjusted
-  with `--exclude`. Files ending in `.orig` are always ignored.
+  with `--exclude`. Files ending in the backup suffix (`.orig` by default) are always
+  ignored.
 
 - Data is handled as bytes internally, allowing it to work with any encoding or binary
   files. File contents are not decoded unless necessary (e.g., for logging).
   However, patterns are specified as strings in the pattern file and command line
   arguments, and file paths are handled as strings for filesystem operations.
-
 """
 
 from __future__ import annotations
@@ -333,9 +392,7 @@ def _get_version() -> str:
 
 VERSION: str = _get_version()
 
-DESCRIPTION: str = (
-    "Powerful, multi-pattern string replacement and file renaming for agents and humans"
-)
+DESCRIPTION: str = "Powerful CLI string replacement and file renaming for agents and humans"
 
 BACKUP_SUFFIX: str = ".orig"
 TEMP_SUFFIX: str = ".repren.tmp"

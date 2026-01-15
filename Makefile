@@ -3,15 +3,21 @@
 
 .DEFAULT_GOAL := default
 
-.PHONY: default install lint test upgrade build clean
+.PHONY: default install lint format gendocs test upgrade build clean
 
-default: install lint test
+default: install lint gendocs test
 
 install:
 	uv sync --all-extras
 
 lint:
 	uv run python devtools/lint.py
+
+format:
+	uvx flowmark@latest --inplace --smartquotes --ellipses docs/repren-manual.md
+
+gendocs:
+	uv run python devtools/gendocs.py
 
 test:
 	uv run pytest
