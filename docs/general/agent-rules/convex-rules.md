@@ -331,11 +331,11 @@ export const exampleQuery = query({
 
 - Always use `as const` for string literals in discriminated union types.
 
-- When using the `Array` type, make sure to always define your arrays as `const array:
-  Array<T> = [...];`
+- When using the `Array` type, make sure to always define your arrays as
+  `const array: Array<T> = [...];`
 
-- When using the `Record` type, make sure to always define your records as `const
-  record: Record<KeyType, ValueType> = {...};`
+- When using the `Record` type, make sure to always define your records as
+  `const record: Record<KeyType, ValueType> = {...};`
 
 - Always add `@types/node` to your `package.json` when using any Node.js built-in
   modules.

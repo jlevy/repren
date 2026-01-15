@@ -327,14 +327,13 @@ runtimes, Cloudflare Workers, etc.).
 
 - Add guard tests to prevent future regressions
 
-For detailed patterns, directory structure, and implementation examples, see [Modern
-TypeScript Monorepo
-Patterns](../research/current/research-modern-typescript-monorepo-patterns.md#13-librarycli-hybrid-packages).
+For detailed patterns, directory structure, and implementation examples, see
+[Modern TypeScript Monorepo Patterns](../research/current/research-modern-typescript-monorepo-patterns.md#13-librarycli-hybrid-packages).
 
 ## CLI Architecture Patterns
 
-For architectural patterns when building CLI applications, see [Modern TypeScript CLI
-Patterns](../research/current/research-modern-typescript-cli-patterns.md).
+For architectural patterns when building CLI applications, see
+[Modern TypeScript CLI Patterns](../research/current/research-modern-typescript-cli-patterns.md).
 
 **Key patterns covered:**
 

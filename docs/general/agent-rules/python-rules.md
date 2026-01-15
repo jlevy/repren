@@ -114,8 +114,8 @@ Always use full type annotations, generics, and other modern practices.
 
 - Don’t add docs to assertions unless it’s not obvious what they’re checking - the
   assertion appears in the stack trace.
-  Do NOT write `assert x == 5, "x should be 5"`. Do NOT write `assert x == 5 # Check if
-  x is 5`. That is redundant.
+  Do NOT write `assert x == 5, "x should be 5"`. Do NOT write
+  `assert x == 5 # Check if x is 5`. That is redundant.
   Just write `assert x == 5`.
 
 - DO NOT write trivial or obvious tests that are evident directly from code, such as
@@ -277,8 +277,9 @@ Always use full type annotations, generics, and other modern practices.
   ```
   In general, the user can just call the enclosed objects methods, reducing code bloat.
 
-- If a function does not use a parameter, but it should still be present, you can use `#
-  pyright: ignore[reportUnusedParameter]` in a comment to suppress the linter warning.
+- If a function does not use a parameter, but it should still be present, you can use
+  `# pyright: ignore[reportUnusedParameter]` in a comment to suppress the linter
+  warning.
 
 ## Guidelines for Backward Compatibility
 

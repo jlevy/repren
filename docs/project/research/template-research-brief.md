@@ -12,8 +12,7 @@
 
 ## Executive Summary
 
-[2-3 paragraphs summarizing the research purpose, key questions being investigated, and
-main findings/recommendations]
+[2-3 paragraphs summarizing the research purpose, key questions being investigated, and main findings/recommendations]
 
 **Research Questions**:
 
@@ -29,13 +28,11 @@ main findings/recommendations]
 
 ### Approach
 
-[Describe how the research was conducted - literature review, web search,
-experimentation, analysis, etc.]
+[Describe how the research was conducted - literature review, web search, experimentation, analysis, etc.]
 
 ### Sources
 
-[List types of sources consulted - documentation, academic papers, blog posts, code
-repositories, etc.]
+[List types of sources consulted - documentation, academic papers, blog posts, code repositories, etc.]
 
 * * *
 

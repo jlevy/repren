@@ -288,7 +288,6 @@ thresholds: {
 
 - [v8 Coverage Provider](https://github.com/vitest-dev/vitest/tree/main/packages/coverage-v8)
 
-- [Code Coverage Best
-  Practices](https://www.atlassian.com/continuous-delivery/software-testing/code-coverage)
+- [Code Coverage Best Practices](https://www.atlassian.com/continuous-delivery/software-testing/code-coverage)
 
 - [Codecov Documentation](https://docs.codecov.com/)

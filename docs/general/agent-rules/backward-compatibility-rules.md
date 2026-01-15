@@ -41,14 +41,14 @@ For the following areas:
 
 **BACKWARD COMPATIBILITY REQUIREMENTS:**
 
-- **Code types, methods, and function signatures**: [DO NOT MAINTAIN or KEEP DEPRECATED,
-  additional notes if necessary]
+- **Code types, methods, and function signatures**:
+  [DO NOT MAINTAIN or KEEP DEPRECATED, additional notes if necessary]
 
-- **Library APIs**: [DO NOT MAINTAIN or KEEP DEPRECATED or N/A, plus any additional
-  notes]
+- **Library APIs**:
+  [DO NOT MAINTAIN or KEEP DEPRECATED or N/A, plus any additional notes]
 
-- **Server APIs**: [DO NOT MAINTAIN or KEEP DEPRECATED or N/A, plus any additional
-  notes]
+- **Server APIs**:
+  [DO NOT MAINTAIN or KEEP DEPRECATED or N/A, plus any additional notes]
 
 - **File formats**: [DO NOT MAINTAIN or SUPPORT BOTH or N/A, plus any additional notes]
 

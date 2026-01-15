@@ -2,8 +2,8 @@
 
 **Last Updated**: 2026-01-09
 
-**Status**: Complete (reviewed January 2026; updated 2026-01-09 with source code verification
-and cross-references)
+**Status**: Complete (reviewed January 2026; updated 2026-01-09 with source code
+verification and cross-references)
 
 **Legend**:
 
@@ -18,12 +18,13 @@ and cross-references)
 | 🔍 | **Undocumented/Discrepancy** - Not in official Convex docs, or source code differs from docs |
 | 🛠️ | **Configurable** - Can be changed via environment variable for self-hosted deployments |
 
-**Notation**: Combinations like "✅ 🔒" mean "Verified Hard Limit"
+**Notation**: Combinations like “✅ 🔒” mean “Verified Hard Limit”
 
 **Related Research**:
 
-- [research-convex-backend-limits-implementation.md](../../../project/research/current/research-convex-backend-limits-implementation.md) —
-  Deep dive into source code implementation of limits and configurability for self-hosted deployments
+- [research-convex-backend-limits-implementation.md](../../../project/research/current/research-convex-backend-limits-implementation.md)
+  — Deep dive into source code implementation of limits and configurability for
+  self-hosted deployments
 
 * * *
 
@@ -131,9 +132,10 @@ export TRANSACTION_MAX_NUM_USER_WRITES=32000
 export TRANSACTION_MAX_USER_WRITE_SIZE_BYTES=33554432  # 32 MiB
 ```
 
-**Key Constraint**: The read limit includes **all scanned document bytes**, not
-just returned results.
-Convex does not support field projection—reading any document reads the entire document.
+**Key Constraint**: The read limit includes **all scanned document bytes**, not just
+returned results.
+Convex does not support field projection—reading any document reads the
+entire document.
 
 **Error Manifestation**: `"transaction exceeded resource limits"` runtime error
 
@@ -170,15 +172,15 @@ Convex does not support field projection—reading any document reads the entire
 **🔍 Note on Field Name vs Identifier Length**:
 
 The docs say 64 characters for field names, but source code shows **1,024 characters**
-for field names (`MAX_FIELD_NAME_LENGTH`) vs **64 characters** for identifiers like table
-names (`MAX_IDENTIFIER_LEN`). These are different limits.
+for field names (`MAX_FIELD_NAME_LENGTH`) vs **64 characters** for identifiers like
+table names (`MAX_IDENTIFIER_LEN`). These are different limits.
 
 **Key Constraints**:
 
 - Field names must be nonempty and cannot start with `$` or `_` (reserved for system
   fields)
 
-- Only "plain old JavaScript objects" are supported (no custom prototypes)
+- Only “plain old JavaScript objects” are supported (no custom prototypes)
 
 - Strings are stored as UTF-8 and must be valid Unicode sequences
 
@@ -235,8 +237,9 @@ const events = await ctx.db.query('events').collect();
 **🔍 Note on Concurrency Defaults**:
 
 The source code base constant `DEFAULT_APPLICATION_MAX_FUNCTION_CONCURRENCY` is **16**
-for all function types. Convex Cloud overrides these via a "big brain" service for
-Professional plan customers (256 queries/mutations, 1000 Node actions, etc.).
+for all function types.
+Convex Cloud overrides these via a “big brain” service for Professional plan customers
+(256 queries/mutations, 1000 Node actions, etc.).
 
 **🛠️ Self-Hosted Configuration**:
 
@@ -249,8 +252,8 @@ export APPLICATION_MAX_CONCURRENT_HTTP_ACTIONS=64
 export SCHEDULED_JOB_EXECUTION_PARALLELISM=20
 ```
 
-*Note: Professional plan limits (256, 1000, etc.) are enforced by Convex Cloud's
-"big brain" service, not by these code defaults.*
+*Note: Professional plan limits (256, 1000, etc.)
+are enforced by Convex Cloud’s “big brain” service, not by these code defaults.*
 
 **Execution Time Limits** ✅ 🔒 🛠️:
 
@@ -269,7 +272,8 @@ export SCHEDULED_JOB_EXECUTION_PARALLELISM=20
 | **Total scheduled args** | 16 MiB | `crates/common/src/knobs.rs:269-275` | ✅ 🔒 🛠️ 🔍 |
 
 **🔍 Note**: The source code default for scheduled args is **16 MiB**, not 8 MiB as
-sometimes documented. Variable: `TRANSACTION_MAX_SCHEDULED_TOTAL_ARGUMENT_SIZE_BYTES`
+sometimes documented.
+Variable: `TRANSACTION_MAX_SCHEDULED_TOTAL_ARGUMENT_SIZE_BYTES`
 
 **Key Constraints**:
 
@@ -306,8 +310,8 @@ For operations that may exceed this limit:
 2. **Resumable Pattern**: Store progress in a database table and resume from last
    checkpoint
 
-   - Use a state table to track: `{ operation: string, lastCursor: string, completed:
-     boolean }`
+   - Use a state table to track:
+     `{ operation: string, lastCursor: string, completed: boolean }`
 
    - Each action invocation processes a batch and updates the state
 
@@ -424,8 +428,9 @@ export AWS_STATIC_LAMBDA_MEMORY_LIMIT_MB=1024     # 1 GB for Node.js (default 51
 - **No queries/mutations in Node.js files**: Files with `"use node";` can only contain
   actions, not queries or mutations
 
-**Error Manifestation**: `"JavaScript execution ran out of memory (maximum memory usage:
-64 MB)"` for Convex runtime, similar for Node.js at 512 MB
+**Error Manifestation**:
+`"JavaScript execution ran out of memory (maximum memory usage: 64 MB)"` for Convex
+runtime, similar for Node.js at 512 MB
 
 **Common Causes**:
 
@@ -557,8 +562,9 @@ official pricing.*
 
 **🔍 Index Count Discrepancy**:
 
-The source code constant `MAX_INDEXES_PER_TABLE` is **64**, not 32 as documented. This is
-the total across all index types (database indexes, text indexes, and vector indexes).
+The source code constant `MAX_INDEXES_PER_TABLE` is **64**, not 32 as documented.
+This is the total across all index types (database indexes, text indexes, and vector
+indexes).
 
 **Schema Limits (per deployment)** ✅ 🔒:
 
@@ -599,7 +605,8 @@ the total across all index types (database indexes, text indexes, and vector ind
 **Sources**:
 
 - [Convex Limits - Indexes](https://docs.convex.dev/production/state/limits)
-- Source: `crates/common/src/schemas/mod.rs`, `crates/common/src/bootstrap_model/index/mod.rs`
+- Source: `crates/common/src/schemas/mod.rs`,
+  `crates/common/src/bootstrap_model/index/mod.rs`
 
 ### 6. Function and Code Limits
 
@@ -634,13 +641,15 @@ the total across all index types (database indexes, text indexes, and vector ind
 
 **🔍 Env Var Count Discrepancy**:
 
-The source code default `ENV_VAR_LIMIT` is **1,000**, not 100 as documented. This is
-configurable via the `ENV_VAR_LIMIT` environment variable for self-hosted deployments.
+The source code default `ENV_VAR_LIMIT` is **1,000**, not 100 as documented.
+This is configurable via the `ENV_VAR_LIMIT` environment variable for self-hosted
+deployments.
 
 **Sources**:
 
 - [Convex Limits - Functions](https://docs.convex.dev/production/state/limits)
-- Source: `crates/common/src/knobs.rs:1537-1538`, `crates/common/src/types/environment_variables.rs`
+- Source: `crates/common/src/knobs.rs:1537-1538`,
+  `crates/common/src/types/environment_variables.rs`
 
 ### 7. Runtime Architecture and Isolation Model
 
@@ -663,8 +672,7 @@ create the Funrun service for horizontal scaling (see below).
 
 **Sources**:
 
-- [How We Horizontally Scaled Function
-  Execution](https://stack.convex.dev/horizontally-scaling-functions)
+- [How We Horizontally Scaled Function Execution](https://stack.convex.dev/horizontally-scaling-functions)
 
 - [How Convex Works](https://stack.convex.dev/how-convex-works)
 
@@ -731,8 +739,7 @@ After Funrun (March 2024+):
 
 **Sources**:
 
-- [How We Horizontally Scaled Function
-  Execution](https://stack.convex.dev/horizontally-scaling-functions)
+- [How We Horizontally Scaled Function Execution](https://stack.convex.dev/horizontally-scaling-functions)
 
 #### 7.4 Local Development vs Cloud vs Self-Hosted ✅
 
@@ -862,13 +869,14 @@ Violating these rules leads to runtime errors or architectural issues.
 
    - For same-runtime calls, extract shared code into plain TypeScript helper functions
 
-   - **Official guidance** ([Convex Actions Docs](https://docs.convex.dev/functions/actions)):
-     > "If you want to call an action from another action that's in the same runtime,
-     > which is the normal case, the best way to do this is to pull the code you want
-     > to call into a TypeScript helper function and call the helper instead."
+   - **Official guidance**
+     ([Convex Actions Docs](https://docs.convex.dev/functions/actions)):
+     > “If you want to call an action from another action that’s in the same runtime,
+     > which is the normal case, the best way to do this is to pull the code you want to
+     > call into a TypeScript helper function and call the helper instead.”
 
-   - **Observed behavior**: Nested same-runtime action calls can silently timeout at
-     ~5 minutes (undocumented implementation detail)
+   - **Observed behavior**: Nested same-runtime action calls can silently timeout at ~5
+     minutes (undocumented implementation detail)
 
 ### Pattern: Helper Functions for Shared Logic
 
@@ -1366,9 +1374,9 @@ requirements apply beyond OCC conflict handling:
 
 **See Also**:
 - [research-durable-workflows-agent-conversations.md](../../../project/research/current/research-durable-workflows-agent-conversations.md)
-  § "Idempotency Requirements for Workflow Steps" for idempotency patterns
+  § “Idempotency Requirements for Workflow Steps” for idempotency patterns
 - [plan-2026-01-09-durable-workflows-agent-conversations-v3.md](../../../project/specs/active/plan-2026-01-09-durable-workflows-agent-conversations-v3.md)
-  § "Idempotency Contract" for implementation-ready details
+  § “Idempotency Contract” for implementation-ready details
 
 **🛠️ OCC Configuration (Self-Hosted)**:
 
@@ -1393,8 +1401,8 @@ export UDF_EXECUTOR_OCC_MAX_BACKOFF_MS=5000
 
 - [Convex Aggregate Component](https://github.com/get-convex/aggregate)
 
-- [@convex-dev/workpool](https://www.npmjs.com/package/@convex-dev/workpool) — "you
-  should ensure that each step is an idempotent Convex action"
+- [@convex-dev/workpool](https://www.npmjs.com/package/@convex-dev/workpool) — “you
+  should ensure that each step is an idempotent Convex action”
 
 - Source: `crates/common/src/knobs.rs:146-155`
 
@@ -1796,15 +1804,16 @@ documented limits.
 
 From [Actions Documentation](https://docs.convex.dev/functions/actions):
 
-> "If you want to call an action from another action that's in the same runtime, which
+> “If you want to call an action from another action that’s in the same runtime, which
 > is the normal case, the best way to do this is to pull the code you want to call into
-> a TypeScript helper function and call the helper instead."
+> a TypeScript helper function and call the helper instead.”
 
 From [Best Practices](https://docs.convex.dev/understanding/best-practices/):
 
-> "It counts as an extra function call with its own memory and CPU usage, while the
-> parent action is doing nothing except waiting for the result. Therefore, runAction
-> should almost always be replaced with calling a plain TypeScript function."
+> “It counts as an extra function call with its own memory and CPU usage, while the
+> parent action is doing nothing except waiting for the result.
+> Therefore, runAction should almost always be replaced with calling a plain TypeScript
+> function.”
 
 **Example Scenario**:
 
@@ -1877,16 +1886,17 @@ export const childAction = internalAction({
 **Impact on Durable Workflows**:
 
 When using `@convex-dev/workflow`, workflow step actions (called via `step.runAction()`)
-must be **leaf actions** that do not call `ctx.runAction()` internally. The workflow
-orchestrator runs in V8 and calls Node.js actions, which is a valid cross-runtime
-pattern. But if those Node.js actions then call other Node.js actions, you recreate
-the problematic nested same-runtime pattern.
+must be **leaf actions** that do not call `ctx.runAction()` internally.
+The workflow orchestrator runs in V8 and calls Node.js actions, which is a valid
+cross-runtime pattern.
+But if those Node.js actions then call other Node.js actions, you recreate the
+problematic nested same-runtime pattern.
 
 **See Also**:
 - [research-durable-workflows-agent-conversations.md](../../../project/research/current/research-durable-workflows-agent-conversations.md)
-  § "Nested Action Timeout Issue" for detailed analysis
+  § “Nested Action Timeout Issue” for detailed analysis
 - [plan-2026-01-09-durable-workflows-agent-conversations-v3.md](../../../project/specs/active/plan-2026-01-09-durable-workflows-agent-conversations-v3.md)
-  § "Leaf Action Requirement" for implementation guidance
+  § “Leaf Action Requirement” for implementation guidance
 
 **Best Practices**:
 
@@ -2010,7 +2020,7 @@ the problematic nested same-runtime pattern.
 
     - Audit codebase for `ctx.runAction` and verify each call crosses runtimes
 
-    - For durable workflows: ensure step actions are "leaf actions" (no nested calls)
+    - For durable workflows: ensure step actions are “leaf actions” (no nested calls)
 
 ### Storage and Cost Management
 
@@ -2153,7 +2163,8 @@ mailto:support@convex.dev.
 |  | Name length | 40 chars | 40 chars | ✅ 🔒 |
 |  | Value length | N/A | 8,192 bytes | ✅ 🔒 |
 
-**Key**: 🔍 = Source code differs from docs; 🛠️ = Configurable via env var for self-hosted
+**Key**: 🔍 = Source code differs from docs; 🛠️ = Configurable via env var for
+self-hosted
 
 ### Common Error Messages and Solutions
 

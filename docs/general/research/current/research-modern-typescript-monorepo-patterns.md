@@ -207,11 +207,9 @@ Internal code organization (`core/`, `cli/`, `adapters/`) creates natural split 
 
 **References**:
 
-- [Setting up a monorepo with pnpm and
-  TypeScript](https://brockherion.dev/blog/posts/setting-up-a-monorepo-with-pnpm-and-typescript/)
+- [Setting up a monorepo with pnpm and TypeScript](https://brockherion.dev/blog/posts/setting-up-a-monorepo-with-pnpm-and-typescript/)
 
-- [Wisp CMS: How to Bootstrap a Monorepo with
-  PNPM](https://www.wisp.blog/blog/how-to-bootstrap-a-monorepo-with-pnpm-a-complete-guide)
+- [Wisp CMS: How to Bootstrap a Monorepo with PNPM](https://www.wisp.blog/blog/how-to-bootstrap-a-monorepo-with-pnpm-a-complete-guide)
 
 * * *
 
@@ -263,11 +261,9 @@ well.
 
 **References**:
 
-- [TypeScript: Choosing Compiler
-  Options](https://www.typescriptlang.org/docs/handbook/modules/guides/choosing-compiler-options.html)
+- [TypeScript: Choosing Compiler Options](https://www.typescriptlang.org/docs/handbook/modules/guides/choosing-compiler-options.html)
 
-- [Is nodenext right for
-  libraries?](https://blog.andrewbran.ch/is-nodenext-right-for-libraries-that-dont-target-node-js/)
+- [Is nodenext right for libraries?](https://blog.andrewbran.ch/is-nodenext-right-for-libraries-that-dont-target-node-js/)
 
 * * *
 
@@ -296,8 +292,7 @@ the final output. The bundler handles the complexity of module resolution.
 
 - [TypeScript moduleResolution documentation](https://www.typescriptlang.org/tsconfig/moduleResolution.html)
 
-- [Live types in a TypeScript
-  monorepo](https://colinhacks.com/essays/live-types-typescript-monorepo)
+- [Live types in a TypeScript monorepo](https://colinhacks.com/essays/live-types-typescript-monorepo)
 
 * * *
 
@@ -372,8 +367,7 @@ The project recommends migrating to tsdown.
 
 - [TresJS tsdown Migration](https://tresjs.org/blog/tresjs-tsdown-migration)
 
-- [Dual publish ESM and CJS with
-  tsdown](https://dev.to/hacksore/dual-publish-esm-and-cjs-with-tsdown-2l75)
+- [Dual publish ESM and CJS with tsdown](https://dev.to/hacksore/dual-publish-esm-and-cjs-with-tsdown-2l75)
 
 * * *
 
@@ -445,8 +439,7 @@ can remain stable even if internals move to `@scope/pkg-cli`.
 
 - [Ship ESM & CJS in one Package](https://antfu.me/posts/publish-esm-and-cjs)
 
-- [Building npm package compatible with ESM and CJS in
-  2024](https://snyk.io/blog/building-npm-package-compatible-with-esm-and-cjs-2024/)
+- [Building npm package compatible with ESM and CJS in 2024](https://snyk.io/blog/building-npm-package-compatible-with-esm-and-cjs-2024/)
 
 * * *
 
@@ -520,8 +513,7 @@ providing rich integrations for users who need them.
 
 - [tsdown Dependencies handling](https://tsdown.dev/options/dependencies)
 
-- [npm peer dependencies
-  documentation](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#peerdependenciesmeta)
+- [npm peer dependencies documentation](https://docs.npmjs.com/cli/v10/configuring-npm/package-json#peerdependenciesmeta)
 
 * * *
 
@@ -1427,8 +1419,7 @@ Reserve vite-node for projects that specifically need Vite’s transformation pi
 
 - [tsx documentation](https://tsx.is/)
 
-- [TSX vs ts-node
-  comparison](https://betterstack.com/community/guides/scaling-nodejs/tsx-vs-ts-node/)
+- [TSX vs ts-node comparison](https://betterstack.com/community/guides/scaling-nodejs/tsx-vs-ts-node/)
 
 - [ts-runtime-comparison benchmarks](https://github.com/privatenumber/ts-runtime-comparison)
 
@@ -1470,11 +1461,9 @@ No build-on-install quirks.
 
 **References**:
 
-- [GitHub npm registry
-  documentation](https://docs.github.com/packages/working-with-a-github-packages-registry/working-with-the-npm-registry)
+- [GitHub npm registry documentation](https://docs.github.com/packages/working-with-a-github-packages-registry/working-with-the-npm-registry)
 
-- [Publish NPM Package to GitHub Packages
-  Registry](https://www.neteye-blog.com/2024/09/publish-npm-package-to-github-packages-registry-with-github-actions/)
+- [Publish NPM Package to GitHub Packages Registry](https://www.neteye-blog.com/2024/09/publish-npm-package-to-github-packages-registry-with-github-actions/)
 
 * * *
 
@@ -1504,8 +1493,7 @@ Use GitHub Packages or npm for production.
 
 **References**:
 
-- [pnpm discussion: Add dependency from git
-  monorepo](https://github.com/orgs/pnpm/discussions/8194)
+- [pnpm discussion: Add dependency from git monorepo](https://github.com/orgs/pnpm/discussions/8194)
 
 * * *
 
@@ -1550,8 +1538,7 @@ experience.
 
 - [Bun: Add a Git dependency](https://bun.sh/docs/guides/install/add-git)
 
-- [Bun issue: Support installing Git dependency from
-  subdirectory](https://github.com/oven-sh/bun/issues/15506)
+- [Bun issue: Support installing Git dependency from subdirectory](https://github.com/oven-sh/bun/issues/15506)
 
 * * *
 
@@ -1799,8 +1786,8 @@ than discovering them when users try to use the library in browser/edge contexts
 9. **Test both ESM and CJS**: Ensure both module formats work correctly, especially for
    CLI tools.
 
-10. **Keep the monorepo root private**: The root `package.json` should have `"private":
-    true` and only contain workspace tooling.
+10. **Keep the monorepo root private**: The root `package.json` should have
+    `"private": true` and only contain workspace tooling.
 
 11. **Use type-aware ESLint**: Configure `recommendedTypeChecked` for comprehensive bug
     detection, especially promise safety rules.
@@ -1945,8 +1932,7 @@ ready for public release.
 
 - [TypeScript Module Documentation](https://www.typescriptlang.org/docs/handbook/modules/reference.html)
 
-- [GitHub Packages npm
-  registry](https://docs.github.com/packages/working-with-a-github-packages-registry/working-with-the-npm-registry)
+- [GitHub Packages npm registry](https://docs.github.com/packages/working-with-a-github-packages-registry/working-with-the-npm-registry)
 
 - [Node.js Releases](https://nodejs.org/en/about/previous-releases)
 
@@ -1958,19 +1944,15 @@ ready for public release.
 
 - [Ship ESM & CJS in one Package](https://antfu.me/posts/publish-esm-and-cjs)
 
-- [Building npm package compatible with ESM and CJS in
-  2024](https://snyk.io/blog/building-npm-package-compatible-with-esm-and-cjs-2024/)
+- [Building npm package compatible with ESM and CJS in 2024](https://snyk.io/blog/building-npm-package-compatible-with-esm-and-cjs-2024/)
 
-- [TypeScript in 2025: ESM and CJS
-  publishing](https://lirantal.com/blog/typescript-in-2025-with-esm-and-cjs-npm-publishing)
+- [TypeScript in 2025: ESM and CJS publishing](https://lirantal.com/blog/typescript-in-2025-with-esm-and-cjs-npm-publishing)
 
 - [Switching from tsup to tsdown](https://alan.norbauer.com/articles/tsdown-bundler/)
 
-- [Live types in a TypeScript
-  monorepo](https://colinhacks.com/essays/live-types-typescript-monorepo)
+- [Live types in a TypeScript monorepo](https://colinhacks.com/essays/live-types-typescript-monorepo)
 
-- [Is nodenext right for
-  libraries?](https://blog.andrewbran.ch/is-nodenext-right-for-libraries-that-dont-target-node-js/)
+- [Is nodenext right for libraries?](https://blog.andrewbran.ch/is-nodenext-right-for-libraries-that-dont-target-node-js/)
 
 ### GitHub Actions
 
