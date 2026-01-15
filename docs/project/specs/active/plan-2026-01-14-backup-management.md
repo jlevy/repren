@@ -369,33 +369,33 @@ Tasks:
 
 Tasks:
 
-- [ ] Implement `find_backup_files()` function
+- [x] Implement `find_backup_files()` function
 
-- [ ] Implement `undo_backups()` function with:
+- [x] Implement `undo_backups()` function with:
 
   - Pattern application to predict renamed file from backup name
 
-  - Detection of ambiguous matches (pattern matches multiple times)
+  - Detection of ambiguous matches (pattern matches multiple times) - deferred
 
   - Timestamp comparison (backup must be older than predicted file)
 
   - Warning and skip (no action) when predicted file not found
 
-  - Warning and skip (no action) when match is ambiguous
+  - Warning and skip (no action) when match is ambiguous - deferred
 
   - Warning and skip (no action) when backup is newer than current
 
   - Atomic file restoration: move backup to original, remove renamed file
 
-- [ ] Add `--undo` CLI argument (requires patterns like normal operation)
+- [x] Add `--undo` CLI argument (requires patterns like normal operation)
 
-- [ ] Add tests for undo functionality including:
+- [x] Add tests for undo functionality including:
 
   - Content-only changes (no rename)
 
   - File renames (e.g., `foo.txt` → `bar.txt`)
 
-  - Path/directory renames (e.g., `src/old_name/file.txt` → `src/new_name/file.txt`)
+  - Path/directory renames (e.g., `src/old_name/file.txt` → `src/new_name/file.txt`) - deferred
 
   - Edge cases (missing files, ambiguous matches, bad timestamps)
 

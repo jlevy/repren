@@ -8,10 +8,13 @@ import pytest
 
 from repren.repren import (
     _split_name,
+    find_backup_files,
+    parse_patterns,
     to_lower_camel,
     to_lower_underscore,
     to_upper_camel,
     to_upper_underscore,
+    undo_backups,
     walk_files,
 )
 
@@ -218,3 +221,170 @@ class TestBackupSuffixValidation:
         )
         # Should not fail on suffix validation (may fail for other reasons like missing paths)
         assert "must start with '.'" not in result.stderr.lower()
+
+
+# --- Undo mode tests ---
+
+
+class TestFindBackupFiles:
+    """Tests for find_backup_files function."""
+
+    def test_find_backup_files_in_directory(self):
+        """Should find all .orig files in a directory."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            Path(tmpdir, "file1.txt").write_text("content")
+            Path(tmpdir, "file1.txt.orig").write_text("backup")
+            Path(tmpdir, "file2.txt.orig").write_text("backup2")
+
+            backups = find_backup_files([tmpdir])
+
+            assert len(backups) == 2
+            assert any("file1.txt.orig" in f for f in backups)
+            assert any("file2.txt.orig" in f for f in backups)
+
+    def test_find_backup_files_custom_suffix(self):
+        """Should find files with custom backup suffix."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            Path(tmpdir, "file1.txt.bak").write_text("backup")
+            Path(tmpdir, "file1.txt.orig").write_text("other backup")
+
+            backups = find_backup_files([tmpdir], backup_suffix=".bak")
+
+            assert len(backups) == 1
+            assert backups[0].endswith(".bak")
+
+    def test_find_backup_files_respects_include_exclude(self):
+        """Should respect include and exclude patterns."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            Path(tmpdir, "file1.txt.orig").write_text("backup")
+            Path(tmpdir, "file2.py.orig").write_text("backup")
+
+            backups = find_backup_files([tmpdir], include_pat=r".*\.txt\.orig$")
+
+            assert len(backups) == 1
+            assert "file1.txt.orig" in backups[0]
+
+
+class TestUndoBackups:
+    """Tests for undo_backups function."""
+
+    def test_undo_content_only_change(self):
+        """Undo a file where only content was changed (no rename)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Simulate: file.txt was modified, .orig backup exists
+            current_file = Path(tmpdir, "file.txt")
+            backup_file = Path(tmpdir, "file.txt.orig")
+
+            backup_file.write_text("original content")
+            current_file.write_text("modified content")
+
+            # Make sure backup is older
+            import time
+
+            time.sleep(0.01)
+            current_file.write_text("modified content")
+
+            patterns = parse_patterns("foo\tbar")  # Pattern that doesn't affect filename
+
+            restored, skipped = undo_backups([tmpdir], patterns)
+
+            assert restored == 1
+            assert skipped == 0
+            assert current_file.read_text() == "original content"
+            assert not backup_file.exists()
+
+    def test_undo_file_rename(self):
+        """Undo a file that was renamed."""
+        import time
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Simulate: OldClass.txt was renamed to NewClass.txt
+            # Use unique names that won't match temp directory paths
+            backup_file = Path(tmpdir, "OldClass.txt.orig")
+            renamed_file = Path(tmpdir, "NewClass.txt")
+
+            # Create backup first (older)
+            backup_file.write_text("original content")
+            time.sleep(0.01)
+            # Create renamed file after (newer)
+            renamed_file.write_text("content")
+
+            patterns = parse_patterns("OldClass\tNewClass")
+
+            restored, skipped = undo_backups([tmpdir], patterns)
+
+            assert restored == 1
+            assert skipped == 0
+            original_file = Path(tmpdir, "OldClass.txt")
+            assert original_file.read_text() == "original content"
+            assert not backup_file.exists()
+            assert not renamed_file.exists()
+
+    def test_undo_skips_when_predicted_file_not_found(self):
+        """Skip undo when the predicted renamed file doesn't exist."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_file = Path(tmpdir, "OldClass.txt.orig")
+            backup_file.write_text("original")
+            # The renamed file (NewClass.txt) doesn't exist
+
+            patterns = parse_patterns("OldClass\tNewClass")
+
+            restored, skipped = undo_backups([tmpdir], patterns)
+
+            assert restored == 0
+            assert skipped == 1
+            assert backup_file.exists()  # Backup should still exist
+
+    def test_undo_skips_when_backup_is_newer(self):
+        """Skip undo when backup is newer than current file (unexpected)."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            current_file = Path(tmpdir, "file.txt")
+            backup_file = Path(tmpdir, "file.txt.orig")
+
+            current_file.write_text("modified content")
+            import time
+
+            time.sleep(0.01)
+            backup_file.write_text("original content")  # Backup is newer (unusual)
+
+            patterns = parse_patterns("foo\tbar")
+
+            restored, skipped = undo_backups([tmpdir], patterns)
+
+            assert restored == 0
+            assert skipped == 1
+            assert current_file.read_text() == "modified content"
+            assert backup_file.exists()
+
+    def test_undo_dry_run(self):
+        """Dry run should not modify files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            current_file = Path(tmpdir, "file.txt")
+            backup_file = Path(tmpdir, "file.txt.orig")
+
+            backup_file.write_text("original")
+            current_file.write_text("modified")
+
+            patterns = parse_patterns("foo\tbar")
+
+            restored, skipped = undo_backups([tmpdir], patterns, dry_run=True)
+
+            assert restored == 1  # Would have restored
+            assert skipped == 0
+            assert current_file.read_text() == "modified"  # Still has modified content
+            assert backup_file.exists()  # Backup still exists
+
+
+class TestUndoCLI:
+    """Tests for --undo CLI argument."""
+
+    def test_undo_requires_patterns(self):
+        """--undo should require pattern specification."""
+        result = subprocess.run(
+            ["uv", "run", "repren", "--undo", "."],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode != 0
+        # Should complain about missing patterns
+        assert "patterns" in result.stderr.lower() or "from" in result.stderr.lower()
