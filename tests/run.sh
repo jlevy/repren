@@ -22,7 +22,7 @@ cd $dir/tmp-dir
 echo "Running..."
 echo "Platform and Python version:"
 uname
-python -V
+uv run python -V
 
 # Hackity hack:
 # Remove per-run and per-platform details to allow easy comparison.

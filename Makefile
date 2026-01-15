@@ -15,6 +15,7 @@ lint:
 
 test:
 	uv run pytest
+	./tests/run.sh
 
 upgrade:
 	uv sync --upgrade --all-extras --dev
