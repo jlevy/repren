@@ -1,314 +1,267 @@
 # Test Coverage Analysis
 
-## Current State
+## Current Test Architecture
 
-**Overall coverage: 50%** (458 statements, 227 missed)
+The codebase uses **two complementary test approaches**:
 
-### What's Well Tested
+### 1. Golden Tests (`tests/tests.sh` → `tests/tests-expected.log`)
 
-The current test suite has good coverage of:
+Shell-based integration tests that capture CLI output and compare against expected results. This approach is excellent for:
+- Testing actual user-facing behavior
+- Catching regressions in output format
+- Validating end-to-end workflows
+- Documenting expected behavior through examples
 
-1. **Case conversion functions** - `to_lower_camel`, `to_upper_camel`, `to_lower_underscore`, `to_upper_underscore` with extensive Unicode test cases
-2. **Name splitting** - `_split_name` with CamelCase and underscore-separated names
-3. **Backup management functions** - `find_backup_files`, `undo_backups`, `clean_backups` have dedicated test classes
-4. **`walk_files`** - Backup suffix filtering is well tested
-5. **CLI validation** - Tests for `--backup-suffix`, `--undo`, `--clean-backups` argument validation
-6. **Integration tests** - Shell-based tests (`tests.sh`) cover common workflows including:
-   - Basic `--from`/`--to` replacements
-   - Dry run mode (`-n`)
-   - File renames (`--renames`)
-   - Full mode (`--full`)
-   - Case insensitive matching (`-i`)
-   - Pattern files (`-p`)
-   - Case preservation (`--preserve-case`)
-   - Word breaks (`--word-breaks`)
-   - Include/exclude patterns
+### 2. Unit Tests (`tests/pytests.py`)
+
+Python unit tests for internal functions. Current coverage: **50%** (458 statements, 227 missed)
 
 ---
 
-## Coverage Gaps (Priority Order)
+## Golden Test Coverage Matrix
 
-### High Priority - Core Functionality
+| Feature | Tested | Commands/Patterns Used |
+|---------|--------|------------------------|
+| **Basic replacement** | ✅ | `--from Humpty --to Dumpty` |
+| **Dry run** | ✅ | `-n` |
+| **Case sensitive** | ✅ | `--from humpty` (no match for `Humpty`) |
+| **Case insensitive** | ✅ | `-i` |
+| **File renames only** | ✅ | `--renames` |
+| **Full mode** | ✅ | `--full` (renames + contents) |
+| **Pattern files** | ✅ | `-p patterns-misc` |
+| **Preserve case** | ✅ | `--preserve-case -p patterns-rotate-abc` |
+| **Word breaks** | ✅ | `--word-breaks` |
+| **Include filter** | ✅ | `--include='.*[.]txt$'` |
+| **Exclude filter** | ✅ | `--exclude='beech\|maple'` |
+| **Walk-only** | ✅ | `--walk-only` |
+| **Backup undo** | ✅ | `--undo` |
+| **Backup clean** | ✅ | `--clean-backups` |
+| **Custom backup suffix** | ✅ | `--backup-suffix .bak` |
+| **Backup skip behavior** | ✅ | (implicitly via `.orig` files in output) |
+| **Overlap counting** | ✅ | (shown in output stats) |
+| **Regex patterns** | ❌ | Not tested |
+| **Capturing groups** | ❌ | Not tested |
+| **Literal mode** | ❌ | `--literal` |
+| **Dotall mode** | ❌ | `--dotall` |
+| **At-once mode** | ❌ | `--at-once` |
+| **Parse-only** | ❌ | `-t` / `--parse-only` |
+| **Stdin/stdout** | ❌ | Piped input |
+| **Quiet mode** | ❌ | `-q` |
+| **Moving files** | ❌ | (noted as TODO in tests.sh) |
+| **File collisions** | ❌ | Rename to existing name |
+| **Error cases** | ❌ | Invalid patterns, permissions |
 
-#### 1. Regex Features and Capturing Groups
-**Lines affected:** Pattern matching/replacement logic
-**Current state:** No unit tests for regex back-references (`\1`, `\2`)
-**Recommended tests:**
-```python
-def test_capturing_groups():
-    """Test regex capturing groups and back-references."""
-    patterns = parse_patterns(r"figure ([0-9]+)\tFigure \1")
-    # Test replacement preserves captured group
+---
 
-def test_nested_capturing_groups():
-    """Test multiple and nested capturing groups."""
-    patterns = parse_patterns(r"(\w+)\.(\w+)\t\2_\1")
+## Proposed Golden Test Enhancements
+
+### Phase 1: Add Missing CLI Flags
+
+Add these sections to `tests.sh`:
+
+```bash
+# --- Regex and capturing groups ---
+
+cp -a original test-regex
+
+# Create a pattern file with capturing group
+echo 'figure ([0-9]+)	Figure \1' > patterns-capturing
+run -p patterns-capturing test-regex/...
+
+# Verify back-reference works
+run --from '(\w+)@(\w+)' --to '\2-\1' test-regex/...
+
+
+# --- Literal mode ---
+
+cp -a original test-literal
+
+# Without --literal: . matches any char
+run --from 'foo.bar' --to 'REPLACED' test-literal/...
+
+# With --literal: . matches only literal .
+cp -a original test-literal2
+run --literal --from 'foo.bar' --to 'REPLACED' test-literal2/...
+
+
+# --- At-once mode (multiline patterns) ---
+
+cp -a original test-atonce
+
+# Create multiline test file
+printf 'start\nmiddle\nend' > test-atonce/multiline.txt
+
+# Default (line-by-line) won't match across lines
+run --from 'start.*end' --to 'REPLACED' test-atonce/multiline.txt
+
+# With --at-once, pattern spans lines
+cp -a original test-atonce2
+run --at-once --from 'start.*end' --to 'REPLACED' test-atonce2/multiline.txt
+
+
+# --- Dotall mode ---
+
+cp -a original test-dotall
+
+# Without dotall: . doesn't match newline
+run --at-once --from 'start.middle' --to 'REPLACED' test-dotall/...
+
+# With dotall: . matches newline
+run --at-once --dotall --from 'start.middle' --to 'REPLACED' test-dotall/...
+
+
+# --- Parse-only mode ---
+
+run -t --from 'foo' --to 'bar'
+run -t -p patterns-misc
+
+
+# --- Stdin/stdout mode ---
+
+echo 'foo bar foo' | run --from foo --to bar
+echo -e 'line1\nline2' | run --from 'line([0-9])' --to 'LINE \1'
+
+
+# --- Quiet mode ---
+
+cp -a original test-quiet
+run -q --from Humpty --to Dumpty test-quiet/humpty-dumpty.txt
+# Should have no output but still make changes
+diff original/humpty-dumpty.txt test-quiet/humpty-dumpty.txt || expect_error
+
+
+# --- File collision handling ---
+
+cp -a original test-collision
+touch test-collision/dumpty-dumpty.txt  # Pre-existing target
+run --renames --from humpty --to dumpty test-collision
+ls_portable test-collision  # Should show dumpty-dumpty.txt.1 or similar
+
+
+# --- Error cases ---
+
+run --from '[invalid(regex' --to 'bar' original || expect_error
+run --from '' --to 'bar' original || expect_error
 ```
 
-#### 2. Overlapping Pattern Handling
-**Lines affected:** `_sort_drop_overlaps` (416, 430-437, 439-446)
-**Current state:** Logic exists but no dedicated tests
-**Recommended tests:**
-```python
-def test_overlapping_patterns_first_wins():
-    """When two patterns overlap, the first pattern in file wins."""
+### Phase 2: Add Test Input Files
 
-def test_nested_pattern_overlap():
-    """A shorter pattern inside a longer one."""
+Create additional files in `tests/work-dir/original/`:
 
-def test_adjacent_non_overlapping():
-    """Adjacent matches that don't overlap both apply."""
+1. **`patterns-capturing`** - Pattern file with regex capturing groups
+2. **`patterns-multiline`** - Patterns that span multiple lines
+3. **`file-with-dots.txt`** - File containing literal dots for `--literal` testing
+4. **`multiline.txt`** - Multi-line content for `--at-once` testing
+5. **`binary-file.bin`** - Binary content to verify binary handling
+
+### Phase 3: Track Test Coverage in Pattern File
+
+Create a central registry of what's tested. Add to `tests/work-dir/`:
+
 ```
+# tests/work-dir/test-coverage-matrix.md
 
-#### 3. Multi-replace Core Function
-**Lines affected:** `multi_replace` (469-500)
-**Current state:** Tested indirectly through integration tests only
-**Recommended tests:**
-```python
-def test_multi_replace_basic():
-    """Direct test of multi_replace function."""
-
-def test_multi_replace_multiple_patterns():
-    """Multiple patterns applied simultaneously."""
-
-def test_multi_replace_no_match():
-    """No matches returns original content unchanged."""
-```
-
-#### 4. Stream/Stdin Mode
-**Lines affected:** 1287-1298
-**Current state:** No tests for stdin/stdout piping
-**Recommended tests:**
-```python
-def test_stdin_to_stdout():
-    """Test reading from stdin and writing to stdout."""
-    result = subprocess.run(
-        ["uv", "run", "repren", "--from", "foo", "--to", "bar"],
-        input="foo bar foo",
-        capture_output=True,
-        text=True
-    )
-    assert result.stdout == "bar bar bar"
-```
-
-### Medium Priority - Options and Modes
-
-#### 5. At-Once vs Line-by-Line Mode
-**Lines affected:** `transform_stream` (615-630), `--at-once` flag
-**Current state:** No explicit tests comparing the modes
-**Recommended tests:**
-```python
-def test_at_once_multiline_pattern():
-    """--at-once allows patterns to span multiple lines."""
-
-def test_line_by_line_default():
-    """Default mode processes line by line."""
-```
-
-#### 6. Literal Mode
-**Lines affected:** `--literal` flag in `parse_patterns`
-**Current state:** Not tested
-**Recommended tests:**
-```python
-def test_literal_mode_escapes_regex():
-    """--literal should escape regex special characters."""
-    # Pattern like "foo.bar" should match literal "foo.bar" not "fooxbar"
-```
-
-#### 7. Dotall Mode
-**Lines affected:** `--dotall` flag
-**Current state:** Not tested
-**Recommended tests:**
-```python
-def test_dotall_matches_newlines():
-    """--dotall allows . to match newline characters."""
-```
-
-#### 8. Parse-Only Mode
-**Lines affected:** `--parse-only` / `-t` (lines 1242-1243)
-**Current state:** Not tested
-**Recommended tests:**
-```python
-def test_parse_only_shows_patterns():
-    """--parse-only displays parsed patterns without processing files."""
-```
-
-### Medium Priority - File Operations
-
-#### 9. File Collision Handling
-**Lines affected:** `move_file` (594-603)
-**Current state:** Not tested
-**Recommended tests:**
-```python
-def test_rename_collision_adds_numeric_suffix():
-    """When renamed file exists, add .1, .2, etc."""
-
-def test_multiple_files_same_destination():
-    """Multiple files renamed to same name get distinct suffixes."""
-```
-
-#### 10. Directory Creation on Rename
-**Lines affected:** `make_parent_dirs` (586-587)
-**Current state:** Not tested
-**Recommended tests:**
-```python
-def test_rename_creates_parent_directories():
-    """Renaming to nested path creates necessary directories."""
-    # Pattern: "file.txt" -> "new/nested/dir/file.txt"
-```
-
-#### 11. Permission Preservation
-**Lines affected:** `transform_file` (658)
-**Current state:** Not tested
-**Recommended tests:**
-```python
-def test_file_permissions_preserved():
-    """Modified files retain original permissions."""
-    # Create file with 0o755, modify it, verify permissions unchanged
-```
-
-### Lower Priority - Edge Cases
-
-#### 12. Binary File Handling
-**Lines affected:** Bytes-based operations throughout
-**Current state:** Not tested
-**Recommended tests:**
-```python
-def test_binary_file_replacement():
-    """Tool correctly handles binary files with byte patterns."""
-
-def test_mixed_encoding_file():
-    """Files with non-UTF-8 content are processed correctly."""
-```
-
-#### 13. Empty Files
-**Current state:** Not tested
-**Recommended tests:**
-```python
-def test_empty_file_processing():
-    """Empty files are processed without error."""
-```
-
-#### 14. Symlink Handling
-**Current state:** Not tested, behavior unclear
-**Recommended tests:**
-```python
-def test_symlink_to_file():
-    """Symlinks to files - should they follow or modify the link?"""
-```
-
-#### 15. Large File Performance
-**Current state:** Not tested
-**Recommended tests:**
-```python
-def test_large_file_memory_usage():
-    """Processing large files doesn't exhaust memory in line mode."""
+| Pattern/Command | Test Case | Line in tests.sh |
+|-----------------|-----------|------------------|
+| --from/--to     | Basic     | 42               |
+| -i              | Case insensitive | 80        |
+| \1 back-ref     | Capturing groups | TODO     |
+| --literal       | Escape regex | TODO          |
+...
 ```
 
 ---
 
-## Error Handling Gaps
+## Unit Test Gaps (pytests.py)
 
-### 16. Invalid Pattern File
-**Lines affected:** `parse_patterns` (994-995)
-**Recommended tests:**
+The golden tests cover CLI behavior well, but some internal functions lack direct unit tests:
+
+### Functions Needing Unit Tests
+
+| Function | Current Coverage | Priority |
+|----------|------------------|----------|
+| `multi_replace()` | Indirect only | High |
+| `_sort_drop_overlaps()` | Not tested | High |
+| `transform_stream()` | Not tested | Medium |
+| `transform_file()` | Not tested | Medium |
+| `move_file()` | Not tested | Medium |
+| `make_parent_dirs()` | Not tested | Low |
+
+### Recommended Additions to pytests.py
+
 ```python
-def test_invalid_pattern_format():
-    """Pattern without tab separator should raise error."""
+class TestMultiReplace:
+    """Direct tests for multi_replace function."""
 
-def test_invalid_regex_pattern():
-    """Invalid regex syntax should raise error with helpful message."""
+    def test_single_pattern(self):
+        patterns = [(_compile("foo"), "bar")]
+        result, count = multi_replace(patterns, "foo baz foo")
+        assert result == "bar baz bar"
+        assert count == 2
+
+    def test_multiple_patterns_no_overlap(self):
+        patterns = [(_compile("foo"), "FOO"), (_compile("bar"), "BAR")]
+        result, count = multi_replace(patterns, "foo bar")
+        assert result == "FOO BAR"
+        assert count == 2
+
+    def test_overlapping_patterns(self):
+        """When patterns overlap, first match wins."""
+        patterns = [(_compile("foobar"), "LONG"), (_compile("foo"), "SHORT")]
+        result, count = multi_replace(patterns, "foobar")
+        assert result == "LONG"  # Not "SHORTbar"
+
+
+class TestSortDropOverlaps:
+    """Test overlap detection and resolution."""
+
+    def test_no_overlaps(self):
+        matches = [(0, 3, "foo"), (4, 7, "bar")]
+        result = _sort_drop_overlaps(matches)
+        assert len(result) == 2
+
+    def test_nested_overlap(self):
+        matches = [(0, 10, "long"), (2, 5, "short")]
+        result = _sort_drop_overlaps(matches)
+        assert len(result) == 1
+        assert result[0][2] == "long"  # First match wins
+
+
+class TestTransformStream:
+    """Test stream transformation with different modes."""
+
+    def test_line_by_line_mode(self):
+        """Default mode doesn't match across lines."""
+
+    def test_at_once_mode(self):
+        """At-once mode matches across lines."""
 ```
-
-### 17. File Access Errors
-**Lines affected:** File operations throughout
-**Recommended tests:**
-```python
-def test_unreadable_file_error():
-    """Appropriate error when file cannot be read."""
-
-def test_unwritable_destination_error():
-    """Appropriate error when destination is not writable."""
-```
-
-### 18. Interrupted Processing
-**Lines affected:** Temp file cleanup logic
-**Recommended tests:**
-```python
-def test_temp_files_cleaned_on_error():
-    """Temporary files don't accumulate on processing errors."""
-```
-
----
-
-## Test Infrastructure Improvements
-
-### Recommended Changes
-
-1. **Add pytest-cov to dev dependencies** - ✅ Done (added during this analysis)
-
-2. **Add coverage threshold to CI** - Fail builds if coverage drops below baseline
-   ```toml
-   # pyproject.toml
-   [tool.coverage.run]
-   branch = true
-
-   [tool.coverage.report]
-   fail_under = 50  # Increase as coverage improves
-   ```
-
-3. **Separate unit tests from integration tests** - Consider splitting `pytests.py` into:
-   - `tests/unit/test_patterns.py` - Pattern parsing and matching
-   - `tests/unit/test_case_conversion.py` - Case utilities
-   - `tests/unit/test_file_operations.py` - File handling
-   - `tests/integration/test_cli.py` - CLI argument handling
-   - `tests/integration/test_workflows.py` - End-to-end workflows
-
-4. **Add property-based testing** - Consider using Hypothesis for:
-   - Pattern matching edge cases
-   - Case conversion roundtrips
-   - File path transformations
-
----
-
-## Implementation Priority
-
-### Phase 1 - Quick Wins (Est. effort: Low)
-- [ ] Stdin/stdout mode tests
-- [ ] Literal mode tests
-- [ ] Parse-only mode tests
-- [ ] Empty file tests
-
-### Phase 2 - Core Coverage (Est. effort: Medium)
-- [ ] Capturing groups and back-references
-- [ ] Overlapping pattern tests
-- [ ] Multi-replace unit tests
-- [ ] At-once vs line-by-line mode
-
-### Phase 3 - File Operations (Est. effort: Medium)
-- [ ] File collision handling
-- [ ] Directory creation on rename
-- [ ] Permission preservation
-- [ ] Binary file handling
-
-### Phase 4 - Edge Cases and Errors (Est. effort: Higher)
-- [ ] Error handling paths
-- [ ] Large file testing
-- [ ] Symlink behavior
-- [ ] Interrupted processing cleanup
 
 ---
 
 ## Summary
 
-The codebase has solid integration test coverage for common workflows via the shell tests, but lacks:
-- **Unit tests for core functions** (multi_replace, transform operations)
-- **Regex feature tests** (capturing groups, special modes)
-- **Edge case coverage** (collisions, errors, binary files)
-- **Error path testing** (invalid inputs, access errors)
+### Golden Tests (Primary - Extend First)
+The shell-based golden tests are the **most valuable** for a CLI tool like repren. They:
+- Test actual user behavior
+- Are easy to extend (just add commands)
+- Serve as documentation
+- Catch output format regressions
 
-Improving test coverage in these areas would:
-1. Catch regressions more reliably
-2. Document expected behavior for edge cases
-3. Make the codebase safer for refactoring
-4. Increase confidence for new contributors
+**Recommended additions:**
+1. Regex/capturing groups
+2. `--literal`, `--dotall`, `--at-once` flags
+3. Stdin/stdout piping
+4. `-t` parse-only mode
+5. `-q` quiet mode
+6. File collision handling
+7. Error cases
+
+### Unit Tests (Secondary - Targeted Additions)
+Add unit tests for:
+1. `multi_replace()` with edge cases
+2. `_sort_drop_overlaps()` overlap handling
+3. Error paths in `parse_patterns()`
+
+### Test Tracking
+Consider adding a test coverage matrix to `tests/work-dir/` that maps features → test cases for easier tracking of what's covered.
