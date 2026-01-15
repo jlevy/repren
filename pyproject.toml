@@ -75,6 +75,7 @@ source = "uv-dynamic-versioning"
 vcs = "git"
 style = "pep440"
 bump = true
+pattern = "default-unprefixed"
 
 [tool.hatch.build.targets.wheel]
 # The source location for the package.
