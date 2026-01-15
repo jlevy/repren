@@ -4,7 +4,7 @@
 
 The codebase uses **two complementary test approaches**:
 
-### 1. Golden Tests (`tests/tests.sh` → `tests/tests-expected.log`)
+### 1. Golden Tests (`tests/golden-tests.sh` → `tests/golden-tests-expected.log`)
 
 Shell-based integration tests that capture CLI output and compare against expected results. This approach is excellent for:
 - Testing actual user-facing behavior
@@ -14,7 +14,7 @@ Shell-based integration tests that capture CLI output and compare against expect
 
 ### 2. Unit Tests (`tests/pytests.py`)
 
-Python unit tests for internal functions. Current coverage: **50%** (458 statements, 227 missed)
+Python unit tests for internal functions. Current coverage: **40%** (586 statements, 351 missed)
 
 ---
 
@@ -23,7 +23,7 @@ Python unit tests for internal functions. Current coverage: **50%** (458 stateme
 | Feature | Tested | Commands/Patterns Used |
 |---------|--------|------------------------|
 | **Basic replacement** | ✅ | `--from Humpty --to Dumpty` |
-| **Dry run** | ✅ | `-n` |
+| **Dry run** | ✅ | `-n` / `--dry-run` |
 | **Case sensitive** | ✅ | `--from humpty` (no match for `Humpty`) |
 | **Case insensitive** | ✅ | `-i` |
 | **File renames only** | ✅ | `--renames` |
@@ -39,6 +39,7 @@ Python unit tests for internal functions. Current coverage: **50%** (458 stateme
 | **Custom backup suffix** | ✅ | `--backup-suffix .bak` |
 | **Backup skip behavior** | ✅ | (implicitly via `.orig` files in output) |
 | **Overlap counting** | ✅ | (shown in output stats) |
+| **JSON output format** | ✅ | `--format json` (walk, replace, undo, clean) |
 | **Regex patterns** | ❌ | Not tested |
 | **Capturing groups** | ❌ | Not tested |
 | **Literal mode** | ❌ | `--literal` |
@@ -47,9 +48,49 @@ Python unit tests for internal functions. Current coverage: **50%** (458 stateme
 | **Parse-only** | ❌ | `-t` / `--parse-only` |
 | **Stdin/stdout** | ❌ | Piped input |
 | **Quiet mode** | ❌ | `-q` |
-| **Moving files** | ❌ | (noted as TODO in tests.sh) |
+| **Moving files** | ❌ | (noted as TODO in golden-tests.sh) |
 | **File collisions** | ❌ | Rename to existing name |
 | **Error cases** | ❌ | Invalid patterns, permissions |
+
+---
+
+## New in v2-revs: Untested Components
+
+### 1. Claude Code Skill Installation (`repren/claude_skill.py`)
+
+**Coverage: 0%** (82 statements, all missed)
+
+This new module provides `repren --install-skill` functionality. Functions needing tests:
+
+| Function | Purpose | Test Approach |
+|----------|---------|---------------|
+| `get_skill_content()` | Load SKILL.md from package | Unit test |
+| `install_skill()` | Install to ~/.claude or .claude | Integration test with temp dirs |
+| `main()` | CLI argument parsing | Golden test or subprocess |
+
+**Recommended golden test additions:**
+```bash
+# Test skill installation (use temp directory)
+export HOME=$(mktemp -d)
+run --install-skill --global --quiet
+test -f "$HOME/.claude/skills/repren/SKILL.md" && echo "Global install OK"
+
+# Test project-level install
+mkdir -p test-skill-project && cd test-skill-project
+run --install-skill --project --quiet
+test -f ".claude/skills/repren/SKILL.md" && echo "Project install OK"
+```
+
+### 2. JSON Output Format
+
+**Coverage: Tested in golden tests** ✅
+
+The v2-revs branch added comprehensive golden tests for JSON output:
+- `--format json --walk-only`
+- `--format json --dry-run --from X --to Y`
+- `--format json --from X --to Y` (actual replace)
+- `--format json --undo`
+- `--format json --clean-backups`
 
 ---
 
@@ -57,31 +98,39 @@ Python unit tests for internal functions. Current coverage: **50%** (458 stateme
 
 ### Phase 1: Add Missing CLI Flags
 
-Add these sections to `tests.sh`:
+Add these sections to `golden-tests.sh`:
 
 ```bash
 # --- Regex and capturing groups ---
 
 cp -a original test-regex
 
-# Create a pattern file with capturing group
-echo 'figure ([0-9]+)	Figure \1' > patterns-capturing
-run -p patterns-capturing test-regex/...
+# Create test file with figures
+echo 'See figure 1 and figure 23 for details.' > test-regex/figures.txt
 
-# Verify back-reference works
-run --from '(\w+)@(\w+)' --to '\2-\1' test-regex/...
+# Test capturing group replacement
+run --from 'figure ([0-9]+)' --to 'Figure \1' test-regex/figures.txt
+cat test-regex/figures.txt
+# Expected: See Figure 1 and Figure 23 for details.
 
 
 # --- Literal mode ---
 
 cp -a original test-literal
 
-# Without --literal: . matches any char
-run --from 'foo.bar' --to 'REPLACED' test-literal/...
+# Create file with regex special chars
+echo 'Match foo.bar and foo+bar here.' > test-literal/special.txt
 
-# With --literal: . matches only literal .
+# Without --literal: . matches any char (would match fooXbar too)
+run --from 'foo.bar' --to 'REPLACED' test-literal/special.txt
+cat test-literal/special.txt
+
+# Reset and test with --literal
 cp -a original test-literal2
-run --literal --from 'foo.bar' --to 'REPLACED' test-literal2/...
+echo 'Match foo.bar and fooXbar here.' > test-literal2/special.txt
+run --literal --from 'foo.bar' --to 'REPLACED' test-literal2/special.txt
+cat test-literal2/special.txt
+# Expected: only foo.bar replaced, not fooXbar
 
 
 # --- At-once mode (multiline patterns) ---
@@ -89,25 +138,14 @@ run --literal --from 'foo.bar' --to 'REPLACED' test-literal2/...
 cp -a original test-atonce
 
 # Create multiline test file
-printf 'start\nmiddle\nend' > test-atonce/multiline.txt
+printf 'start\nmiddle\nend\n' > test-atonce/multiline.txt
 
 # Default (line-by-line) won't match across lines
-run --from 'start.*end' --to 'REPLACED' test-atonce/multiline.txt
+run -n --from 'start.*end' --to 'REPLACED' test-atonce/multiline.txt
 
-# With --at-once, pattern spans lines
-cp -a original test-atonce2
-run --at-once --from 'start.*end' --to 'REPLACED' test-atonce2/multiline.txt
-
-
-# --- Dotall mode ---
-
-cp -a original test-dotall
-
-# Without dotall: . doesn't match newline
-run --at-once --from 'start.middle' --to 'REPLACED' test-dotall/...
-
-# With dotall: . matches newline
-run --at-once --dotall --from 'start.middle' --to 'REPLACED' test-dotall/...
+# With --at-once and --dotall, pattern spans lines
+run --at-once --dotall --from 'start.*end' --to 'REPLACED' test-atonce/multiline.txt
+cat test-atonce/multiline.txt
 
 
 # --- Parse-only mode ---
@@ -119,7 +157,7 @@ run -t -p patterns-misc
 # --- Stdin/stdout mode ---
 
 echo 'foo bar foo' | run --from foo --to bar
-echo -e 'line1\nline2' | run --from 'line([0-9])' --to 'LINE \1'
+echo 'figure 1 and figure 2' | run --from 'figure ([0-9]+)' --to 'Fig. \1'
 
 
 # --- Quiet mode ---
@@ -135,39 +173,32 @@ diff original/humpty-dumpty.txt test-quiet/humpty-dumpty.txt || expect_error
 cp -a original test-collision
 touch test-collision/dumpty-dumpty.txt  # Pre-existing target
 run --renames --from humpty --to dumpty test-collision
-ls_portable test-collision  # Should show dumpty-dumpty.txt.1 or similar
+ls_portable test-collision  # Should show collision handling
 
 
 # --- Error cases ---
 
 run --from '[invalid(regex' --to 'bar' original || expect_error
-run --from '' --to 'bar' original || expect_error
 ```
 
-### Phase 2: Add Test Input Files
+### Phase 2: Add Skill Installation Tests
 
-Create additional files in `tests/work-dir/original/`:
+```bash
+# --- Skill installation ---
 
-1. **`patterns-capturing`** - Pattern file with regex capturing groups
-2. **`patterns-multiline`** - Patterns that span multiple lines
-3. **`file-with-dots.txt`** - File containing literal dots for `--literal` testing
-4. **`multiline.txt`** - Multi-line content for `--at-once` testing
-5. **`binary-file.bin`** - Binary content to verify binary handling
+# Test global install (use temp HOME)
+export ORIG_HOME="$HOME"
+export HOME=$(mktemp -d)
+run --install-skill --global --quiet
+test -f "$HOME/.claude/skills/repren/SKILL.md" && echo "Global skill install: OK"
+export HOME="$ORIG_HOME"
 
-### Phase 3: Track Test Coverage in Pattern File
-
-Create a central registry of what's tested. Add to `tests/work-dir/`:
-
-```
-# tests/work-dir/test-coverage-matrix.md
-
-| Pattern/Command | Test Case | Line in tests.sh |
-|-----------------|-----------|------------------|
-| --from/--to     | Basic     | 42               |
-| -i              | Case insensitive | 80        |
-| \1 back-ref     | Capturing groups | TODO     |
-| --literal       | Escape regex | TODO          |
-...
+# Test project install
+mkdir -p test-skill-project
+cd test-skill-project
+run --install-skill --project --quiet
+test -f ".claude/skills/repren/SKILL.md" && echo "Project skill install: OK"
+cd ..
 ```
 
 ---
@@ -186,6 +217,8 @@ The golden tests cover CLI behavior well, but some internal functions lack direc
 | `transform_file()` | Not tested | Medium |
 | `move_file()` | Not tested | Medium |
 | `make_parent_dirs()` | Not tested | Low |
+| `get_skill_content()` | Not tested | Medium |
+| `install_skill()` | Not tested | Medium |
 
 ### Recommended Additions to pytests.py
 
@@ -199,10 +232,10 @@ class TestMultiReplace:
         assert result == "bar baz bar"
         assert count == 2
 
-    def test_multiple_patterns_no_overlap(self):
-        patterns = [(_compile("foo"), "FOO"), (_compile("bar"), "BAR")]
-        result, count = multi_replace(patterns, "foo bar")
-        assert result == "FOO BAR"
+    def test_capturing_group(self):
+        patterns = [(_compile(r"figure (\d+)"), r"Figure \1")]
+        result, count = multi_replace(patterns, "See figure 1 and figure 23")
+        assert result == "See Figure 1 and Figure 23"
         assert count == 2
 
     def test_overlapping_patterns(self):
@@ -212,56 +245,77 @@ class TestMultiReplace:
         assert result == "LONG"  # Not "SHORTbar"
 
 
-class TestSortDropOverlaps:
-    """Test overlap detection and resolution."""
+class TestClaudeSkill:
+    """Tests for Claude Code skill installation."""
 
-    def test_no_overlaps(self):
-        matches = [(0, 3, "foo"), (4, 7, "bar")]
-        result = _sort_drop_overlaps(matches)
-        assert len(result) == 2
+    def test_get_skill_content_returns_markdown(self):
+        from repren.claude_skill import get_skill_content
+        content = get_skill_content()
+        assert "repren" in content.lower()
+        assert content.startswith("#") or "##" in content  # Markdown headers
 
-    def test_nested_overlap(self):
-        matches = [(0, 10, "long"), (2, 5, "short")]
-        result = _sort_drop_overlaps(matches)
-        assert len(result) == 1
-        assert result[0][2] == "long"  # First match wins
-
-
-class TestTransformStream:
-    """Test stream transformation with different modes."""
-
-    def test_line_by_line_mode(self):
-        """Default mode doesn't match across lines."""
-
-    def test_at_once_mode(self):
-        """At-once mode matches across lines."""
+    def test_install_skill_creates_file(self, tmp_path, monkeypatch):
+        from repren.claude_skill import install_skill
+        monkeypatch.setenv("HOME", str(tmp_path))
+        install_skill(scope="global", interactive=False)
+        skill_file = tmp_path / ".claude" / "skills" / "repren" / "SKILL.md"
+        assert skill_file.exists()
 ```
 
 ---
 
-## Summary
+## Coverage Summary
 
-### Golden Tests (Primary - Extend First)
-The shell-based golden tests are the **most valuable** for a CLI tool like repren. They:
-- Test actual user behavior
-- Are easy to extend (just add commands)
-- Serve as documentation
-- Catch output format regressions
+### Current State (Post v2-revs Merge)
 
-**Recommended additions:**
-1. Regex/capturing groups
-2. `--literal`, `--dotall`, `--at-once` flags
-3. Stdin/stdout piping
-4. `-t` parse-only mode
-5. `-q` quiet mode
-6. File collision handling
-7. Error cases
+| Component | Statements | Covered | Coverage |
+|-----------|------------|---------|----------|
+| `repren/__init__.py` | 2 | 2 | 100% |
+| `repren/repren.py` | 502 | 233 | 46% |
+| `repren/claude_skill.py` | 82 | 0 | 0% |
+| **Total** | **586** | **235** | **40%** |
 
-### Unit Tests (Secondary - Targeted Additions)
-Add unit tests for:
-1. `multi_replace()` with edge cases
-2. `_sort_drop_overlaps()` overlap handling
-3. Error paths in `parse_patterns()`
+### Coverage Trend
 
-### Test Tracking
-Consider adding a test coverage matrix to `tests/work-dir/` that maps features → test cases for easier tracking of what's covered.
+- **Before v2-revs:** 50% (458 statements)
+- **After v2-revs:** 40% (586 statements)
+- **Cause:** New `claude_skill.py` (82 lines, 0% covered) + expanded `repren.py`
+
+---
+
+## Recommended Priority
+
+### High Priority (Extend Golden Tests)
+1. **Regex capturing groups** - Core feature, untested
+2. **`--literal` mode** - Important for non-regex users
+3. **Stdin/stdout piping** - Common CLI usage pattern
+4. **Error cases** - Invalid regex, missing files
+5. **`--install-skill`** - New feature needs coverage
+
+### Medium Priority (Golden Tests)
+6. **`--at-once` + `--dotall`** - Multiline pattern support
+7. **`-t` / `--parse-only`** - Debugging feature
+8. **`-q` quiet mode** - Output control
+9. **File collision handling** - Edge case
+
+### Lower Priority (Unit Tests)
+10. **`multi_replace()` direct tests** - Currently only indirect coverage
+11. **`_sort_drop_overlaps()`** - Edge case handling
+12. **`install_skill()` with temp dirs** - Installation paths
+
+---
+
+## Test Infrastructure Notes
+
+1. **Golden tests renamed:** `tests.sh` → `golden-tests.sh`, `tests-expected.log` → `golden-tests-expected.log`
+
+2. **Run tests with:**
+   ```bash
+   # Golden tests
+   cd tests/work-dir && bash ../golden-tests.sh 2>&1 | diff - ../golden-tests-expected.log
+
+   # Unit tests with coverage
+   uv run pytest --cov=repren --cov-report=term-missing tests/pytests.py
+   ```
+
+3. **pytest-cov added** to dev dependencies for coverage reporting
