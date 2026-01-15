@@ -630,10 +630,154 @@ run --format json --clean-backups test-json
 }
 
 
+# Regex and capturing groups.
+
+cp -a original test-regex
+
+# Create test file with figures
+echo 'See figure 1 and figure 23 for details.' > test-regex/figures.txt
+
+# Test capturing group replacement
+run --from 'figure ([0-9]+)' --to 'Figure \1' test-regex/figures.txt
+Using 1 patterns:
+  'figure ([0-9]+)' -> 'Figure \1'
+Found 1 files in: test-regex/figures.txt
+- modify: test-regex/figures.txt: 2 matches
+Read 1 files (40 chars), found 2 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 0 renamed)
+
+cat test-regex/figures.txt
+See Figure 1 and Figure 23 for details.
+
+
+# Literal mode.
+
+cp -a original test-literal
+
+# Create file with regex special chars
+echo 'Match foo.bar and fooXbar here.' > test-literal/special.txt
+
+# Without --literal: . matches any char (matches both foo.bar and fooXbar)
+run --from 'foo.bar' --to 'REPLACED' test-literal/special.txt
+Using 1 patterns:
+  'foo.bar' -> 'REPLACED'
+Found 1 files in: test-literal/special.txt
+- modify: test-literal/special.txt: 2 matches
+Read 1 files (32 chars), found 2 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 0 renamed)
+
+cat test-literal/special.txt
+Match REPLACED and REPLACED here.
+
+# Reset and test with --literal (only exact match)
+cp -a original test-literal2
+echo 'Match foo.bar and fooXbar here.' > test-literal2/special.txt
+
+run --literal --from 'foo.bar' --to 'REPLACED' test-literal2/special.txt
+Using 1 patterns:
+  'foo\.bar' -> 'REPLACED'
+Found 1 files in: test-literal2/special.txt
+- modify: test-literal2/special.txt: 1 matches
+Read 1 files (32 chars), found 1 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 0 renamed)
+
+cat test-literal2/special.txt
+Match REPLACED and fooXbar here.
+
+
+# At-once mode (multiline patterns).
+
+cp -a original test-atonce
+
+# Create multiline test file
+printf 'start\nmiddle\nend\n' > test-atonce/multiline.txt
+
+# Default (line-by-line) won't match across lines
+run -n --from 'start.*end' --to 'REPLACED' test-atonce/multiline.txt
+Dry run: No files will be changed
+Using 1 patterns:
+  'start.*end' -> 'REPLACED'
+Found 1 files in: test-atonce/multiline.txt
+Read 1 files (17 chars), found 0 matches (0 skipped due to overlaps)
+Dry run: Would have changed 0 files (0 rewritten and 0 renamed)
+
+# With --at-once and --dotall, pattern spans lines
+run --at-once --dotall --from 'start.*end' --to 'REPLACED' test-atonce/multiline.txt
+Using 1 patterns:
+  'start.*end' DOTALL -> 'REPLACED'
+Found 1 files in: test-atonce/multiline.txt
+- modify: test-atonce/multiline.txt: 1 matches
+Read 1 files (17 chars), found 1 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 0 renamed)
+
+cat test-atonce/multiline.txt
+REPLACED
+
+
+# Parse-only mode.
+
+run -t --from 'foo' --to 'bar'
+Using 1 patterns:
+  'foo' -> 'bar'
+
+run -t -p patterns-misc
+Using 5 patterns:
+  'humpty' -> 'dumpty'
+  'dumpty' -> 'humpty'
+  'beech' -> 'BEECH'
+  'Asia' -> 'Asia!'
+  'Europe' -> 'Europe!'
+
+
+# Stdin/stdout mode.
+
+echo 'foo bar foo' | run --from foo --to bar
+Using 1 patterns:
+  'foo' -> 'bar'
+bar bar bar
+Read 12 chars, made 2 replacements (0 skipped due to overlaps)
+
+echo 'figure 1 and figure 2' | run --from 'figure ([0-9]+)' --to 'Fig. \1'
+Using 1 patterns:
+  'figure ([0-9]+)' -> 'Fig. \1'
+Fig. 1 and Fig. 2
+Read 22 chars, made 2 replacements (0 skipped due to overlaps)
+
+
+# Quiet mode.
+
+cp -a original test-quiet
+
+run -q --from Humpty --to Dumpty test-quiet/humpty-dumpty.txt
+
+# Verify changes were made silently
+diff original/humpty-dumpty.txt test-quiet/humpty-dumpty.txt || expect_error
+1c1
+< Humpty Dumpty smiled contemptuously. 'Of course you don't — till I tell you. I meant "there's a nice knock-down argument for you!"'
+---
+> Dumpty Dumpty smiled contemptuously. 'Of course you don't — till I tell you. I meant "there's a nice knock-down argument for you!"'
+3c3
+< 'When I use a word,' Humpty Dumpty said, in rather a scornful tone, 'it means just what I choose it to mean — neither more nor less.'
+---
+> 'When I use a word,' Dumpty Dumpty said, in rather a scornful tone, 'it means just what I choose it to mean — neither more nor less.'
+5c5
+< 'The question is,' said Humpty Dumpty, 'which is to be master — that's all.'
+---
+> 'The question is,' said Dumpty Dumpty, 'which is to be master — that's all.'
+(got expected error: status 1)
+
+
+# Error cases.
+
+run --from '[invalid(regex' --to 'bar' original || expect_error
+error: error parsing pattern: unterminated character set at position 0: ['[invalid(regex', 'bar']: unterminated character set at position 0
+(got expected error: status 1)
+
+
 # TODO: More test coverage:
-# - Regex and capturing groups.
 # - CamelCase and whole word support.
 # - Large stress test (rename a variable in a large source package and recompile).
+# - File collision handling when rename target exists.
 
 # Leave files installed in case it's helpful to debug anything.
 

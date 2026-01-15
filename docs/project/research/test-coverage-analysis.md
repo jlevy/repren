@@ -40,17 +40,17 @@ Python unit tests for internal functions. Current coverage: **40%** (586 stateme
 | **Backup skip behavior** | ✅ | (implicitly via `.orig` files in output) |
 | **Overlap counting** | ✅ | (shown in output stats) |
 | **JSON output format** | ✅ | `--format json` (walk, replace, undo, clean) |
-| **Regex patterns** | ❌ | Not tested |
-| **Capturing groups** | ❌ | Not tested |
-| **Literal mode** | ❌ | `--literal` |
-| **Dotall mode** | ❌ | `--dotall` |
-| **At-once mode** | ❌ | `--at-once` |
-| **Parse-only** | ❌ | `-t` / `--parse-only` |
-| **Stdin/stdout** | ❌ | Piped input |
-| **Quiet mode** | ❌ | `-q` |
+| **Regex patterns** | ✅ | `--from 'figure ([0-9]+)' --to 'Figure \1'` |
+| **Capturing groups** | ✅ | Back-reference `\1` tested |
+| **Literal mode** | ✅ | `--literal --from 'foo.bar'` escapes regex |
+| **Dotall mode** | ✅ | `--dotall` with `--at-once` |
+| **At-once mode** | ✅ | `--at-once --dotall` for multiline patterns |
+| **Parse-only** | ✅ | `-t --from 'foo' --to 'bar'` |
+| **Stdin/stdout** | ✅ | `echo 'foo' \| run --from foo --to bar` |
+| **Quiet mode** | ✅ | `-q` with diff to verify silent changes |
 | **Moving files** | ❌ | (noted as TODO in golden-tests.sh) |
 | **File collisions** | ❌ | Rename to existing name |
-| **Error cases** | ❌ | Invalid patterns, permissions |
+| **Error cases** | ✅ | Invalid regex `'[invalid(regex'` |
 
 ---
 
@@ -285,23 +285,36 @@ class TestClaudeSkill:
 
 ## Recommended Priority
 
-### High Priority (Extend Golden Tests)
-1. **Regex capturing groups** - Core feature, untested
-2. **`--literal` mode** - Important for non-regex users
-3. **Stdin/stdout piping** - Common CLI usage pattern
-4. **Error cases** - Invalid regex, missing files
-5. **`--install-skill`** - New feature needs coverage
+### Completed (Now Tested in Golden Tests) ✅
+1. ~~**Regex capturing groups**~~ - Tested with `\1` back-reference
+2. ~~**`--literal` mode**~~ - Tested
+3. ~~**Stdin/stdout piping**~~ - Tested
+4. ~~**Error cases**~~ - Invalid regex tested
+5. ~~**`--at-once` + `--dotall`**~~ - Multiline patterns tested
+6. ~~**`-t` / `--parse-only`**~~ - Tested
+7. ~~**`-q` quiet mode**~~ - Tested
 
-### Medium Priority (Golden Tests)
-6. **`--at-once` + `--dotall`** - Multiline pattern support
-7. **`-t` / `--parse-only`** - Debugging feature
-8. **`-q` quiet mode** - Output control
-9. **File collision handling** - Edge case
+### Remaining Gaps
 
-### Lower Priority (Unit Tests)
-10. **`multi_replace()` direct tests** - Currently only indirect coverage
-11. **`_sort_drop_overlaps()`** - Edge case handling
-12. **`install_skill()` with temp dirs** - Installation paths
+#### High Priority (Golden Tests)
+1. **`--install-skill`** - New feature needs coverage
+2. **File collision handling** - When rename target already exists
+
+#### Lower Priority (Unit Tests)
+3. **`multi_replace()` direct tests** - Currently only indirect coverage
+4. **`_sort_drop_overlaps()`** - Edge case handling
+5. **`install_skill()` with temp dirs** - Installation paths
+6. **`claude_skill.py`** - 0% coverage (82 statements)
+
+---
+
+## Bug Fixes During Analysis
+
+### Fixed: `--at-once` mode not applying changes
+
+The `transform_stream()` function had a bug where `counts` was not updated with
+`new_counts` in at-once mode, causing files to not be rewritten even when matches
+were found. Fixed in `repren.py:761` by adding `counts.add(new_counts)`.
 
 ---
 
@@ -311,8 +324,14 @@ class TestClaudeSkill:
 
 2. **Run tests with:**
    ```bash
-   # Golden tests
-   cd tests/work-dir && bash ../golden-tests.sh 2>&1 | diff - ../golden-tests-expected.log
+   # All tests (unit + golden)
+   make test
+
+   # Just golden tests
+   ./tests/run.sh
+
+   # Update golden baseline after intentional changes
+   make update-golden
 
    # Unit tests with coverage
    uv run pytest --cov=repren --cov-report=term-missing tests/pytests.py
