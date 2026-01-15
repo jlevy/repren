@@ -96,11 +96,7 @@ select = [
 ]
 ignore = [
     "E501",  # https://docs.astral.sh/ruff/rules/line-too-long/
-    "E402",  # https://docs.astral.sh/ruff/rules/module-import-not-at-top-of-file/
     "E731",  # https://docs.astral.sh/ruff/rules/lambda-assignment/
-    "E712",  # https://docs.astral.sh/ruff/rules/true-false-comparison/
-    "UP031", # https://docs.astral.sh/ruff/rules/printf-string-formatting/ - keep % formatting for legacy code
-    "B905",  # https://docs.astral.sh/ruff/rules/zip-without-explicit-strict/ - strict=True not always needed
     # Disabled for formatter compatibility:
     "W191",  # https://docs.astral.sh/ruff/rules/tab-indentation/
     "E111",  # https://docs.astral.sh/ruff/rules/indentation-with-invalid-multiple/
@@ -119,25 +115,20 @@ ignore = [
 
 [tool.basedpyright]
 include = ["repren", "tests", "devtools"]
-reportIgnoreCommentWithoutRule = false
-reportUnnecessaryTypeIgnoreComment = false
+# Standard settings for a well-typed codebase:
 reportMissingTypeStubs = false
 reportUnusedCallResult = false
 reportAny = false
 reportExplicitAny = false
 reportImplicitStringConcatenation = false
-reportUnreachable = false
-reportMissingImports = false
 reportPrivateUsage = false
+# These require more type annotations to enable:
 reportUnknownParameterType = false
 reportMissingParameterType = false
 reportUnknownArgumentType = false
-reportConstantRedefinition = false
 reportUnknownMemberType = false
 reportUnknownVariableType = false
 reportUnknownLambdaType = false
-reportUnusedParameter = false
-reportUnusedVariable = false
 
 [tool.codespell]
 # ignore-words-list = "foo,bar"

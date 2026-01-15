@@ -274,13 +274,17 @@ TransformFunc = Callable[[bytes], tuple[bytes, "_MatchCounts"]]
 LogFunc = Callable[[str], None]
 FailHandler = Callable[[str, Exception | None], None]
 
+
 # Get the version from package metadata.
-VERSION: str
-try:
-    VERSION = importlib.metadata.version("repren")
-except importlib.metadata.PackageNotFoundError:
-    # Fallback version if package metadata is not available.
-    VERSION = "0.0.0.dev"
+def _get_version() -> str:
+    try:
+        return importlib.metadata.version("repren")
+    except importlib.metadata.PackageNotFoundError:
+        # Fallback version if package metadata is not available.
+        return "0.0.0.dev"
+
+
+VERSION: str = _get_version()
 
 DESCRIPTION: str = "repren: Multi-pattern string replacement and file renaming"
 
@@ -291,7 +295,7 @@ DEFAULT_EXCLUDE_PAT: str = r"^\."
 CONSOLE_WIDTH: int = 88
 
 
-def no_log(msg: str) -> None:
+def no_log(_msg: str) -> None:
     pass
 
 
@@ -301,7 +305,7 @@ def print_stderr(msg: str) -> None:
 
 def _fail_exit(msg: str, e: Exception | None = None) -> None:
     if e:
-        msg = "%s: %s" % (msg, e) if msg else str(e)
+        msg = f"{msg}: {e}" if msg else str(e)
     print("error: " + msg, file=sys.stderr)
     sys.exit(1)
 
@@ -357,28 +361,18 @@ def _sort_drop_overlaps(
             (prev_match, _) = non_overlaps[index - 1]
             if _overlap(prev_match, match):
                 log(
-                    "- %s: Skipping overlapping match '%s' of '%s' that overlaps '%s' of '%s' on its left"
-                    % (
-                        source_name,
-                        safe_decode(match.group()),
-                        safe_decode(match.re.pattern),
-                        safe_decode(prev_match.group()),
-                        safe_decode(prev_match.re.pattern),
-                    ),
+                    f"- {source_name}: Skipping overlapping match '{safe_decode(match.group())}' "
+                    f"of '{safe_decode(match.re.pattern)}' that overlaps "
+                    f"'{safe_decode(prev_match.group())}' of '{safe_decode(prev_match.re.pattern)}' on its left"
                 )
                 continue
         if index < len(non_overlaps):
             (next_match, _) = non_overlaps[index]
             if _overlap(next_match, match):
                 log(
-                    "- %s: Skipping overlapping match '%s' of '%s' that overlaps '%s' of '%s' on its right"
-                    % (
-                        source_name,
-                        safe_decode(match.group()),
-                        safe_decode(match.re.pattern),
-                        safe_decode(next_match.group()),
-                        safe_decode(next_match.re.pattern),
-                    ),
+                    f"- {source_name}: Skipping overlapping match '{safe_decode(match.group())}' "
+                    f"of '{safe_decode(match.re.pattern)}' that overlaps "
+                    f"'{safe_decode(next_match.group())}' of '{safe_decode(next_match.re.pattern)}' on its right"
                 )
                 continue
         starts.insert(index, match.start())
@@ -478,22 +472,22 @@ def _capitalize(word: str) -> str:
 
 
 def to_lower_camel(name: str) -> str:
-    separator, words = _split_name(name)
+    _, words = _split_name(name)
     return words[0].lower() + "".join(_capitalize(word) for word in words[1:])
 
 
 def to_upper_camel(name: str) -> str:
-    separator, words = _split_name(name)
+    _, words = _split_name(name)
     return "".join(_capitalize(word) for word in words)
 
 
 def to_lower_underscore(name: str) -> str:
-    separator, words = _split_name(name)
+    _, words = _split_name(name)
     return "_".join(word.lower() for word in words)
 
 
 def to_upper_underscore(name: str) -> str:
-    separator, words = _split_name(name)
+    _, words = _split_name(name)
     return "_".join(word.upper() for word in words)
 
 
@@ -535,7 +529,7 @@ def move_file(source_path: str, dest_path: str, clobber: bool = False) -> None:
             match = trailing_num.match(dest_path)
             if match:
                 dest_path = match.group(1)
-            dest_path = "%s.%s" % (dest_path, i)
+            dest_path = f"{dest_path}.{i}"
             i += 1
     shutil.move(source_path, dest_path)
 
@@ -649,9 +643,9 @@ def rewrite_file(
         transform = lambda contents: multi_replace(contents, patterns, source_name=path, log=log)
     counts = transform_file(transform, path, dest_path, by_line=by_line, dry_run=dry_run)
     if counts.found > 0:
-        log("- modify: %s: %s matches" % (path, counts.found))
+        log(f"- modify: {path}: {counts.found} matches")
     if dest_path != path:
-        log("- rename: %s -> %s" % (path, dest_path))
+        log(f"- rename: {path} -> {dest_path}")
 
 
 def walk_files(
@@ -706,7 +700,7 @@ def rewrite_files(
         include_pat=include_pat,
         exclude_pat=exclude_pat,
     )
-    log("Found %s files in: %s" % (len(paths), ", ".join(root_paths)))
+    log(f"Found {len(paths)} files in: {', '.join(root_paths)}")
     for path in paths:
         rewrite_file(
             path,
@@ -744,7 +738,9 @@ def parse_patterns(
                     regex = re.escape(regex)
                 pairs: list[tuple[str, str]] = []
                 if preserve_case:
-                    pairs += zip(all_case_variants(regex), all_case_variants(replacement))
+                    pairs += zip(
+                        all_case_variants(regex), all_case_variants(replacement), strict=True
+                    )
                 pairs.append((regex, replacement))
                 # Avoid spurious overlap warnings by removing dups.
                 pairs = sorted(set(pairs))
@@ -759,7 +755,7 @@ def parse_patterns(
                         )
                     )
         except Exception as e:
-            _fail("error parsing pattern: %s: %s" % (e, bits), e)
+            _fail(f"error parsing pattern: {e}: {bits}", e)
     return patterns
 
 
@@ -906,9 +902,9 @@ def main() -> None:
         paths = walk_files(
             options.root_paths, include_pat=options.include_pat, exclude_pat=options.exclude_pat
         )
-        log("Found %s files in: %s" % (len(paths), ", ".join(options.root_paths)))
+        log(f"Found {len(paths)} files in: {', '.join(options.root_paths)}")
         for path in paths:
-            log("- %s" % path)
+            log(f"- {path}")
         return  # We're done!
 
     # log("Settings: %s" % options)
@@ -927,7 +923,7 @@ def main() -> None:
         with open(options.pat_file, "rb") as f:
             pat_str = f.read().decode("utf-8")
     else:
-        pat_str = "%s\t%s" % (options.from_pat, options.to_pat)
+        pat_str = f"{options.from_pat}\t{options.to_pat}"
     patterns = parse_patterns(
         pat_str,
         literal=options.literal,
@@ -949,17 +945,10 @@ def main() -> None:
     if options.dry_run:
         log("Dry run: No files will be changed")
     log(
-        ("Using %s patterns:\n  " % len(patterns))
+        f"Using {len(patterns)} patterns:\n  "
         + "\n  ".join(
-            [
-                "'%s' %s-> '%s'"
-                % (
-                    safe_decode(regex.pattern),
-                    format_flags(regex.flags),
-                    safe_decode(replacement),
-                )
-                for (regex, replacement) in patterns
-            ]
+            f"'{safe_decode(regex.pattern)}' {format_flags(regex.flags)}-> '{safe_decode(replacement)}'"
+            for (regex, replacement) in patterns
         ),
     )
 
@@ -981,18 +970,13 @@ def main() -> None:
         )
 
         log(
-            "Read %s files (%s chars), found %s matches (%s skipped due to overlaps)"
-            % (
-                _tally.files,
-                _tally.chars,
-                _tally.valid_matches,
-                _tally.matches - _tally.valid_matches,
-            ),
+            f"Read {_tally.files} files ({_tally.chars} chars), found {_tally.valid_matches} matches "
+            f"({_tally.matches - _tally.valid_matches} skipped due to overlaps)",
         )
         change_words = "Dry run: Would have changed" if options.dry_run else "Changed"
         log(
-            "%s %s files (%s rewritten and %s renamed)"
-            % (change_words, _tally.files_changed, _tally.files_rewritten, _tally.renames),
+            f"{change_words} {_tally.files_changed} files "
+            f"({_tally.files_rewritten} rewritten and {_tally.renames} renamed)",
         )
     else:
         if options.do_renames:
@@ -1003,8 +987,8 @@ def main() -> None:
         transform_stream(transform, sys.stdin.buffer, sys.stdout.buffer, by_line=by_line)
 
         log(
-            "Read %s chars, made %s replacements (%s skipped due to overlaps)"
-            % (_tally.chars, _tally.valid_matches, _tally.matches - _tally.valid_matches),
+            f"Read {_tally.chars} chars, made {_tally.valid_matches} replacements "
+            f"({_tally.matches - _tally.valid_matches} skipped due to overlaps)",
         )
 
 
