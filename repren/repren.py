@@ -40,6 +40,10 @@ It’s more powerful than classic options like `perl -pie`, `rpl`, or `sed`:
 - **Dry run, backups, and undo:** It has convenient options for dry run, undo (restoring
   backups), and cleanup (deleting backups).
 
+- **Text or JSON output:** It supports human-readable text output (default) or
+  machine-parseable JSON output (`--format=json`) for easy integration with scripts and
+  agents.
+
 - **Self-documenting:** It is packaged with its own nice documentation!
   Run with `--help` for these full docs.
 
@@ -127,13 +131,18 @@ share.
 
 ## Installation
 
-No dependencies except Python 3.10+. It’s easiest to install with pip:
+No dependencies except Python 3.10+. It's easiest to install with
+[uv](https://docs.astral.sh/uv/):
 
 ```bash
-pip install repren
+# Install as a tool:
+uv tool install repren
+
+# Or run directly without installing:
+uvx repren --help
 ```
 
-Or, since it’s just one file, you can copy the
+Or, since it's just one file, you can copy the
 [repren.py](https://raw.githubusercontent.com/jlevy/repren/master/repren/repren.py)
 script somewhere convenient and make it executable.
 
@@ -1243,12 +1252,14 @@ def _run_cli() -> None:
             backup_suffix=options.backup_suffix,
         )
         if json_mode:
-            _output_json({
-                "operation": "walk",
-                "paths": paths,
-                "files_found": len(paths),
-                "skipped_backups": skipped_backup_count,
-            })
+            _output_json(
+                {
+                    "operation": "walk",
+                    "paths": paths,
+                    "files_found": len(paths),
+                    "skipped_backups": skipped_backup_count,
+                }
+            )
         else:
             if skipped_backup_count > 0:
                 log(
@@ -1277,11 +1288,13 @@ def _run_cli() -> None:
             log=log,
         )
         if json_mode:
-            _output_json({
-                "operation": "clean_backups",
-                "dry_run": options.dry_run,
-                "removed": removed,
-            })
+            _output_json(
+                {
+                    "operation": "clean_backups",
+                    "dry_run": options.dry_run,
+                    "removed": removed,
+                }
+            )
         else:
             action_word = "Would remove" if options.dry_run else "Removed"
             log(f"{action_word} {removed} backup file(s)")
@@ -1349,12 +1362,14 @@ def _run_cli() -> None:
             log=log,
         )
         if json_mode:
-            _output_json({
-                "operation": "undo",
-                "dry_run": options.dry_run,
-                "restored": restored,
-                "skipped": skipped,
-            })
+            _output_json(
+                {
+                    "operation": "undo",
+                    "dry_run": options.dry_run,
+                    "restored": restored,
+                    "skipped": skipped,
+                }
+            )
         else:
             action_word = "Would restore" if options.dry_run else "Restored"
             log(f"{action_word} {restored} file(s), skipped {skipped} with warnings")
@@ -1376,18 +1391,20 @@ def _run_cli() -> None:
         )
 
         if json_mode:
-            _output_json({
-                "operation": "replace",
-                "dry_run": options.dry_run,
-                "patterns_count": len(patterns),
-                "files_found": _tally.files,
-                "chars_read": _tally.chars,
-                "matches_found": _tally.matches,
-                "matches_applied": _tally.valid_matches,
-                "files_changed": _tally.files_changed,
-                "files_rewritten": _tally.files_rewritten,
-                "files_renamed": _tally.renames,
-            })
+            _output_json(
+                {
+                    "operation": "replace",
+                    "dry_run": options.dry_run,
+                    "patterns_count": len(patterns),
+                    "files_found": _tally.files,
+                    "chars_read": _tally.chars,
+                    "matches_found": _tally.matches,
+                    "matches_applied": _tally.valid_matches,
+                    "files_changed": _tally.files_changed,
+                    "files_rewritten": _tally.files_rewritten,
+                    "files_renamed": _tally.renames,
+                }
+            )
         else:
             log(
                 f"Read {_tally.files} files ({_tally.chars} chars), found {_tally.valid_matches} matches "

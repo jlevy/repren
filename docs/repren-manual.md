@@ -39,7 +39,7 @@ It’s more powerful than classic options like `perl -pie`, `rpl`, or `sed`:
   backups), and cleanup (deleting backups).
 
 - **Text or JSON output:** It supports human-readable text output (default) or
-  machine-parseable JSON output (`--format json`) for easy integration with scripts and
+  machine-parseable JSON output (`--format=json`) for easy integration with scripts and
   agents.
 
 - **Self-documenting:** It is packaged with its own nice documentation!
@@ -129,13 +129,18 @@ share.
 
 ## Installation
 
-No dependencies except Python 3.10+. It’s easiest to install with pip:
+No dependencies except Python 3.10+. It's easiest to install with
+[uv](https://docs.astral.sh/uv/):
 
 ```bash
-pip install repren
+# Install as a tool:
+uv tool install repren
+
+# Or run directly without installing:
+uvx repren --help
 ```
 
-Or, since it’s just one file, you can copy the
+Or, since it's just one file, you can copy the
 [repren.py](https://raw.githubusercontent.com/jlevy/repren/master/repren/repren.py)
 script somewhere convenient and make it executable.
 
