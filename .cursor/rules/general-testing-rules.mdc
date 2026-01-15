@@ -1,0 +1,1 @@
+../../docs/general/agent-rules/general-testing-rules.md
