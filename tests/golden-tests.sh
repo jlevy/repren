@@ -213,6 +213,26 @@ run --clean-backups --backup-suffix .bak test-suffix
 ls_portable test-suffix
 
 
+# JSON output format tests.
+
+cp -a original test-json
+
+# JSON output for walk-only.
+run --format json --walk-only test-json
+
+# JSON output for dry-run replacement.
+run --format json --dry-run --from Humpty --to Dumpty test-json/humpty-dumpty.txt
+
+# JSON output for actual replacement.
+run --format json --from Humpty --to Dumpty test-json/humpty-dumpty.txt
+
+# JSON output for undo (pass directory so undo can find .orig files).
+run --format json --undo --full --from Humpty --to Dumpty test-json
+
+# JSON output for clean-backups (no backups remain after undo, so should be 0).
+run --format json --clean-backups test-json
+
+
 # TODO: More test coverage:
 # - Regex and capturing groups.
 # - CamelCase and whole word support.

@@ -5,7 +5,7 @@ Repository = "https://github.com/jlevy/repren"
 
 [project]
 name = "repren"
-description = "Powerful, multi-pattern string replacement and file renaming for agents and humans"
+description = "Powerful CLI string replacement and file renaming for agents and humans"
 authors = [
     { name = "Joshua Levy", email = "joshua@cal.berkeley.edu" },
 ]
@@ -81,6 +81,10 @@ pattern = "default-unprefixed"
 [tool.hatch.build.targets.wheel]
 # The source location for the package.
 packages = ["repren"]
+
+# Include Claude Code skill files in the package
+[tool.hatch.build.targets.wheel.force-include]
+"repren/skills" = "repren/skills"
 
 
 # ---- Settings ----
