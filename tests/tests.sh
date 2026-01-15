@@ -7,14 +7,12 @@
 set -e -o pipefail
 
 prog_name=repren
-base_dir=`dirname $0`
-prog=$base_dir/../repren/repren.py
 
 args=
 #args=--debug
 
 run() {
-  $prog $args "$@"
+  uv run repren $args "$@"
 }
 
 # A trick to test for error conditions.

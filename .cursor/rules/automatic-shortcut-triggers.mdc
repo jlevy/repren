@@ -1,0 +1,1 @@
+../../docs/general/agent-rules/automatic-shortcut-triggers.md

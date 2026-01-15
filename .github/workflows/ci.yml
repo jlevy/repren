@@ -5,6 +5,8 @@ name: CI
 
 on:
   push:
+    # Use ["main", "master"] for CI only on the default branch.
+    # Use ["**"] for CI on all branches.
     branches: ["main", "master"]
   pull_request:
     branches: ["main", "master"]
@@ -14,49 +16,45 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
     strategy:
       matrix:
-        python-version: ["3.10", "3.11", "3.12", "3.13"]
+        # Update this as needed:
+        # Common platforms: ["ubuntu-latest", "macos-latest", "windows-latest"]
+        os: ["ubuntu-latest"]
+        python-version: ["3.10", "3.11", "3.12", "3.13", "3.14"]
+
+    # Linux only by default. Use ${{ matrix.os }} for other OSes.
+    runs-on: ${{ matrix.os }}
 
     steps:
-      - uses: actions/checkout@v4
+      # Generally following uv docs:
+      # https://docs.astral.sh/uv/guides/integration/github/
+
+      - name: Checkout (official GitHub action)
+        uses: actions/checkout@v6
         with:
           # Important for versioning plugins:
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv (official Astral action)
+        uses: astral-sh/setup-uv@v7
         with:
+          # Update this as needed:
+          version: "0.9.25"
+          enable-cache: true
           python-version: ${{ matrix.python-version }}
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: latest
+      - name: Set up Python (using uv)
+        run: uv python install
 
-      - name: Cache Poetry dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/pypoetry
-            ~/.cache/pip
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}-${{ matrix.python-version }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-
-
-      - name: Install Poetry plugins
-        run: |
-          poetry self add "poetry-dynamic-versioning[plugin]"
-
-      - name: Install dependencies
-        run: poetry install
+      - name: Install all dependencies
+        run: uv sync --all-extras
 
       - name: Run linting
-        run: poetry run python devtools/lint.py
+        run: uv run python devtools/lint.py
 
       - name: Run unit tests
-        run: poetry run pytest
+        run: uv run pytest
 
       - name: Run integration tests
         run: ./tests/run.sh

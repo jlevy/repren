@@ -12,34 +12,36 @@ jobs:
       id-token: write # Mandatory for OIDC.
       contents: read
     steps:
-      - name: Check out the code
-        uses: actions/checkout@v4
+      - name: Checkout (official GitHub action)
+        uses: actions/checkout@v6
         with:
           # Important for versioning plugins:
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Install uv (official Astral action)
+        uses: astral-sh/setup-uv@v7
         with:
+          version: "0.9.25"
+          enable-cache: true
           python-version: "3.12"
 
-      - name: Install Poetry
-        uses: snok/install-poetry@v1
-        with:
-          version: latest
+      - name: Set up Python (using uv)
+        run: uv python install
 
-      - name: Install Poetry plugins
-        run: |
-          poetry self add "poetry-dynamic-versioning[plugin]"
-
-      - name: Install dependencies
-        run: poetry install --no-root
+      - name: Install all dependencies
+        run: uv sync --all-extras
 
       - name: Generate README.md
-        run: poetry run python devtools/generate_readme.py
+        run: uv run python devtools/generate_readme.py
+
+      - name: Run tests
+        run: uv run pytest
 
       - name: Build package
-        run: poetry build
+        run: uv build
 
       - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+        run: uv publish --trusted-publishing always
+        # Although uv is newer and faster, the "official" publishing option is the one from PyPA,
+        # which uses twine. If desired, replace `uv publish` with:
+        # uses: pypa/gh-action-pypi-publish@release/v1

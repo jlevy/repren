@@ -1,0 +1,1 @@
+../../docs/general/agent-rules/python-rules-opinionated.md

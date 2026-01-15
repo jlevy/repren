@@ -1,3 +1,17 @@
-from .repren import main, multi_replace, rewrite_file, rewrite_files
+from .repren import (
+    CLIError,
+    ValidationError,
+    main,
+    multi_replace,
+    rewrite_file,
+    rewrite_files,
+)
 
-__all__ = ["main", "rewrite_file", "rewrite_files", "multi_replace"]
+__all__ = [
+    "CLIError",
+    "ValidationError",
+    "main",
+    "multi_replace",
+    "rewrite_file",
+    "rewrite_files",
+]

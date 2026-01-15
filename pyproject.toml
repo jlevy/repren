@@ -1,12 +1,20 @@
-[tool.poetry]
+# ---- Project Info and Dependencies ----
+
+[project.urls]
+Repository = "https://github.com/jlevy/repren"
+
+[project]
 name = "repren"
-# Keep this a dev version, as the dynamic versioning plugin is used for actual release versions:
-version = "0.0.0.dev"
 description = "repren: Multi-pattern string replacement and file renaming"
-authors = ["Joshua Levy <joshua@cal.berkeley.edu>"]
+authors = [
+    { name = "Joshua Levy", email = "joshua@cal.berkeley.edu" },
+]
 readme = "README.md"
 license = "MIT"
-repository = "https://github.com/jlevy/repren"
+requires-python = ">=3.10"
+dynamic = ["version"]
+
+# https://pypi.org/classifiers/
 classifiers = [
     "Development Status :: 4 - Beta",
     "Environment :: Console",
@@ -21,71 +29,107 @@ classifiers = [
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
     "Topic :: Utilities",
     "Topic :: Text Processing",
     "Topic :: Software Development",
 ]
 
-[tool.poetry.dependencies]
-python = "^3.10"
 
-[tool.poetry.group.dev.dependencies]
-black = "^24.10.0"
-pytest = "^8.3.3"
-ruff = "^0.4.10"
-usort = "^1.0.8.post1"
-mypy = "^1.13.0"
-codespell = "^2.3.0"
-rich = "^13.9.3"
-jinja2 = "^3.1.4"
+# ---- Main dependencies ----
 
-[build-system]
-requires = ["poetry-core"]
-build-backend = "poetry.core.masonry.api"
-
-# Auto-generated version for builds based on git tag or commit.
-# Preferred styles of versioning (PEP 440 compliant):
-#
-#   1.2.3               (stable release)
-#   1.2.3a4             (pre-release, no dash or dots)
-#   1.2.3rc1            (release candidate)
-#   1.2.3.dev4+abcdef12 (development build, .dev for dev releases and +commit hash)
-#
-# Tags with a "v" prefix (e.g., v1.2.3) or additional dots (e.g., v1.2.3.rc1) are recognized
-# but normalized to the preferred style for distribution.
-# See: https://sam.hooke.me/note/2023/08/poetry-automatically-generated-package-version-from-git-commit/
-[tool.poetry-dynamic-versioning]
-enable = true
-vcs = "git"
-pattern = "^v?(?P<base>\\d+\\.\\d+\\.\\d+)(-?((?P<stage>[a-zA-Z]+)\\.?(?P<revision>\\d+)?))?"
-format-jinja = """
-    {%- if distance == 0 -%}
-        {{- base -}}
-        {%- if stage -%}
-            {{ stage }}{{ revision | default("") }}
-        {%- endif -%}
-    {%- else -%}
-        {{- base }}.dev{{ distance }}+{{commit}}
-    {%- endif -%}
-"""
+dependencies = []
 
 
-[tool.poetry.scripts]
+# ---- Dev dependencies ----
+
+[dependency-groups]
+dev = [
+    "pytest>=9.0.2",
+    "pytest-sugar>=1.1.1",
+    "ruff>=0.14.11",
+    "codespell>=2.4.1",
+    "rich>=14.2.0",
+    "basedpyright>=1.37.1",
+    "funlog>=0.2.1",
+    "jinja2>=3.1.4",
+]
+
+[project.scripts]
 repren = "repren:main"
 
-[tool.black]
-line-length = 100
+
+# ---- Build system ----
+
+# Dynamic versioning from:
+# https://github.com/ninoseki/uv-dynamic-versioning/
+
+[build-system]
+requires = ["hatchling", "uv-dynamic-versioning"]
+build-backend = "hatchling.build"
+
+[tool.hatch.version]
+source = "uv-dynamic-versioning"
+
+[tool.uv-dynamic-versioning]
+vcs = "git"
+style = "pep440"
+bump = true
+pattern = "default-unprefixed"
+
+[tool.hatch.build.targets.wheel]
+# The source location for the package.
+packages = ["repren"]
+
+
+# ---- Settings ----
 
 [tool.ruff]
 line-length = 100
 
 [tool.ruff.lint]
-ignore = ["E402", "E731", "E712"]
-
-[tool.mypy]
-disable_error_code = [
-    "import-untyped",
+select = [
+    "E",  # https://docs.astral.sh/ruff/rules/#error-e
+    "F",  # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    "UP", # https://docs.astral.sh/ruff/rules/#pyupgrade-up
+    "B",  # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
+    "I",  # https://docs.astral.sh/ruff/rules/#isort-i
 ]
+ignore = [
+    "E501",  # https://docs.astral.sh/ruff/rules/line-too-long/
+    "E731",  # https://docs.astral.sh/ruff/rules/lambda-assignment/
+    # Disabled for formatter compatibility:
+    "W191",  # https://docs.astral.sh/ruff/rules/tab-indentation/
+    "E111",  # https://docs.astral.sh/ruff/rules/indentation-with-invalid-multiple/
+    "E114",  # https://docs.astral.sh/ruff/rules/indentation-with-invalid-multiple-comment/
+    "E117",  # https://docs.astral.sh/ruff/rules/over-indented/
+    "D206",  # https://docs.astral.sh/ruff/rules/docstring-tab-indentation/
+    "D300",  # https://docs.astral.sh/ruff/rules/triple-single-quotes/
+    "Q000",  # https://docs.astral.sh/ruff/rules/bad-quotes-inline-string/
+    "Q001",  # https://docs.astral.sh/ruff/rules/bad-quotes-multiline-string/
+    "Q002",  # https://docs.astral.sh/ruff/rules/bad-quotes-docstring/
+    "Q003",  # https://docs.astral.sh/ruff/rules/avoidable-escaped-quote/
+    "COM812",  # https://docs.astral.sh/ruff/rules/missing-trailing-comma/
+    "COM819",  # https://docs.astral.sh/ruff/rules/prohibited-trailing-comma/
+    "ISC002",  # https://docs.astral.sh/ruff/rules/multi-line-implicit-string-concatenation/
+]
+
+[tool.basedpyright]
+include = ["repren", "tests", "devtools"]
+# Standard settings for a well-typed codebase:
+reportMissingTypeStubs = false
+reportUnusedCallResult = false
+reportAny = false
+reportExplicitAny = false
+reportImplicitStringConcatenation = false
+reportPrivateUsage = false
+# These require more type annotations to enable:
+reportUnknownParameterType = false
+reportMissingParameterType = false
+reportUnknownArgumentType = false
+reportUnknownMemberType = false
+reportUnknownVariableType = false
+reportUnknownLambdaType = false
 
 [tool.codespell]
 # ignore-words-list = "foo,bar"

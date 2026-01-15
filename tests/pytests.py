@@ -1,4 +1,8 @@
+import subprocess
+from pathlib import Path
+
 import pytest
+
 from repren.repren import (
     _split_name,
     to_lower_camel,
@@ -88,3 +92,26 @@ def test_to_lower_underscore(input_str, expected):
 )
 def test_to_upper_underscore(input_str, expected):
     assert to_upper_underscore(input_str) == expected
+
+
+def test_integration_shell_tests():
+    """
+    Run the shell-based integration tests via run.sh.
+
+    These tests exercise the full repren CLI with various argument combinations
+    and compare output against a committed baseline for regression detection.
+    """
+    tests_dir = Path(__file__).parent
+    run_script = tests_dir / "run.sh"
+
+    result = subprocess.run(
+        [str(run_script)],
+        cwd=tests_dir.parent,  # Run from project root
+        capture_output=True,
+        text=True,
+    )
+
+    if result.returncode != 0:
+        # Include both stdout and stderr in failure message for debugging
+        output = f"STDOUT:\n{result.stdout}\n\nSTDERR:\n{result.stderr}"
+        pytest.fail(f"Integration tests failed (exit code {result.returncode}):\n{output}")

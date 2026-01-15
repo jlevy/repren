@@ -253,6 +253,7 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
 
 """
 
+from __future__ import annotations
 
 import argparse
 import bisect
@@ -261,25 +262,62 @@ import os
 import re
 import shutil
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import BinaryIO, Callable, List, Match, Optional, Pattern, Tuple
+from re import Match, Pattern
+from typing import BinaryIO, NoReturn
 
 # Type aliases for clarity.
-PatternType = Tuple[Pattern[bytes], bytes]
+PatternType = tuple[Pattern[bytes], bytes]
 FileHandle = BinaryIO
 MatchType = Match[bytes]
-PatternPair = Tuple[MatchType, bytes]
-TransformFunc = Callable[[bytes], Tuple[bytes, "_MatchCounts"]]
+PatternPair = tuple[MatchType, bytes]
+TransformFunc = Callable[[bytes], tuple[bytes, "_MatchCounts"]]
 LogFunc = Callable[[str], None]
-FailHandler = Callable[[str, Optional[Exception]], None]
+FailHandler = Callable[[str, Exception | None], None]
+
+
+# --- Exit codes (following Unix conventions) ---
+
+
+EXIT_SUCCESS = 0
+EXIT_ERROR = 1
+EXIT_USAGE = 2
+EXIT_INTERRUPTED = 130  # 128 + SIGINT(2)
+
+
+# --- Custom exceptions ---
+
+
+class CLIError(Exception):
+    """Base exception for CLI errors."""
+
+    message: str
+    exit_code: int
+
+    def __init__(self, message: str, exit_code: int = EXIT_ERROR) -> None:
+        self.message = message
+        self.exit_code = exit_code
+        super().__init__(message)
+
+
+class ValidationError(CLIError):
+    """Input validation or usage error."""
+
+    def __init__(self, message: str) -> None:
+        super().__init__(message, exit_code=EXIT_USAGE)
+
 
 # Get the version from package metadata.
-VERSION: str
-try:
-    VERSION = importlib.metadata.version("repren")
-except importlib.metadata.PackageNotFoundError:
-    # Fallback version if package metadata is not available.
-    VERSION = "0.0.0.dev"
+def _get_version() -> str:
+    try:
+        return importlib.metadata.version("repren")
+    except importlib.metadata.PackageNotFoundError:
+        # Fallback version if package metadata is not available.
+        return "0.0.0.dev"
+
+
+VERSION: str = _get_version()
 
 DESCRIPTION: str = "repren: Multi-pattern string replacement and file renaming"
 
@@ -287,10 +325,28 @@ BACKUP_SUFFIX: str = ".orig"
 TEMP_SUFFIX: str = ".repren.tmp"
 DEFAULT_EXCLUDE_PAT: str = r"^\."
 
-CONSOLE_WIDTH: int = 88
+# Terminal width handling.
+DEFAULT_WIDTH: int = 88
+MIN_WIDTH: int = 40
+MAX_WIDTH: int = 120
 
 
-def no_log(msg: str) -> None:
+def _get_terminal_width() -> int:
+    """Get terminal width, clamped to reasonable bounds.
+
+    Uses DEFAULT_WIDTH when not connected to a TTY for consistent output
+    in scripts and CI environments.
+    """
+    if not sys.stdout.isatty():
+        return DEFAULT_WIDTH
+    try:
+        width = shutil.get_terminal_size().columns
+        return min(MAX_WIDTH, max(MIN_WIDTH, width))
+    except Exception:
+        return DEFAULT_WIDTH
+
+
+def no_log(_msg: str) -> None:
     pass
 
 
@@ -298,19 +354,21 @@ def print_stderr(msg: str) -> None:
     print(msg, file=sys.stderr)
 
 
-def _fail_exit(msg: str, e: Optional[Exception] = None) -> None:
+def _fail_with_exit(msg: str, e: Exception | None = None) -> NoReturn:
+    """Fail by exiting the process (used when running as CLI)."""
     if e:
-        msg = "%s: %s" % (msg, e) if msg else str(e)
+        msg = f"{msg}: {e}" if msg else str(e)
     print("error: " + msg, file=sys.stderr)
-    sys.exit(1)
+    sys.exit(EXIT_ERROR)
 
 
-def _fail_exception(msg: str, e: Optional[Exception] = None) -> None:
-    raise ValueError(msg) from e
+def _fail_with_exception(msg: str, e: Exception | None = None) -> NoReturn:
+    """Fail by raising an exception (used when used as a library)."""
+    raise CLIError(msg) from e
 
 
 # By default, fail with exceptions in case we want to use this as a library.
-_fail: FailHandler = _fail_exception
+_fail: FailHandler = _fail_with_exception
 
 
 def safe_decode(b: bytes) -> str:
@@ -343,41 +401,31 @@ def _overlap(match1: MatchType, match2: MatchType) -> bool:
 
 
 def _sort_drop_overlaps(
-    matches: List[PatternPair],
-    source_name: Optional[str] = None,
+    matches: list[PatternPair],
+    source_name: str | None = None,
     log: LogFunc = no_log,
-) -> List[PatternPair]:
+) -> list[PatternPair]:
     """Select and sort a set of disjoint intervals, omitting ones that overlap."""
-    non_overlaps: List[PatternPair] = []
-    starts: List[int] = []
+    non_overlaps: list[PatternPair] = []
+    starts: list[int] = []
     for match, replacement in matches:
         index: int = bisect.bisect_left(starts, match.start())
         if index > 0:
             (prev_match, _) = non_overlaps[index - 1]
             if _overlap(prev_match, match):
                 log(
-                    "- %s: Skipping overlapping match '%s' of '%s' that overlaps '%s' of '%s' on its left"
-                    % (
-                        source_name,
-                        safe_decode(match.group()),
-                        safe_decode(match.re.pattern),
-                        safe_decode(prev_match.group()),
-                        safe_decode(prev_match.re.pattern),
-                    ),
+                    f"- {source_name}: Skipping overlapping match '{safe_decode(match.group())}' "
+                    f"of '{safe_decode(match.re.pattern)}' that overlaps "
+                    f"'{safe_decode(prev_match.group())}' of '{safe_decode(prev_match.re.pattern)}' on its left"
                 )
                 continue
         if index < len(non_overlaps):
             (next_match, _) = non_overlaps[index]
             if _overlap(next_match, match):
                 log(
-                    "- %s: Skipping overlapping match '%s' of '%s' that overlaps '%s' of '%s' on its right"
-                    % (
-                        source_name,
-                        safe_decode(match.group()),
-                        safe_decode(match.re.pattern),
-                        safe_decode(next_match.group()),
-                        safe_decode(next_match.re.pattern),
-                    ),
+                    f"- {source_name}: Skipping overlapping match '{safe_decode(match.group())}' "
+                    f"of '{safe_decode(match.re.pattern)}' that overlaps "
+                    f"'{safe_decode(next_match.group())}' of '{safe_decode(next_match.re.pattern)}' on its right"
                 )
                 continue
         starts.insert(index, match.start())
@@ -385,8 +433,8 @@ def _sort_drop_overlaps(
     return non_overlaps
 
 
-def _apply_replacements(input_bytes: bytes, matches: List[PatternPair]) -> bytes:
-    out: List[bytes] = []
+def _apply_replacements(input_bytes: bytes, matches: list[PatternPair]) -> bytes:
+    out: list[bytes] = []
     pos: int = 0
     for match, replacement in matches:
         out.append(input_bytes[pos : match.start()])
@@ -401,27 +449,27 @@ class _MatchCounts:
     found: int = 0
     valid: int = 0
 
-    def add(self, o: "_MatchCounts") -> None:
+    def add(self, o: _MatchCounts) -> None:
         self.found += o.found
         self.valid += o.valid
 
 
 def multi_replace(
     input_bytes: bytes,
-    patterns: List[PatternType],
+    patterns: list[PatternType],
     is_path: bool = False,
-    source_name: Optional[str] = None,
+    source_name: str | None = None,
     log: LogFunc = no_log,
-) -> Tuple[bytes, _MatchCounts]:
+) -> tuple[bytes, _MatchCounts]:
     """
     Replace all occurrences in the input given a list of patterns (regex,
     replacement), simultaneously, so that no replacement affects any other.
     """
-    matches: List[PatternPair] = []
+    matches: list[PatternPair] = []
     for regex, replacement in patterns:
         for match in regex.finditer(input_bytes):
             matches.append((match, replacement))
-    valid_matches: List[PatternPair] = _sort_drop_overlaps(
+    valid_matches: list[PatternPair] = _sort_drop_overlaps(
         matches, source_name=source_name, log=log
     )
     result: bytes = _apply_replacements(input_bytes, valid_matches)
@@ -441,7 +489,7 @@ def multi_replace(
 _name_pat = re.compile(r"\w+")
 
 
-def _split_name(name: str) -> Tuple[str, List[str]]:
+def _split_name(name: str) -> tuple[str, list[str]]:
     """
     Split a CamelCase or underscore-formatted name into words.
     Return separator and list of words.
@@ -477,22 +525,22 @@ def _capitalize(word: str) -> str:
 
 
 def to_lower_camel(name: str) -> str:
-    separator, words = _split_name(name)
+    _, words = _split_name(name)
     return words[0].lower() + "".join(_capitalize(word) for word in words[1:])
 
 
 def to_upper_camel(name: str) -> str:
-    separator, words = _split_name(name)
+    _, words = _split_name(name)
     return "".join(_capitalize(word) for word in words)
 
 
 def to_lower_underscore(name: str) -> str:
-    separator, words = _split_name(name)
+    _, words = _split_name(name)
     return "_".join(word.lower() for word in words)
 
 
 def to_upper_underscore(name: str) -> str:
-    separator, words = _split_name(name)
+    _, words = _split_name(name)
     return "_".join(word.upper() for word in words)
 
 
@@ -501,7 +549,7 @@ def _transform_expr(expr: str, transform: Callable[[str], str]) -> str:
     return transformed
 
 
-def all_case_variants(expr: str) -> List[str]:
+def all_case_variants(expr: str) -> list[str]:
     """
     Return all casing variations of an expression.
     Note: This operates on strings and is called before pattern compilation.
@@ -534,13 +582,13 @@ def move_file(source_path: str, dest_path: str, clobber: bool = False) -> None:
             match = trailing_num.match(dest_path)
             if match:
                 dest_path = match.group(1)
-            dest_path = "%s.%s" % (dest_path, i)
+            dest_path = f"{dest_path}.{i}"
             i += 1
     shutil.move(source_path, dest_path)
 
 
 def transform_stream(
-    transform: Optional[TransformFunc],
+    transform: TransformFunc | None,
     stream_in: BinaryIO,
     stream_out: BinaryIO,
     by_line: bool = False,
@@ -567,7 +615,7 @@ def transform_stream(
 
 
 def transform_file(
-    transform: Optional[TransformFunc],
+    transform: TransformFunc | None,
     source_path: str,
     dest_path: str,
     orig_suffix: str = BACKUP_SUFFIX,
@@ -625,7 +673,7 @@ def transform_file(
 
 def rewrite_file(
     path: str,
-    patterns: List[PatternType],
+    patterns: list[PatternType],
     do_renames: bool = False,
     do_contents: bool = False,
     by_line: bool = False,
@@ -648,19 +696,19 @@ def rewrite_file(
         transform = lambda contents: multi_replace(contents, patterns, source_name=path, log=log)
     counts = transform_file(transform, path, dest_path, by_line=by_line, dry_run=dry_run)
     if counts.found > 0:
-        log("- modify: %s: %s matches" % (path, counts.found))
+        log(f"- modify: {path}: {counts.found} matches")
     if dest_path != path:
-        log("- rename: %s -> %s" % (path, dest_path))
+        log(f"- rename: {path} -> {dest_path}")
 
 
 def walk_files(
-    paths: List[str],
+    paths: list[str],
     include_pat: str = ".*",
     exclude_pat: str = DEFAULT_EXCLUDE_PAT,
-) -> List[str]:
+) -> list[str]:
     include_re = re.compile(include_pat)
     exclude_re = re.compile(exclude_pat)
-    out: List[str] = []
+    out: list[str] = []
 
     for path in paths:
         if os.path.isfile(path):
@@ -685,8 +733,8 @@ def walk_files(
 
 
 def rewrite_files(
-    root_paths: List[str],
-    patterns: List[PatternType],
+    root_paths: list[str],
+    patterns: list[PatternType],
     do_renames: bool = False,
     do_contents: bool = False,
     include_pat: str = ".*",
@@ -705,7 +753,7 @@ def rewrite_files(
         include_pat=include_pat,
         exclude_pat=exclude_pat,
     )
-    log("Found %s files in: %s" % (len(paths), ", ".join(root_paths)))
+    log(f"Found {len(paths)} files in: {', '.join(root_paths)}")
     for path in paths:
         rewrite_file(
             path,
@@ -728,8 +776,8 @@ def parse_patterns(
     insensitive: bool = False,
     dotall: bool = False,
     preserve_case: bool = False,
-) -> List[PatternType]:
-    patterns: List[PatternType] = []
+) -> list[PatternType]:
+    patterns: list[PatternType] = []
     flags = (re.IGNORECASE if insensitive else 0) | (re.DOTALL if dotall else 0)
     for line in patterns_str.splitlines():
         bits = None
@@ -741,9 +789,11 @@ def parse_patterns(
                 (regex, replacement) = bits
                 if literal:
                     regex = re.escape(regex)
-                pairs: List[Tuple[str, str]] = []
+                pairs: list[tuple[str, str]] = []
                 if preserve_case:
-                    pairs += zip(all_case_variants(regex), all_case_variants(replacement))
+                    pairs += zip(
+                        all_case_variants(regex), all_case_variants(replacement), strict=True
+                    )
                 pairs.append((regex, replacement))
                 # Avoid spurious overlap warnings by removing dups.
                 pairs = sorted(set(pairs))
@@ -758,16 +808,16 @@ def parse_patterns(
                         )
                     )
         except Exception as e:
-            _fail("error parsing pattern: %s: %s" % (e, bits), e)
+            _fail(f"error parsing pattern: {e}: {bits}", e)
     return patterns
 
 
-def main() -> None:
+def _run_cli() -> None:
+    """Main CLI logic, separated for cleaner error handling."""
+    width = _get_terminal_width()
     parser = argparse.ArgumentParser(
         description=DESCRIPTION,
-        formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(
-            prog=prog, width=CONSOLE_WIDTH
-        ),
+        formatter_class=lambda prog: argparse.RawDescriptionHelpFormatter(prog=prog, width=width),
         add_help=False,
     )
     parser.add_argument(
@@ -898,16 +948,16 @@ def main() -> None:
     options.do_renames = options.do_renames or options.do_full
 
     global _fail
-    _fail = _fail_exit
+    _fail = _fail_with_exit
     log: LogFunc = print_stderr if not options.quiet else no_log
 
     if options.walk_only:
         paths = walk_files(
             options.root_paths, include_pat=options.include_pat, exclude_pat=options.exclude_pat
         )
-        log("Found %s files in: %s" % (len(paths), ", ".join(options.root_paths)))
+        log(f"Found {len(paths)} files in: {', '.join(options.root_paths)}")
         for path in paths:
-            log("- %s" % path)
+            log(f"- {path}")
         return  # We're done!
 
     # log("Settings: %s" % options)
@@ -926,7 +976,7 @@ def main() -> None:
         with open(options.pat_file, "rb") as f:
             pat_str = f.read().decode("utf-8")
     else:
-        pat_str = "%s\t%s" % (options.from_pat, options.to_pat)
+        pat_str = f"{options.from_pat}\t{options.to_pat}"
     patterns = parse_patterns(
         pat_str,
         literal=options.literal,
@@ -948,17 +998,10 @@ def main() -> None:
     if options.dry_run:
         log("Dry run: No files will be changed")
     log(
-        ("Using %s patterns:\n  " % len(patterns))
+        f"Using {len(patterns)} patterns:\n  "
         + "\n  ".join(
-            [
-                "'%s' %s-> '%s'"
-                % (
-                    safe_decode(regex.pattern),
-                    format_flags(regex.flags),
-                    safe_decode(replacement),
-                )
-                for (regex, replacement) in patterns
-            ]
+            f"'{safe_decode(regex.pattern)}' {format_flags(regex.flags)}-> '{safe_decode(replacement)}'"
+            for (regex, replacement) in patterns
         ),
     )
 
@@ -980,18 +1023,13 @@ def main() -> None:
         )
 
         log(
-            "Read %s files (%s chars), found %s matches (%s skipped due to overlaps)"
-            % (
-                _tally.files,
-                _tally.chars,
-                _tally.valid_matches,
-                _tally.matches - _tally.valid_matches,
-            ),
+            f"Read {_tally.files} files ({_tally.chars} chars), found {_tally.valid_matches} matches "
+            f"({_tally.matches - _tally.valid_matches} skipped due to overlaps)",
         )
         change_words = "Dry run: Would have changed" if options.dry_run else "Changed"
         log(
-            "%s %s files (%s rewritten and %s renamed)"
-            % (change_words, _tally.files_changed, _tally.files_rewritten, _tally.renames),
+            f"{change_words} {_tally.files_changed} files "
+            f"({_tally.files_rewritten} rewritten and {_tally.renames} renamed)",
         )
     else:
         if options.do_renames:
@@ -1002,9 +1040,21 @@ def main() -> None:
         transform_stream(transform, sys.stdin.buffer, sys.stdout.buffer, by_line=by_line)
 
         log(
-            "Read %s chars, made %s replacements (%s skipped due to overlaps)"
-            % (_tally.chars, _tally.valid_matches, _tally.matches - _tally.valid_matches),
+            f"Read {_tally.chars} chars, made {_tally.valid_matches} replacements "
+            f"({_tally.matches - _tally.valid_matches} skipped due to overlaps)",
         )
+
+
+def main() -> None:
+    """CLI entrypoint with centralized error handling."""
+    try:
+        _run_cli()
+    except CLIError as e:
+        print(f"error: {e.message}", file=sys.stderr)
+        sys.exit(e.exit_code)
+    except KeyboardInterrupt:
+        print("\nInterrupted", file=sys.stderr)
+        sys.exit(EXIT_INTERRUPTED)
 
 
 if __name__ == "__main__":
