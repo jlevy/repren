@@ -5,7 +5,8 @@ run || expect_error
 usage: repren [-h] [--version] [--usage] [--from FROM_PAT] [--to TO_PAT] [-p PAT_FILE]
               [--full] [--renames] [--literal] [-i] [--dotall] [--preserve-case] [-b]
               [--include INCLUDE_PAT] [--exclude EXCLUDE_PAT] [--at-once] [-t]
-              [--walk-only] [-n] [-q]
+              [--walk-only] [-n] [-q] [--backup-suffix BACKUP_SUFFIX] [--undo]
+              [--clean-backups]
               [root_paths ...]
 repren: error: must specify --patterns or both --from and --to
 (got expected error: status 2)
@@ -63,6 +64,7 @@ Only in test1: humpty-dumpty.txt.orig
 run --from humpty --to dumpty test1
 Using 1 patterns:
   'humpty' -> 'dumpty'
+Skipped 1 file(s) ending in '.orig' (backup files are never processed)
 Found 12 files in: test1
 Read 12 files (3810 chars), found 0 matches (0 skipped due to overlaps)
 Changed 0 files (0 rewritten and 0 renamed)
@@ -306,6 +308,7 @@ Using 6 patterns:
   'b' -> 'c'
   'C' -> 'A'
   'c' -> 'a'
+Skipped 9 file(s) ending in '.orig' (backup files are never processed)
 Found 12 files in: test7
 - modify: test7/humpty-dumpty.txt: 40 matches
 - modify: test7/stuff/trees/ceeah.txt: 180 matches
@@ -330,6 +333,7 @@ Using 6 patterns:
   'b' -> 'c'
   'C' -> 'A'
   'c' -> 'a'
+Skipped 17 file(s) ending in '.orig' (backup files are never processed)
 Found 12 files in: test7
 - modify: test7/humpty-dumpty.txt: 40 matches
 - modify: test7/stuff/trees/aeebh.txt: 180 matches
@@ -430,6 +434,124 @@ Found 3 files in: original
 # TODO: Fix this.
 # cp -a original test9
 # run --renames --from stuff/trees --to another-dir test9
+
+
+# Backup management: undo and clean-backups.
+
+cp -a original test-backup
+
+# Make a change with renames (creates backup files).
+run --full -i --from humpty --to dumpty test-backup
+Using 1 patterns:
+  'humpty' IGNORECASE -> 'dumpty'
+Found 12 files in: test-backup
+- modify: test-backup/humpty-dumpty.txt: 3 matches
+- rename: test-backup/humpty-dumpty.txt -> test-backup/dumpty-dumpty.txt
+Read 12 files (3810 chars), found 3 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 1 renamed)
+
+ls_portable test-backup
+-rw-r--r-- dumpty-dumpty.txt
+-rw-r--r-- humpty-dumpty.txt.orig
+drwxr-xr-x stuff/
+
+# Verify backup exists and content changed.
+cat test-backup/humpty-dumpty.txt.orig | head -1
+Humpty Dumpty smiled contemptuously. 'Of course you don't — till I tell you. I meant "there's a nice knock-down argument for you!"'
+
+cat test-backup/dumpty-dumpty.txt | head -1
+dumpty Dumpty smiled contemptuously. 'Of course you don't — till I tell you. I meant "there's a nice knock-down argument for you!"'
+
+# Dry run undo to preview what would be restored.
+run --undo -n --full -i --from humpty --to dumpty test-backup
+Dry run: No files will be changed
+Using 1 patterns:
+  'humpty' IGNORECASE -> 'dumpty'
+- restore (dry-run): test-backup/humpty-dumpty.txt.orig -> test-backup/humpty-dumpty.txt
+Would restore 1 file(s), skipped 0 with warnings
+
+# Actually undo the changes.
+run --undo --full -i --from humpty --to dumpty test-backup
+Using 1 patterns:
+  'humpty' IGNORECASE -> 'dumpty'
+- restore: test-backup/humpty-dumpty.txt.orig -> test-backup/humpty-dumpty.txt
+Restored 1 file(s), skipped 0 with warnings
+
+ls_portable test-backup
+-rw-r--r-- humpty-dumpty.txt
+drwxr-xr-x stuff/
+
+# Verify content is restored.
+cat test-backup/humpty-dumpty.txt | head -1
+Humpty Dumpty smiled contemptuously. 'Of course you don't — till I tell you. I meant "there's a nice knock-down argument for you!"'
+
+# Verify we're back to original state.
+diff -r original test-backup
+
+# Redo the change for clean-backups test.
+run --full -i --from humpty --to dumpty test-backup
+Using 1 patterns:
+  'humpty' IGNORECASE -> 'dumpty'
+Found 12 files in: test-backup
+- modify: test-backup/humpty-dumpty.txt: 3 matches
+- rename: test-backup/humpty-dumpty.txt -> test-backup/dumpty-dumpty.txt
+Read 12 files (3810 chars), found 3 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 1 renamed)
+
+ls_portable test-backup
+-rw-r--r-- dumpty-dumpty.txt
+-rw-r--r-- humpty-dumpty.txt.orig
+drwxr-xr-x stuff/
+
+# Dry run clean-backups to preview what would be removed.
+run --clean-backups -n test-backup
+Dry run: No files will be changed
+- remove (dry-run): test-backup/humpty-dumpty.txt.orig
+Would remove 1 backup file(s)
+
+# Actually clean the backups.
+run --clean-backups test-backup
+- remove: test-backup/humpty-dumpty.txt.orig
+Removed 1 backup file(s)
+
+ls_portable test-backup
+-rw-r--r-- dumpty-dumpty.txt
+drwxr-xr-x stuff/
+
+# Verify changes remain but backups are gone.
+diff -r original test-backup || expect_error
+Only in test-backup: dumpty-dumpty.txt
+Only in original: humpty-dumpty.txt
+(got expected error: status 1)
+
+
+# Custom backup suffix.
+
+cp -a original test-suffix
+
+# Use custom backup suffix.
+run --full -i --from humpty --to dumpty --backup-suffix .bak test-suffix
+Using 1 patterns:
+  'humpty' IGNORECASE -> 'dumpty'
+Found 12 files in: test-suffix
+- modify: test-suffix/humpty-dumpty.txt: 3 matches
+- rename: test-suffix/humpty-dumpty.txt -> test-suffix/dumpty-dumpty.txt
+Read 12 files (3810 chars), found 3 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 1 renamed)
+
+ls_portable test-suffix
+-rw-r--r-- dumpty-dumpty.txt
+-rw-r--r-- humpty-dumpty.txt.bak
+drwxr-xr-x stuff/
+
+# Clean backups with custom suffix.
+run --clean-backups --backup-suffix .bak test-suffix
+- remove: test-suffix/humpty-dumpty.txt.bak
+Removed 1 backup file(s)
+
+ls_portable test-suffix
+-rw-r--r-- dumpty-dumpty.txt
+drwxr-xr-x stuff/
 
 
 # TODO: More test coverage:

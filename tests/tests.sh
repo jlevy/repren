@@ -153,6 +153,66 @@ run --walk-only --include='A.*|M.*|oak' --exclude='Mex.*' original
 # run --renames --from stuff/trees --to another-dir test9
 
 
+# Backup management: undo and clean-backups.
+
+cp -a original test-backup
+
+# Make a change with renames (creates backup files).
+run --full -i --from humpty --to dumpty test-backup
+
+ls_portable test-backup
+
+# Verify backup exists and content changed.
+cat test-backup/humpty-dumpty.txt.orig | head -1
+
+cat test-backup/dumpty-dumpty.txt | head -1
+
+# Dry run undo to preview what would be restored.
+run --undo -n --full -i --from humpty --to dumpty test-backup
+
+# Actually undo the changes.
+run --undo --full -i --from humpty --to dumpty test-backup
+
+ls_portable test-backup
+
+# Verify content is restored.
+cat test-backup/humpty-dumpty.txt | head -1
+
+# Verify we're back to original state.
+diff -r original test-backup
+
+# Redo the change for clean-backups test.
+run --full -i --from humpty --to dumpty test-backup
+
+ls_portable test-backup
+
+# Dry run clean-backups to preview what would be removed.
+run --clean-backups -n test-backup
+
+# Actually clean the backups.
+run --clean-backups test-backup
+
+ls_portable test-backup
+
+# Verify changes remain but backups are gone.
+diff -r original test-backup || expect_error
+
+
+# Custom backup suffix.
+
+cp -a original test-suffix
+
+# Use custom backup suffix.
+run --full -i --from humpty --to dumpty --backup-suffix .bak test-suffix
+
+ls_portable test-suffix
+
+# Clean backups with custom suffix.
+run --clean-backups --backup-suffix .bak test-suffix
+
+ls_portable test-suffix
+
+
 # TODO: More test coverage:
 # - Regex and capturing groups.
 # - CamelCase and whole word support.

@@ -676,6 +676,7 @@ def rewrite_file(
     patterns: list[PatternType],
     do_renames: bool = False,
     do_contents: bool = False,
+    backup_suffix: str = BACKUP_SUFFIX,
     by_line: bool = False,
     dry_run: bool = False,
     log: LogFunc = no_log,
@@ -694,7 +695,9 @@ def rewrite_file(
     transform = None
     if do_contents:
         transform = lambda contents: multi_replace(contents, patterns, source_name=path, log=log)
-    counts = transform_file(transform, path, dest_path, by_line=by_line, dry_run=dry_run)
+    counts = transform_file(
+        transform, path, dest_path, orig_suffix=backup_suffix, by_line=by_line, dry_run=dry_run
+    )
     if counts.found > 0:
         log(f"- modify: {path}: {counts.found} matches")
     if dest_path != path:
@@ -705,31 +708,39 @@ def walk_files(
     paths: list[str],
     include_pat: str = ".*",
     exclude_pat: str = DEFAULT_EXCLUDE_PAT,
-) -> list[str]:
+    backup_suffix: str = BACKUP_SUFFIX,
+) -> tuple[list[str], int]:
+    """
+    Walk the given paths and return files matching include/exclude patterns.
+    Filters out backup files (ending with backup_suffix) and temp files.
+
+    Returns a tuple of (list of file paths, count of skipped backup files).
+    """
     include_re = re.compile(include_pat)
     exclude_re = re.compile(exclude_pat)
     out: list[str] = []
+    skipped_backup_count = 0
 
     for path in paths:
         if os.path.isfile(path):
             f = os.path.basename(path)
-            if include_re.match(f) and not exclude_re.match(f):
+            # Also filter explicit file paths that are backup files
+            if path.endswith(backup_suffix) or path.endswith(TEMP_SUFFIX):
+                skipped_backup_count += 1
+            elif include_re.match(f) and not exclude_re.match(f):
                 out.append(path)
         else:
             for root, dirs, files in os.walk(path):
                 # Filter directories based on include and exclude patterns
                 dirs[:] = [d for d in dirs if not exclude_re.match(d)]
                 for f in files:
-                    if (
-                        include_re.match(f)
-                        and not exclude_re.match(f)
-                        and not f.endswith(BACKUP_SUFFIX)
-                        and not f.endswith(TEMP_SUFFIX)
-                    ):
+                    if f.endswith(backup_suffix) or f.endswith(TEMP_SUFFIX):
+                        skipped_backup_count += 1
+                    elif include_re.match(f) and not exclude_re.match(f):
                         out.append(os.path.join(root, f))
 
     out.sort()  # Ensure deterministic order of file processing.
-    return out
+    return out, skipped_backup_count
 
 
 def rewrite_files(
@@ -739,6 +750,7 @@ def rewrite_files(
     do_contents: bool = False,
     include_pat: str = ".*",
     exclude_pat: str = DEFAULT_EXCLUDE_PAT,
+    backup_suffix: str = BACKUP_SUFFIX,
     by_line: bool = False,
     dry_run: bool = False,
     log: LogFunc = no_log,
@@ -748,11 +760,17 @@ def rewrite_files(
     changes according to the given list of patterns. Set `log` if you wish to log info
     in `dry_run` mode.
     """
-    paths = walk_files(
+    paths, skipped_backup_count = walk_files(
         root_paths,
         include_pat=include_pat,
         exclude_pat=exclude_pat,
+        backup_suffix=backup_suffix,
     )
+    if skipped_backup_count > 0:
+        log(
+            f"Skipped {skipped_backup_count} file(s) ending in '{backup_suffix}' "
+            "(backup files are never processed)"
+        )
     log(f"Found {len(paths)} files in: {', '.join(root_paths)}")
     for path in paths:
         rewrite_file(
@@ -760,10 +778,160 @@ def rewrite_files(
             patterns,
             do_renames=do_renames,
             do_contents=do_contents,
+            backup_suffix=backup_suffix,
             by_line=by_line,
             dry_run=dry_run,
             log=log,
         )
+
+
+# --- Backup management ---
+
+
+def find_backup_files(
+    root_paths: list[str],
+    backup_suffix: str = BACKUP_SUFFIX,
+    include_pat: str = ".*",
+    exclude_pat: str = DEFAULT_EXCLUDE_PAT,
+) -> list[str]:
+    """
+    Find all files ending with the backup suffix in the given paths.
+    """
+    include_re = re.compile(include_pat)
+    exclude_re = re.compile(exclude_pat)
+    out: list[str] = []
+
+    for path in root_paths:
+        if os.path.isfile(path):
+            f = os.path.basename(path)
+            if path.endswith(backup_suffix) and include_re.match(f) and not exclude_re.match(f):
+                out.append(path)
+        else:
+            for root, dirs, files in os.walk(path):
+                dirs[:] = [d for d in dirs if not exclude_re.match(d)]
+                for f in files:
+                    if (
+                        f.endswith(backup_suffix)
+                        and include_re.match(f)
+                        and not exclude_re.match(f)
+                    ):
+                        out.append(os.path.join(root, f))
+
+    out.sort()
+    return out
+
+
+def undo_backups(
+    root_paths: list[str],
+    patterns: list[PatternType],
+    backup_suffix: str = BACKUP_SUFFIX,
+    include_pat: str = ".*",
+    exclude_pat: str = DEFAULT_EXCLUDE_PAT,
+    dry_run: bool = False,
+    log: LogFunc = no_log,
+) -> tuple[int, int]:
+    """
+    Restore original files from backups using patterns to reverse renames.
+
+    For each backup file (e.g., foo.txt.orig):
+    1. Strip suffix to get original path (foo.txt)
+    2. Apply patterns to predict what the file was renamed to
+    3. Validate predicted file exists and timestamps are correct
+    4. Restore original and remove renamed file (if applicable)
+
+    Skips with warnings (no action taken) when:
+    - Predicted renamed file doesn't exist
+    - Backup is newer than current file (unexpected timestamp order)
+
+    Returns (restored_count, skipped_count).
+    """
+    backup_files = find_backup_files(
+        root_paths,
+        backup_suffix=backup_suffix,
+        include_pat=include_pat,
+        exclude_pat=exclude_pat,
+    )
+
+    restored = 0
+    skipped = 0
+
+    for backup_path in backup_files:
+        # Strip the backup suffix to get the original path
+        original_path = backup_path[: -len(backup_suffix)]
+
+        # Apply patterns to predict the renamed path
+        original_path_bytes = original_path.encode("utf-8")
+        predicted_path_bytes, _ = multi_replace(original_path_bytes, patterns, is_path=True)
+        predicted_path = predicted_path_bytes.decode("utf-8")
+
+        # Determine which file should exist (original or renamed)
+        if predicted_path == original_path:
+            # No rename happened, just content change
+            target_path = original_path
+        else:
+            # File was renamed
+            target_path = predicted_path
+
+        # Check if target file exists
+        if not os.path.exists(target_path):
+            log(f"- skip: {backup_path}: expected '{target_path}' not found")
+            skipped += 1
+            continue
+
+        # Check timestamps: backup should be older than current file
+        backup_mtime = os.path.getmtime(backup_path)
+        target_mtime = os.path.getmtime(target_path)
+        if backup_mtime > target_mtime:
+            log(f"- skip: {backup_path}: backup is newer than current file")
+            skipped += 1
+            continue
+
+        # Perform the undo
+        if not dry_run:
+            # Move backup to original location
+            shutil.move(backup_path, original_path)
+            # Remove the renamed file if it's different from original
+            if predicted_path != original_path and os.path.exists(predicted_path):
+                os.remove(predicted_path)
+            log(f"- restore: {backup_path} -> {original_path}")
+        else:
+            log(f"- restore (dry-run): {backup_path} -> {original_path}")
+
+        restored += 1
+
+    return restored, skipped
+
+
+def clean_backups(
+    root_paths: list[str],
+    backup_suffix: str = BACKUP_SUFFIX,
+    include_pat: str = ".*",
+    exclude_pat: str = DEFAULT_EXCLUDE_PAT,
+    dry_run: bool = False,
+    log: LogFunc = no_log,
+) -> int:
+    """
+    Remove backup files.
+
+    Returns the count of files removed (or that would be removed in dry_run mode).
+    """
+    backup_files = find_backup_files(
+        root_paths,
+        backup_suffix=backup_suffix,
+        include_pat=include_pat,
+        exclude_pat=exclude_pat,
+    )
+
+    removed = 0
+    for backup_path in backup_files:
+        if not dry_run:
+            os.remove(backup_path)
+            log(f"- remove: {backup_path}")
+        else:
+            log(f"- remove (dry-run): {backup_path}")
+        removed += 1
+
+    return removed
 
 
 # --- Invocation ---
@@ -932,6 +1100,24 @@ def _run_cli() -> None:
         dest="quiet",
         action="store_true",
     )
+    parser.add_argument(
+        "--backup-suffix",
+        help=f"suffix for backup files (default: {BACKUP_SUFFIX})",
+        dest="backup_suffix",
+        default=BACKUP_SUFFIX,
+    )
+    parser.add_argument(
+        "--undo",
+        help="restore original files from backups (requires same patterns as original operation)",
+        dest="undo",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--clean-backups",
+        help="remove backup files (standalone mode, no patterns needed)",
+        dest="clean_backups",
+        action="store_true",
+    )
     parser.add_argument("root_paths", nargs="*", help="root paths to process")
 
     if "--usage" in sys.argv:
@@ -951,13 +1137,45 @@ def _run_cli() -> None:
     _fail = _fail_with_exit
     log: LogFunc = print_stderr if not options.quiet else no_log
 
+    # Validate backup suffix
+    if not options.backup_suffix.startswith("."):
+        parser.error("--backup-suffix must start with '.'")
+
     if options.walk_only:
-        paths = walk_files(
-            options.root_paths, include_pat=options.include_pat, exclude_pat=options.exclude_pat
+        paths, skipped_backup_count = walk_files(
+            options.root_paths,
+            include_pat=options.include_pat,
+            exclude_pat=options.exclude_pat,
+            backup_suffix=options.backup_suffix,
         )
+        if skipped_backup_count > 0:
+            log(
+                f"Skipped {skipped_backup_count} file(s) ending in '{options.backup_suffix}' "
+                "(backup files are never processed)"
+            )
         log(f"Found {len(paths)} files in: {', '.join(options.root_paths)}")
         for path in paths:
             log(f"- {path}")
+        return  # We're done!
+
+    # Handle --clean-backups mode (standalone, no patterns needed)
+    if options.clean_backups:
+        if options.pat_file or options.from_pat or options.to_pat:
+            parser.error("--clean-backups cannot be used with --patterns or --from/--to")
+        if len(options.root_paths) == 0:
+            parser.error("--clean-backups requires paths to process")
+        if options.dry_run:
+            log("Dry run: No files will be changed")
+        removed = clean_backups(
+            options.root_paths,
+            backup_suffix=options.backup_suffix,
+            include_pat=options.include_pat,
+            exclude_pat=options.exclude_pat,
+            dry_run=options.dry_run,
+            log=log,
+        )
+        action_word = "Would remove" if options.dry_run else "Removed"
+        log(f"{action_word} {removed} backup file(s)")
         return  # We're done!
 
     # log("Settings: %s" % options)
@@ -1008,6 +1226,23 @@ def _run_cli() -> None:
     if options.parse_only:
         return  # We're done!
 
+    # Handle --undo mode
+    if options.undo:
+        if len(options.root_paths) == 0:
+            parser.error("--undo requires paths to process")
+        restored, skipped = undo_backups(
+            options.root_paths,
+            patterns,
+            backup_suffix=options.backup_suffix,
+            include_pat=options.include_pat,
+            exclude_pat=options.exclude_pat,
+            dry_run=options.dry_run,
+            log=log,
+        )
+        action_word = "Would restore" if options.dry_run else "Restored"
+        log(f"{action_word} {restored} file(s), skipped {skipped} with warnings")
+        return  # We're done!
+
     # Process files.
     if len(options.root_paths) > 0:
         rewrite_files(
@@ -1017,6 +1252,7 @@ def _run_cli() -> None:
             do_contents=options.do_contents,
             exclude_pat=options.exclude_pat,
             include_pat=options.include_pat,
+            backup_suffix=options.backup_suffix,
             by_line=by_line,
             dry_run=options.dry_run,
             log=log,
@@ -1063,9 +1299,6 @@ if __name__ == "__main__":
 # TODO:
 #   consider using regex for better Unicode support (but only gracefully, such as
 #     with a dynamic import, if those features like Unicode character properties are needed)
-#   --undo mode to revert a previous run by using .orig files
-#   --clean mode to remove .orig files
-#   --orig_suffix to allow for backups besides .orig, including for these use cases
 #   Log collisions
 #   Separate patterns file for renames and replacements
 #   Should --at-once be the default?
