@@ -1299,9 +1299,6 @@ if __name__ == "__main__":
 # TODO:
 #   consider using regex for better Unicode support (but only gracefully, such as
 #     with a dynamic import, if those features like Unicode character properties are needed)
-#   --undo mode to revert a previous run by using .orig files
-#   --clean mode to remove .orig files
-#   --orig_suffix to allow for backups besides .orig, including for these use cases
 #   Log collisions
 #   Separate patterns file for renames and replacements
 #   Should --at-once be the default?

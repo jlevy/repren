@@ -415,9 +415,9 @@ Tasks:
 
 Tasks:
 
-- [ ] Update CLI help text for all three options with clear explanations
+- [x] Update CLI help text for all three options with clear explanations
 
-- [ ] Update README.md with:
+- [x] Update README.md with:
 
   - New features section for backup management
 
@@ -427,9 +427,9 @@ Tasks:
 
   - Examples for content changes, file renames, and directory renames
 
-- [ ] Run full test suite and integration tests
+- [x] Run full test suite and integration tests
 
-- [ ] Remove TODOs from repren.py (lines 1066-1069) that are now implemented
+- [x] Remove TODOs from repren.py (lines 1066-1069) that are now implemented
 
 ## Stage 4: Validation
 

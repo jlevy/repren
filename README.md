@@ -250,9 +250,67 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
   File permissions are preserved.
 
 - Backups are created of all modified files, with the suffix ".orig".
+  The suffix can be customized with `--backup-suffix`.
 
 - By default, recursive searching omits paths starting with ".". This may be adjusted with
-  `--exclude`. Files ending in `.orig` are always ignored.
+  `--exclude`. Files ending in the backup suffix (`.orig` by default) are always ignored.
+
+## Backup Management
+
+Repren provides tools for managing backup files created during operations:
+
+### Undo Changes
+
+If you need to revert changes, use `--undo` with the same patterns as the original operation:
+
+```bash
+# Original operation:
+repren --from OldClass --to NewClass --full src/
+
+# Undo the changes:
+repren --undo --from OldClass --to NewClass --full src/
+```
+
+The undo command:
+- Finds all `.orig` backup files
+- Uses the patterns to determine which files were renamed
+- Restores the original files and removes renamed files
+- Skips with warnings if timestamps look wrong or files are missing
+
+### Clean Backups
+
+When you're satisfied with your changes, remove backup files:
+
+```bash
+# Remove all .orig backup files:
+repren --clean-backups src/
+
+# Dry run to see what would be removed:
+repren --clean-backups --dry-run src/
+
+# Remove backups with custom suffix:
+repren --clean-backups --backup-suffix .bak src/
+```
+
+### Complete Workflow
+
+A typical workflow:
+
+```bash
+# 1. Preview changes
+repren --dry-run --from foo --to bar --full mydir/
+
+# 2. Execute changes (creates .orig backups)
+repren --from foo --to bar --full mydir/
+
+# 3. Review and test your changes
+
+# 4. Either undo if something went wrong:
+repren --undo --from foo --to bar --full mydir/
+
+# 4. Or clean up backups when satisfied:
+repren --clean-backups mydir/
+```
 
 - Data is handled as bytes internally, allowing it to work with any encoding or binary
   files.
