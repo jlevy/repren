@@ -8,9 +8,9 @@ Thanks to
 [the dynamic versioning plugin](https://github.com/ninoseki/uv-dynamic-versioning/) and
 the [`publish.yml`
 workflow](https://github.com/jlevy/repren/blob/master/.github/workflows/publish.yml),
-you can simply create tagged releases (using standard format for the tag name, e.g.
-`v1.0.2`) on GitHub and the tag will trigger a release build, which then uploads it to
-PyPI.
+you can simply create tagged releases (using the tag name format matching your version,
+e.g. `1.0.2`) on GitHub and the tag will trigger a release build, which then uploads it
+to PyPI.
 
 ### First-Time Setup
 
@@ -50,7 +50,7 @@ Here is the simplest way to do it.
 
    - Fill in the tag and the release name.
      Select to create a new tag, and pick a version.
-     A good option is `v0.1.0`. (It's wise to have it start with a `v`.)
+     A good option is `0.1.0` (matching `pattern = "default-unprefixed"` in pyproject.toml).
 
    - Submit to create the release.
 
@@ -98,11 +98,11 @@ Follow this checklist for each new release.
 
    Use [semantic versioning](https://semver.org/):
 
-   - **Patch** (e.g., `v1.0.1` → `v1.0.2`): Bug fixes, minor changes
+   - **Patch** (e.g., `1.0.1` → `1.0.2`): Bug fixes, minor changes
 
-   - **Minor** (e.g., `v1.0.2` → `v1.1.0`): New features, backward-compatible
+   - **Minor** (e.g., `1.0.2` → `1.1.0`): New features, backward-compatible
 
-   - **Major** (e.g., `v1.1.0` → `v2.0.0`): Breaking changes
+   - **Major** (e.g., `1.1.0` → `2.0.0`): Breaking changes
 
 #### Create the Release
 
@@ -124,7 +124,7 @@ Follow this checklist for each new release.
 6. **Create the release with `gh`:**
 
    ```shell
-   NEW_TAG="vX.Y.Z"  # Replace with actual version
+   NEW_TAG="X.Y.Z"  # Replace with actual version (unprefixed)
    LAST_TAG=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
 
    gh release create "${NEW_TAG}" \
@@ -181,7 +181,7 @@ Description of what changed and how to migrate.
 
 ### Full Changelog
 
-https://github.com/jlevy/repren/compare/vPREVIOUS...vNEW
+https://github.com/jlevy/repren/compare/PREVIOUS...NEW
 ```
 
 Guidelines:
