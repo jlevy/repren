@@ -9,8 +9,9 @@ trap "echo && echo 'Tests failed! See failure above.'" ERR
 
 dir="$(cd `dirname $0`; pwd)"
 
-full_log=${1:-$dir/tests-full.log}
-clean_log=${2:-$dir/tests-clean.log}
+full_log=$dir/tests-full.log
+baseline=$dir/tests-expected.log
+new_output=$dir/tests-actual.log
 final_diff=$dir/test.diff
 
 echo Cleaning up...
@@ -41,20 +42,23 @@ $dir/tests.sh 2>&1 \
   | perl -pe '$|=1; s/ at 0x[0-9a-f]*/ at 0x__X/g' \
   | perl -pe '$|=1; s/[0-9.:T-]*Z/__TIMESTAMP/g' \
   | perl -pe '$|=1; s|/private/tmp/|/tmp/|g' \
-  > $clean_log
+  > $new_output
 
 echo "Tests done."
 echo
 echo "Full log: $full_log"
-echo "Clean log: $clean_log"
+echo "Actual output: $new_output"
+echo "Expected output: $baseline"
 echo
-echo "Now diffing: git diff $clean_log > $final_diff"
+echo "Comparing actual vs expected..."
 
-git diff $clean_log > $final_diff
+# Compare new output against the committed baseline
+diff -u "$baseline" "$new_output" > $final_diff || true
 
 if [ ! -s "$final_diff" ]; then
     echo
     echo "Success! No differences found."
+    rm -f "$new_output"
     exit 0
 else
     echo
@@ -64,7 +68,8 @@ else
     echo "----------------------------------------"
     echo
     echo "Tests did not pass!"
-    echo "Review the diffs above, then fix or commit the new $clean_log file if it is correct."
+    echo "If the actual output is correct, update the expected baseline:"
+    echo "  cp $new_output $baseline"
 
     exit 1
 fi
