@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-"""
+r"""
 ## Rename Anything
 
 `repren` is a powerful CLI string replacement and file renaming tool for use by agents
@@ -29,9 +29,8 @@ It’s more powerful than classic options like `perl -pie`, `rpl`, or `sed`:
   once, without requiring a temporary intermediate rename.
 
 - **Good hygiene:** It is careful: it has a nondestructive “dry run” mode and prints
-  clear stats on its changes.
-  It leaves backups. File operations are done atomically, so interruptions never leave a
-  previously existing file truncated or partly edited.
+  clear stats on its changes. It leaves backups. File operations are done atomically, so
+  interruptions never leave a previously existing file truncated or partly edited.
 
 - **Case preserving options:** It supports “magic” case-preserving renames that let you
   find and rename identifiers with case variants (lowerCamel, UpperCamel,
@@ -40,21 +39,24 @@ It’s more powerful than classic options like `perl -pie`, `rpl`, or `sed`:
 - **Dry run, backups, and undo:** It has convenient options for dry run, undo (restoring
   backups), and cleanup (deleting backups).
 
-- **Self-documenting:** It is packaged with its own nice documentation!
-  Run with `--help` for these full docs.
+- **Text or JSON output:** It supports human-readable text output (default) or
+  machine-parseable JSON output (`--format=json`) for easy integration with scripts and
+  agents.
+
+- **Self-documenting:** It is packaged with its own nice documentation! Run with
+  `--help` for these full docs.
 
 If file paths are provided, repren replaces those files in place, leaving a backup with
 extension “.orig” (controlled by the `--backup-suffix` option).
 
 If directory paths are provided, it applies replacements recursively to all files in the
-supplied paths that are not in the exclude pattern.
-If no arguments are supplied, it reads from stdin and writes to stdout.
+supplied paths that are not in the exclude pattern. If no arguments are supplied, it
+reads from stdin and writes to stdout.
 
 ## Examples
 
 Patterns can be supplied in a text file, with one or more replacements consisting of
-regular expression and replacement.
-For example:
+regular expression and replacement. For example:
 
 ```
 # Sample pattern file
@@ -63,9 +65,8 @@ WhizzleStick<tab>AcmeExtrudedPlasticFunProvider
 figure ([0-9+])<tab>Figure \1
 ```
 
-(Where `<tab>` is an actual tab character.)
-Each line is a replacement.
-Empty lines and #-prefixed comments are ignored.
+(Where `<tab>` is an actual tab character.) Each line is a replacement. Empty lines and
+#-prefixed comments are ignored.
 
 As a short-cut, a single replacement can be specified on the command line using `--from`
 (match) and `--to` (replacement).
@@ -75,27 +76,27 @@ Examples:
 ```bash
 # Here `patfile` is a patterns file.
 # Rewrite stdin:
-repren -p patfile < input > output
+repren --patterns=patfile < input > output
 
 # Shortcut with a single pattern replacement (replace foo with bar):
-repren --from foo --to bar < input > output
+repren --from=foo --to=bar < input > output
 
 # Rewrite a few files in place, also requiring matches be on word breaks:
-repren -p patfile --word-breaks myfile1 myfile2 myfile3
+repren --patterns=patfile --word-breaks myfile1 myfile2 myfile3
 
 # Rewrite whole directory trees. Since this is a big operation, we use
 # `-n` to do a dry run that only prints what would be done:
-repren -n -p patfile --word-breaks --full mydir1
+repren -n --patterns=patfile --word-breaks --full mydir1
 
 # Now actually do it:
-repren -p patfile --word-breaks --full mydir1
+repren --patterns=patfile --word-breaks --full mydir1
 
 # Same as above, for all case variants:
-repren -p patfile --word-breaks --preserve-case --full mydir1
+repren --patterns=patfile --word-breaks --preserve-case --full mydir1
 
 # Same as above but including only .py files and excluding the tests directory
 # and any files or directories starting with test_:
-repren -p patfile --word-breaks --preserve-case --full --include='.*[.]py$' --exclude='tests|test_.*' mydir1
+repren --patterns=patfile --word-breaks --preserve-case --full --include='.*[.]py$' --exclude='tests|test_.*' mydir1
 ```
 
 ## Usage
@@ -104,38 +105,102 @@ Run `repren --help` for full usage and flags.
 
 If file paths are provided, repren replaces those files in place, leaving a backup with
 extension “.orig”. If directory paths are provided, it applies replacements recursively
-to all files in the supplied paths that are not in the exclude pattern.
-If no arguments are supplied, it reads from stdin and writes to stdout.
+to all files in the supplied paths that are not in the exclude pattern. If no arguments
+are supplied, it reads from stdin and writes to stdout.
 
 ## Alternatives
 
 Aren’t there standard tools for this already?
 
-It’s a bit surprising, but not really.
-Getting the features right is a bit tricky, I guess.
-The
+It’s a bit surprising, but not really. Getting the features right is a bit tricky, I
+guess. The
 [standard](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549)
 [answers](http://stackoverflow.com/questions/6840332/rename-multiple-files-by-replacing-a-particular-pattern-in-the-filenames-using-a)
 like *sed*, *perl*, *awk*, *rename*, *Vim* macros, or even IDE refactoring tools, often
 cover specific cases, but tend to be error-prone or not offer specific features you
 probably want. Things like nondestructive mode, file renaming as well as search/replace,
-multiple simultaneous renames/swaps, or renaming enclosing parent directories.
-Also many of these vary by platform, which adds to the corner cases.
-Inevitably you end up digging through the darker corners of a man page, doing
-semi-automated things in an IDE, or writing hacked scripts that are an embarrassment to
-share.
+multiple simultaneous renames/swaps, or renaming enclosing parent directories. Also many
+of these vary by platform, which adds to the corner cases. Inevitably you end up digging
+through the darker corners of a man page, doing semi-automated things in an IDE, or
+writing hacked scripts that are an embarrassment to share.
 
 ## Installation
 
-No dependencies except Python 3.10+. It’s easiest to install with pip:
+No dependencies except Python 3.10+. It’s easiest to install with
+[uv](https://docs.astral.sh/uv/):
 
 ```bash
-pip install repren
+# Install as a tool:
+uv tool install repren
+
+# Or run directly without installing:
+uvx repren --help
 ```
 
 Or, since it’s just one file, you can copy the
 [repren.py](https://raw.githubusercontent.com/jlevy/repren/master/repren/repren.py)
 script somewhere convenient and make it executable.
+
+## Agent Use
+
+### Why Agents Should Use repren
+
+repren is designed for use by AI coding agents (Claude Code, Codex, etc.) as well as
+humans.
+
+AST-based tools (ast-grep, Semgrep, ts-morph) can be better for focused, language-aware
+semantic refactoring. But repren is ideal for fast, large code or doc text refactoring,
+file/directory renaming, or any serious larger-scale renaming effort:
+
+| Feature | repren | AST tools | Built-in Edit |
+| --- | --- | --- | --- |
+| Simultaneous renames and swaps (foo↔bar) | ✅ | ❌ | ❌ |
+| File/directory renaming | ✅ | Some | ❌ |
+| Case-preserving variants | ✅ | ❌ | ❌ |
+| Works on any text file | ✅ | ❌ | ✅ |
+| Dry runs, backups, undo system | ✅ | ❌ | ❌ |
+
+### JSON Output
+
+Use `--format=json` for machine-parseable output:
+
+```bash
+repren --format=json --from=foo --to=bar --full src/
+```
+
+### Claude Code Skill
+
+repren includes a built-in skill for [Claude Code](https://claude.com/claude-code),
+making it easy for Claude AI to use repren for bulk refactoring tasks.
+
+**Quick Install:**
+
+```bash
+# Recommended: Install globally (available in all projects)
+uvx repren --install-claude-skill
+
+# Or: Install for current project only (shareable with team via git)
+uvx repren --install-claude-skill --skill-scope=project
+```
+
+The installer will prompt you to choose between global (`~/.claude/skills/repren`) or
+project-local (`.claude/skills/repren`) installation.
+
+Once installed, Claude Code will automatically use repren for bulk refactoring tasks.
+
+**Manual Installation:**
+
+To view the skill content for manual installation, run:
+
+```bash
+uvx repren --skill-instructions
+```
+
+Then save the output to `~/.claude/skills/repren/SKILL.md` (global) or
+`.claude/skills/repren/SKILL.md` (project).
+
+**Learn More:** See the [Claude Code documentation](https://code.claude.com/) and
+[Agent Skills repository](https://github.com/anthropics/skills).
 
 ## Try It
 
@@ -143,7 +208,7 @@ Let’s try a simple replacement in my working directory (which has a few random
 files):
 
 ```bash
-$ repren --from frobinator-server --to glurp-server --full --dry-run .
+$ repren --from=frobinator-server --to=glurp-server --full --dry-run .
 Dry run: No files will be changed
 Using 1 patterns:
   'frobinator-server' -> 'glurp-server'
@@ -162,9 +227,8 @@ Dry run: Would have changed 2 files, including 0 renames
 ```
 
 That was a dry run, so if it looks good, it’s easy to repeat that a second time,
-dropping the `--dry-run` flag.
-If this is in git, we’d do a git diff to verify, test, then commit it all.
-If we messed up, there are still .orig files present.
+dropping the `--dry-run` flag. If this is in git, we’d do a git diff to verify, test,
+then commit it all. If we messed up, there are still .orig files present.
 
 ## Patterns
 
@@ -172,8 +236,8 @@ Patterns can be supplied using the `--from` and `--to` syntax above, but that on
 for a single pattern.
 
 In general, you can perform multiple simultaneous replacements by putting them in a
-*patterns file*. Each line consists of a regular expression and replacement.
-For example:
+*patterns file*. Each line consists of a regular expression and replacement. For
+example:
 
 ```
 # Sample pattern file
@@ -184,31 +248,89 @@ figure ([0-9+])<tab>Figure \1
 
 (Where `<tab>` is an actual tab character.)
 
-Empty lines and #-prefixed comments are ignored.
-Capturing groups and back substitutions (such as \1 above) are supported.
+Empty lines and #-prefixed comments are ignored. Capturing groups and back substitutions
+(such as \1 above) are supported.
 
 ## Examples
 
 ```
 # Here `patfile` is a patterns file.
 # Rewrite stdin:
-repren -p patfile < input > output
+repren --patterns=patfile < input > output
 
 # Shortcut with a single pattern replacement (replace foo with bar):
-repren --from foo --to bar < input > output
+repren --from=foo --to=bar < input > output
 
 # Rewrite a few files in place, also requiring matches be on word breaks:
-repren -p patfile --word-breaks myfile1 myfile2 myfile3
+repren --patterns=patfile --word-breaks myfile1 myfile2 myfile3
 
 # Rewrite whole directory trees. Since this is a big operation, we use
 # `-n` to do a dry run that only prints what would be done:
-repren -n -p patfile --word-breaks --full mydir1
+repren -n --patterns=patfile --word-breaks --full mydir1
 
 # Now actually do it:
-repren -p patfile --word-breaks --full mydir1
+repren --patterns=patfile --word-breaks --full mydir1
 
 # Same as above, for all case variants:
-repren -p patfile --word-breaks --preserve-case --full mydir1
+repren --patterns=patfile --word-breaks --preserve-case --full mydir1
+```
+
+## Backup Management
+
+Repren provides tools for managing backup files created during operations:
+
+### Undo Changes
+
+If you need to revert changes, use `--undo` with the same patterns as the original
+operation:
+
+```bash
+# Original operation:
+repren --from=OldClass --to=NewClass --full src/
+
+# Undo the changes:
+repren --undo --from=OldClass --to=NewClass --full src/
+```
+
+The undo command:
+- Finds all `.orig` backup files
+- Uses the patterns to determine which files were renamed
+- Restores the original files and removes renamed files
+- Skips with warnings if timestamps look wrong or files are missing
+
+### Clean Backups
+
+When you’re satisfied with your changes, remove backup files:
+
+```bash
+# Remove all .orig backup files:
+repren --clean-backups src/
+
+# Dry run to see what would be removed:
+repren --clean-backups --dry-run src/
+
+# Remove backups with custom suffix:
+repren --clean-backups --backup-suffix=.bak src/
+```
+
+### Complete Workflow
+
+A typical workflow:
+
+```bash
+# 1. Preview changes
+repren --dry-run --from=foo --to=bar --full mydir/
+
+# 2. Execute changes (creates .orig backups)
+repren --from=foo --to=bar --full mydir/
+
+# 3. Review and test your changes
+
+# 4. Either undo if something went wrong:
+repren --undo --from=foo --to=bar --full mydir/
+
+# 4. Or clean up backups when satisfied:
+repren --clean-backups mydir/
 ```
 
 ## Notes
@@ -216,15 +338,15 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
 - All pattern matching is via standard
   [Python regular expressions](https://docs.python.org/3/library/re.html).
 
-- As with sed, replacements are made line by line by default.
-  Memory permitting, replacements may be done on entire files using `--at-once`.
+- As with sed, replacements are made line by line by default. Memory permitting,
+  replacements may be done on entire files using `--at-once`.
 
 - As with sed, replacement text may include backreferences to groups within the regular
   expression, using the usual syntax: \1, \2, etc.
 
 - In the pattern file, both the regular expression and the replacement may contain the
-  usual escapes `\\n`, `\\t`, etc.
-  (To match a multi-line pattern, containing `\\n`, you must use `--at-once`.)
+  usual escapes `\\n`, `\\t`, etc. (To match a multi-line pattern, containing `\\n`, you
+  must use `--at-once`.)
 
 - Replacements are all matched on each input file, then all replaced, so it’s possible
   to swap or otherwise change names in ways that would require multiple steps if done
@@ -239,32 +361,32 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
 
 - The case-preserving option works by adding all case variants to the pattern
   replacements, e.g. if the pattern file has foo_bar -> xxx_yyy, the replacements fooBar
-  -> xxxYyy, FooBar -> XxxYyy, FOO_BAR -> XXX_YYY are also made.
-  Assumes each pattern has one casing convention.
+  -> xxxYyy, FooBar -> XxxYyy, FOO_BAR -> XXX_YYY are also made. Assumes each pattern
+  has one casing convention.
 
 - The same logic applies to filenames, with patterns applied to the full file path with
   slashes replaced and then parent directories created as needed, e.g.
   `my/path/to/filename` can be rewritten to `my/other/path/to/otherfile`. (Use caution
   and test with `-n`, especially when using absolute path arguments!)
 
-- Files are never clobbered by renames.
-  If a target already exists, or multiple files are renamed to the same target, numeric
-  suffixes will be added to make the files distinct (".1", “.2”, etc.).
+- Files are never clobbered by renames. If a target already exists, or multiple files
+  are renamed to the same target, numeric suffixes will be added to make the files
+  distinct (".1", “.2”, etc.).
 
 - Files are created at a temporary location, then renamed, so original files are left
-  intact in case of unexpected errors.
-  File permissions are preserved.
+  intact in case of unexpected errors. File permissions are preserved.
 
-- Backups are created of all modified files, with the suffix “.orig”.
+- Backups are created of all modified files, with the suffix “.orig”. The suffix can be
+  customized with `--backup-suffix`.
 
 - By default, recursive searching omits paths starting with “.”. This may be adjusted
-  with `--exclude`. Files ending in `.orig` are always ignored.
+  with `--exclude`. Files ending in the backup suffix (`.orig` by default) are always
+  ignored.
 
 - Data is handled as bytes internally, allowing it to work with any encoding or binary
-  files. File contents are not decoded unless necessary (e.g., for logging).
-  However, patterns are specified as strings in the pattern file and command line
-  arguments, and file paths are handled as strings for filesystem operations.
-
+  files. File contents are not decoded unless necessary (e.g., for logging). However,
+  patterns are specified as strings in the pattern file and command line arguments, and
+  file paths are handled as strings for filesystem operations.
 """
 
 from __future__ import annotations
@@ -272,6 +394,7 @@ from __future__ import annotations
 import argparse
 import bisect
 import importlib.metadata
+import json
 import os
 import re
 import shutil
@@ -279,9 +402,10 @@ import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from re import Match, Pattern
-from typing import BinaryIO, NoReturn
+from typing import Any, BinaryIO, Literal, NoReturn
 
 # Type aliases for clarity.
+OutputFormat = Literal["text", "json"]
 PatternType = tuple[Pattern[bytes], bytes]
 FileHandle = BinaryIO
 MatchType = Match[bytes]
@@ -333,9 +457,7 @@ def _get_version() -> str:
 
 VERSION: str = _get_version()
 
-DESCRIPTION: str = (
-    "Powerful, multi-pattern string replacement and file renaming for agents and humans"
-)
+DESCRIPTION: str = "Powerful CLI string replacement and file renaming for agents and humans"
 
 BACKUP_SUFFIX: str = ".orig"
 TEMP_SUFFIX: str = ".repren.tmp"
@@ -347,13 +469,18 @@ MIN_WIDTH: int = 40
 MAX_WIDTH: int = 120
 
 
+def _is_ci() -> bool:
+    """Check if running in a CI environment."""
+    return bool(os.environ.get("CI"))
+
+
 def _get_terminal_width() -> int:
     """Get terminal width, clamped to reasonable bounds.
 
-    Uses DEFAULT_WIDTH when not connected to a TTY for consistent output
-    in scripts and CI environments.
+    Uses DEFAULT_WIDTH when not connected to a TTY or in CI environments
+    for consistent output in scripts and automated pipelines.
     """
-    if not sys.stdout.isatty():
+    if not sys.stdout.isatty() or _is_ci():
         return DEFAULT_WIDTH
     try:
         width = shutil.get_terminal_size().columns
@@ -407,6 +534,11 @@ class _Tally:
 
 
 _tally: _Tally = _Tally()
+
+
+def _output_json(result: dict[str, Any]) -> None:
+    """Output a JSON result to stdout."""
+    print(json.dumps(result, indent=2))
 
 
 # --- String matching ---
@@ -1117,6 +1249,13 @@ def _run_cli() -> None:
         action="store_true",
     )
     parser.add_argument(
+        "--format",
+        help="output format: 'text' for human-readable (default), 'json' for machine-parseable",
+        dest="output_format",
+        choices=["text", "json"],
+        default="text",
+    )
+    parser.add_argument(
         "--backup-suffix",
         help=f"suffix for backup files (default: {BACKUP_SUFFIX})",
         dest="backup_suffix",
@@ -1134,6 +1273,24 @@ def _run_cli() -> None:
         dest="clean_backups",
         action="store_true",
     )
+    parser.add_argument(
+        "--install-claude-skill",
+        help="install Claude Code skill for repren (makes repren available to Claude AI)",
+        dest="install_claude_skill",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--skill-scope",
+        help="installation scope for Claude skill: 'global' (~/.claude/skills) or 'project' (.claude/skills)",
+        dest="skill_scope",
+        choices=["global", "project"],
+    )
+    parser.add_argument(
+        "--skill-instructions",
+        help="print Claude Code skill instructions (SKILL.md content) for manual installation",
+        dest="skill_instructions",
+        action="store_true",
+    )
     parser.add_argument("root_paths", nargs="*", help="root paths to process")
 
     if "--usage" in sys.argv:
@@ -1145,13 +1302,63 @@ def _run_cli() -> None:
 
     options = parser.parse_args()
 
+    # Handle Claude skill installation (early exit)
+    if options.install_claude_skill:
+        try:
+            from .claude_skill import install_skill
+
+            install_skill(scope=options.skill_scope, interactive=(options.skill_scope is None))
+            sys.exit(0)
+        except ImportError:
+            # Fallback if running as standalone script
+            print(
+                "Error: Claude skill installation requires full package installation.",
+                file=sys.stderr,
+            )
+            print("Install with: uv tool install repren", file=sys.stderr)
+            print("", file=sys.stderr)
+            print(
+                "Alternative: Download SKILL.md from the repository and install manually:",
+                file=sys.stderr,
+            )
+            print("  mkdir -p ~/.claude/skills/repren", file=sys.stderr)
+            print(
+                "  curl -o ~/.claude/skills/repren/SKILL.md https://raw.githubusercontent.com/jlevy/repren/master/repren/skills/SKILL.md",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+    # Handle skill instructions output (early exit)
+    if options.skill_instructions:
+        try:
+            from .claude_skill import get_skill_content
+
+            print(get_skill_content())
+            sys.exit(0)
+        except ImportError:
+            # Fallback if running as standalone script
+            print("Error: Skill instructions require full package installation.", file=sys.stderr)
+            print("Install with: uv tool install repren", file=sys.stderr)
+            print("", file=sys.stderr)
+            print(
+                "Alternative: Download SKILL.md directly from the repository:",
+                file=sys.stderr,
+            )
+            print(
+                "  curl https://raw.githubusercontent.com/jlevy/repren/master/repren/skills/SKILL.md",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
     # Option setup.
     options.do_contents = not options.do_renames
     options.do_renames = options.do_renames or options.do_full
 
     global _fail
     _fail = _fail_with_exit
-    log: LogFunc = print_stderr if not options.quiet else no_log
+    # In JSON mode, suppress text output (JSON result will be output at end)
+    json_mode = options.output_format == "json"
+    log: LogFunc = print_stderr if not options.quiet and not json_mode else no_log
 
     # Validate backup suffix
     if not options.backup_suffix.startswith("."):
@@ -1164,14 +1371,24 @@ def _run_cli() -> None:
             exclude_pat=options.exclude_pat,
             backup_suffix=options.backup_suffix,
         )
-        if skipped_backup_count > 0:
-            log(
-                f"Skipped {skipped_backup_count} file(s) ending in '{options.backup_suffix}' "
-                "(backup files are never processed)"
+        if json_mode:
+            _output_json(
+                {
+                    "operation": "walk",
+                    "paths": paths,
+                    "files_found": len(paths),
+                    "skipped_backups": skipped_backup_count,
+                }
             )
-        log(f"Found {len(paths)} files in: {', '.join(options.root_paths)}")
-        for path in paths:
-            log(f"- {path}")
+        else:
+            if skipped_backup_count > 0:
+                log(
+                    f"Skipped {skipped_backup_count} file(s) ending in '{options.backup_suffix}' "
+                    "(backup files are never processed)"
+                )
+            log(f"Found {len(paths)} files in: {', '.join(options.root_paths)}")
+            for path in paths:
+                log(f"- {path}")
         return  # We're done!
 
     # Handle --clean-backups mode (standalone, no patterns needed)
@@ -1190,8 +1407,17 @@ def _run_cli() -> None:
             dry_run=options.dry_run,
             log=log,
         )
-        action_word = "Would remove" if options.dry_run else "Removed"
-        log(f"{action_word} {removed} backup file(s)")
+        if json_mode:
+            _output_json(
+                {
+                    "operation": "clean_backups",
+                    "dry_run": options.dry_run,
+                    "removed": removed,
+                }
+            )
+        else:
+            action_word = "Would remove" if options.dry_run else "Removed"
+            log(f"{action_word} {removed} backup file(s)")
         return  # We're done!
 
     # log("Settings: %s" % options)
@@ -1255,8 +1481,18 @@ def _run_cli() -> None:
             dry_run=options.dry_run,
             log=log,
         )
-        action_word = "Would restore" if options.dry_run else "Restored"
-        log(f"{action_word} {restored} file(s), skipped {skipped} with warnings")
+        if json_mode:
+            _output_json(
+                {
+                    "operation": "undo",
+                    "dry_run": options.dry_run,
+                    "restored": restored,
+                    "skipped": skipped,
+                }
+            )
+        else:
+            action_word = "Would restore" if options.dry_run else "Restored"
+            log(f"{action_word} {restored} file(s), skipped {skipped} with warnings")
         return  # We're done!
 
     # Process files.
@@ -1274,20 +1510,38 @@ def _run_cli() -> None:
             log=log,
         )
 
-        log(
-            f"Read {_tally.files} files ({_tally.chars} chars), found {_tally.valid_matches} matches "
-            f"({_tally.matches - _tally.valid_matches} skipped due to overlaps)",
-        )
-        change_words = "Dry run: Would have changed" if options.dry_run else "Changed"
-        log(
-            f"{change_words} {_tally.files_changed} files "
-            f"({_tally.files_rewritten} rewritten and {_tally.renames} renamed)",
-        )
+        if json_mode:
+            _output_json(
+                {
+                    "operation": "replace",
+                    "dry_run": options.dry_run,
+                    "patterns_count": len(patterns),
+                    "files_found": _tally.files,
+                    "chars_read": _tally.chars,
+                    "matches_found": _tally.matches,
+                    "matches_applied": _tally.valid_matches,
+                    "files_changed": _tally.files_changed,
+                    "files_rewritten": _tally.files_rewritten,
+                    "files_renamed": _tally.renames,
+                }
+            )
+        else:
+            log(
+                f"Read {_tally.files} files ({_tally.chars} chars), found {_tally.valid_matches} matches "
+                f"({_tally.matches - _tally.valid_matches} skipped due to overlaps)",
+            )
+            change_words = "Dry run: Would have changed" if options.dry_run else "Changed"
+            log(
+                f"{change_words} {_tally.files_changed} files "
+                f"({_tally.files_rewritten} rewritten and {_tally.renames} renamed)",
+            )
     else:
         if options.do_renames:
             parser.error("can't specify --renames on stdin; give filename arguments")
         if options.dry_run:
             parser.error("can't specify --dry-run on stdin; give filename arguments")
+        if json_mode:
+            parser.error("can't specify --format json on stdin; give filename arguments")
         transform = lambda contents: multi_replace(contents, patterns, log=log)
         transform_stream(transform, sys.stdin.buffer, sys.stdout.buffer, by_line=by_line)
 

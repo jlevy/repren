@@ -5,8 +5,10 @@ run || expect_error
 usage: repren [-h] [--version] [--usage] [--from FROM_PAT] [--to TO_PAT] [-p PAT_FILE]
               [--full] [--renames] [--literal] [-i] [--dotall] [--preserve-case] [-b]
               [--include INCLUDE_PAT] [--exclude EXCLUDE_PAT] [--at-once] [-t]
-              [--walk-only] [-n] [-q] [--backup-suffix BACKUP_SUFFIX] [--undo]
-              [--clean-backups]
+              [--walk-only] [-n] [-q] [--format {text,json}]
+              [--backup-suffix BACKUP_SUFFIX] [--undo] [--clean-backups]
+              [--install-claude-skill] [--skill-scope {global,project}]
+              [--skill-instructions]
               [root_paths ...]
 repren: error: must specify --patterns or both --from and --to
 (got expected error: status 2)
@@ -552,6 +554,80 @@ Removed 1 backup file(s)
 ls_portable test-suffix
 -rw-r--r-- dumpty-dumpty.txt
 drwxr-xr-x stuff/
+
+
+# JSON output format tests.
+
+cp -a original test-json
+
+# JSON output for walk-only.
+run --format json --walk-only test-json
+{
+  "operation": "walk",
+  "paths": [
+    "test-json/humpty-dumpty.txt",
+    "test-json/stuff/trees/beech.txt",
+    "test-json/stuff/trees/maple.txt",
+    "test-json/stuff/trees/oak.txt",
+    "test-json/stuff/words/Asia",
+    "test-json/stuff/words/Europe",
+    "test-json/stuff/words/Mexico",
+    "test-json/stuff/words/United",
+    "test-json/stuff/words/genetic",
+    "test-json/stuff/words/genus",
+    "test-json/stuff/words/oak",
+    "test-json/stuff/words/second"
+  ],
+  "files_found": 12,
+  "skipped_backups": 0
+}
+
+# JSON output for dry-run replacement.
+run --format json --dry-run --from Humpty --to Dumpty test-json/humpty-dumpty.txt
+{
+  "operation": "replace",
+  "dry_run": true,
+  "patterns_count": 1,
+  "files_found": 1,
+  "chars_read": 513,
+  "matches_found": 3,
+  "matches_applied": 3,
+  "files_changed": 1,
+  "files_rewritten": 1,
+  "files_renamed": 0
+}
+
+# JSON output for actual replacement.
+run --format json --from Humpty --to Dumpty test-json/humpty-dumpty.txt
+{
+  "operation": "replace",
+  "dry_run": false,
+  "patterns_count": 1,
+  "files_found": 1,
+  "chars_read": 513,
+  "matches_found": 3,
+  "matches_applied": 3,
+  "files_changed": 1,
+  "files_rewritten": 1,
+  "files_renamed": 0
+}
+
+# JSON output for undo (pass directory so undo can find .orig files).
+run --format json --undo --full --from Humpty --to Dumpty test-json
+{
+  "operation": "undo",
+  "dry_run": false,
+  "restored": 1,
+  "skipped": 0
+}
+
+# JSON output for clean-backups (no backups remain after undo, so should be 0).
+run --format json --clean-backups test-json
+{
+  "operation": "clean_backups",
+  "dry_run": false,
+  "removed": 0
+}
 
 
 # TODO: More test coverage:

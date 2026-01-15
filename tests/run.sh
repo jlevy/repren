@@ -9,9 +9,9 @@ trap "echo && echo 'Tests failed! See failure above.'" ERR
 
 dir="$(cd `dirname $0`; pwd)"
 
-full_log=$dir/tests-full.log
-baseline=$dir/tests-expected.log
-new_output=$dir/tests-actual.log
+full_log=$dir/golden-tests-full.log
+baseline=$dir/golden-tests-expected.log
+new_output=$dir/golden-tests-actual.log
 final_diff=$dir/test.diff
 
 echo Cleaning up...
@@ -32,7 +32,7 @@ uv run python -V
 # The $|=1; is just for the impatient and ensures line buffering.
 # We also use the cat trick below so it's possible to view the full log as it
 # runs on stderr while writing to both logs.
-$dir/tests.sh 2>&1 \
+$dir/golden-tests.sh 2>&1 \
   | tee $full_log \
   | tee >(cat 1>&2) \
   | perl -pe '$|=1; s/([a-zA-Z0-9._]+.py):[0-9]+/\1:xx/g' \

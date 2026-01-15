@@ -6,15 +6,14 @@ This project is set up to use [uv](https://docs.astral.sh/uv/) to manage Python 
 dependencies. First, be sure you
 [have uv installed](https://docs.astral.sh/uv/getting-started/installation/).
 
-Then
-[fork the jlevy/repren repo](https://github.com/jlevy/repren/fork)
-(having your own fork will make it easier to contribute) and
+Then [fork the jlevy/repren repo](https://github.com/jlevy/repren/fork) (having your own
+fork will make it easier to contribute) and
 [clone it](https://docs.github.com/en/repositories/creating-and-managing-repositories/cloning-a-repository).
 
 ## Basic Developer Workflows
 
 The `Makefile` simply offers shortcuts to `uv` commands for developer convenience.
-(For clarity, GitHub Actions don't use the Makefile and just call `uv` directly.)
+(For clarity, GitHub Actions don’t use the Makefile and just call `uv` directly.)
 
 ```shell
 # First, install all dependencies and set up your virtual environment.
@@ -33,6 +32,9 @@ make lint
 
 # Run tests:
 make test
+
+# Update golden test baseline (when expected test output changes intentionally):
+make update-golden
 
 # Delete all the build artifacts:
 make clean
@@ -93,5 +95,4 @@ See [publishing.md](publishing.md) for instructions on publishing to PyPI.
 
 * * *
 
-*This project uses
-[simple-modern-uv](https://github.com/jlevy/simple-modern-uv).*
+*This project uses [simple-modern-uv](https://github.com/jlevy/simple-modern-uv).*

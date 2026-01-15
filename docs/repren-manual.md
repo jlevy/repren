@@ -1,14 +1,3 @@
-# repren
-
-![But call me repren for short](https://github.com/jlevy/repren/blob/master/images/awkward-150.jpg)
-
-* * *
-
-✨ **NEW:** [v2.0.0-rc1](https://github.com/jlevy/repren/releases/tag/2.0.0-rc1) is out,
-refreshed for agent-friendly use and Python 3.10-3.14! ✨
-
-* * *
-
 ## Rename Anything
 
 `repren` is a powerful CLI string replacement and file renaming tool for use by agents
@@ -396,13 +385,3 @@ repren --clean-backups mydir/
   files. File contents are not decoded unless necessary (e.g., for logging). However,
   patterns are specified as strings in the pattern file and command line arguments, and
   file paths are handled as strings for filesystem operations.
-
-## Contributing
-
-Contributions and issues welcome!
-Check the output of the test script and if it has changed or needs updating, and commit
-the clean log changes if you submit a PR.
-
-## License
-
-MIT.

@@ -3,9 +3,9 @@
 
 .DEFAULT_GOAL := default
 
-.PHONY: default install lint test upgrade build clean
+.PHONY: default install lint format gendocs test update-golden upgrade build clean
 
-default: install lint test
+default: install lint gendocs test
 
 install:
 	uv sync --all-extras
@@ -13,9 +13,18 @@ install:
 lint:
 	uv run python devtools/lint.py
 
+format:
+	uvx flowmark@latest --inplace --smartquotes --ellipses docs/repren-manual.md repren/skills/SKILL.md
+
+gendocs:
+	uv run python devtools/gendocs.py
+
 test:
 	uv run pytest
 	./tests/run.sh
+
+update-golden:
+	./tests/run.sh || cp tests/golden-tests-actual.log tests/golden-tests-expected.log
 
 upgrade:
 	uv sync --upgrade --all-extras --dev
