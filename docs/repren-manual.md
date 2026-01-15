@@ -38,6 +38,10 @@ It’s more powerful than classic options like `perl -pie`, `rpl`, or `sed`:
 - **Dry run, backups, and undo:** It has convenient options for dry run, undo (restoring
   backups), and cleanup (deleting backups).
 
+- **Text or JSON output:** It supports human-readable text output (default) or
+  machine-parseable JSON output (`--format json`) for easy integration with scripts and
+  agents.
+
 - **Self-documenting:** It is packaged with its own nice documentation!
   Run with `--help` for these full docs.
 

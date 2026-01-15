@@ -331,6 +331,7 @@ from __future__ import annotations
 import argparse
 import bisect
 import importlib.metadata
+import json
 import os
 import re
 import shutil
@@ -338,9 +339,10 @@ import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from re import Match, Pattern
-from typing import BinaryIO, NoReturn
+from typing import Any, BinaryIO, Literal, NoReturn
 
 # Type aliases for clarity.
+OutputFormat = Literal["text", "json"]
 PatternType = tuple[Pattern[bytes], bytes]
 FileHandle = BinaryIO
 MatchType = Match[bytes]
@@ -404,13 +406,18 @@ MIN_WIDTH: int = 40
 MAX_WIDTH: int = 120
 
 
+def _is_ci() -> bool:
+    """Check if running in a CI environment."""
+    return bool(os.environ.get("CI"))
+
+
 def _get_terminal_width() -> int:
     """Get terminal width, clamped to reasonable bounds.
 
-    Uses DEFAULT_WIDTH when not connected to a TTY for consistent output
-    in scripts and CI environments.
+    Uses DEFAULT_WIDTH when not connected to a TTY or in CI environments
+    for consistent output in scripts and automated pipelines.
     """
-    if not sys.stdout.isatty():
+    if not sys.stdout.isatty() or _is_ci():
         return DEFAULT_WIDTH
     try:
         width = shutil.get_terminal_size().columns
@@ -464,6 +471,11 @@ class _Tally:
 
 
 _tally: _Tally = _Tally()
+
+
+def _output_json(result: dict[str, Any]) -> None:
+    """Output a JSON result to stdout."""
+    print(json.dumps(result, indent=2))
 
 
 # --- String matching ---
@@ -1174,6 +1186,13 @@ def _run_cli() -> None:
         action="store_true",
     )
     parser.add_argument(
+        "--format",
+        help="output format: 'text' for human-readable (default), 'json' for machine-parseable",
+        dest="output_format",
+        choices=["text", "json"],
+        default="text",
+    )
+    parser.add_argument(
         "--backup-suffix",
         help=f"suffix for backup files (default: {BACKUP_SUFFIX})",
         dest="backup_suffix",
@@ -1208,7 +1227,9 @@ def _run_cli() -> None:
 
     global _fail
     _fail = _fail_with_exit
-    log: LogFunc = print_stderr if not options.quiet else no_log
+    # In JSON mode, suppress text output (JSON result will be output at end)
+    json_mode = options.output_format == "json"
+    log: LogFunc = print_stderr if not options.quiet and not json_mode else no_log
 
     # Validate backup suffix
     if not options.backup_suffix.startswith("."):
@@ -1221,14 +1242,22 @@ def _run_cli() -> None:
             exclude_pat=options.exclude_pat,
             backup_suffix=options.backup_suffix,
         )
-        if skipped_backup_count > 0:
-            log(
-                f"Skipped {skipped_backup_count} file(s) ending in '{options.backup_suffix}' "
-                "(backup files are never processed)"
-            )
-        log(f"Found {len(paths)} files in: {', '.join(options.root_paths)}")
-        for path in paths:
-            log(f"- {path}")
+        if json_mode:
+            _output_json({
+                "operation": "walk",
+                "paths": paths,
+                "files_found": len(paths),
+                "skipped_backups": skipped_backup_count,
+            })
+        else:
+            if skipped_backup_count > 0:
+                log(
+                    f"Skipped {skipped_backup_count} file(s) ending in '{options.backup_suffix}' "
+                    "(backup files are never processed)"
+                )
+            log(f"Found {len(paths)} files in: {', '.join(options.root_paths)}")
+            for path in paths:
+                log(f"- {path}")
         return  # We're done!
 
     # Handle --clean-backups mode (standalone, no patterns needed)
@@ -1247,8 +1276,15 @@ def _run_cli() -> None:
             dry_run=options.dry_run,
             log=log,
         )
-        action_word = "Would remove" if options.dry_run else "Removed"
-        log(f"{action_word} {removed} backup file(s)")
+        if json_mode:
+            _output_json({
+                "operation": "clean_backups",
+                "dry_run": options.dry_run,
+                "removed": removed,
+            })
+        else:
+            action_word = "Would remove" if options.dry_run else "Removed"
+            log(f"{action_word} {removed} backup file(s)")
         return  # We're done!
 
     # log("Settings: %s" % options)
@@ -1312,8 +1348,16 @@ def _run_cli() -> None:
             dry_run=options.dry_run,
             log=log,
         )
-        action_word = "Would restore" if options.dry_run else "Restored"
-        log(f"{action_word} {restored} file(s), skipped {skipped} with warnings")
+        if json_mode:
+            _output_json({
+                "operation": "undo",
+                "dry_run": options.dry_run,
+                "restored": restored,
+                "skipped": skipped,
+            })
+        else:
+            action_word = "Would restore" if options.dry_run else "Restored"
+            log(f"{action_word} {restored} file(s), skipped {skipped} with warnings")
         return  # We're done!
 
     # Process files.
@@ -1331,20 +1375,36 @@ def _run_cli() -> None:
             log=log,
         )
 
-        log(
-            f"Read {_tally.files} files ({_tally.chars} chars), found {_tally.valid_matches} matches "
-            f"({_tally.matches - _tally.valid_matches} skipped due to overlaps)",
-        )
-        change_words = "Dry run: Would have changed" if options.dry_run else "Changed"
-        log(
-            f"{change_words} {_tally.files_changed} files "
-            f"({_tally.files_rewritten} rewritten and {_tally.renames} renamed)",
-        )
+        if json_mode:
+            _output_json({
+                "operation": "replace",
+                "dry_run": options.dry_run,
+                "patterns_count": len(patterns),
+                "files_found": _tally.files,
+                "chars_read": _tally.chars,
+                "matches_found": _tally.matches,
+                "matches_applied": _tally.valid_matches,
+                "files_changed": _tally.files_changed,
+                "files_rewritten": _tally.files_rewritten,
+                "files_renamed": _tally.renames,
+            })
+        else:
+            log(
+                f"Read {_tally.files} files ({_tally.chars} chars), found {_tally.valid_matches} matches "
+                f"({_tally.matches - _tally.valid_matches} skipped due to overlaps)",
+            )
+            change_words = "Dry run: Would have changed" if options.dry_run else "Changed"
+            log(
+                f"{change_words} {_tally.files_changed} files "
+                f"({_tally.files_rewritten} rewritten and {_tally.renames} renamed)",
+            )
     else:
         if options.do_renames:
             parser.error("can't specify --renames on stdin; give filename arguments")
         if options.dry_run:
             parser.error("can't specify --dry-run on stdin; give filename arguments")
+        if json_mode:
+            parser.error("can't specify --format json on stdin; give filename arguments")
         transform = lambda contents: multi_replace(contents, patterns, log=log)
         transform_stream(transform, sys.stdin.buffer, sys.stdout.buffer, by_line=by_line)
 
