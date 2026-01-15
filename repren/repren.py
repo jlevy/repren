@@ -253,7 +253,6 @@ repren -p patfile --word-breaks --preserve-case --full mydir1
 
 """
 
-
 import argparse
 import bisect
 import importlib.metadata
@@ -261,17 +260,19 @@ import os
 import re
 import shutil
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import BinaryIO, Callable, List, Match, Optional, Pattern, Tuple
+from re import Match, Pattern
+from typing import BinaryIO
 
 # Type aliases for clarity.
-PatternType = Tuple[Pattern[bytes], bytes]
+PatternType = tuple[Pattern[bytes], bytes]
 FileHandle = BinaryIO
 MatchType = Match[bytes]
-PatternPair = Tuple[MatchType, bytes]
-TransformFunc = Callable[[bytes], Tuple[bytes, "_MatchCounts"]]
+PatternPair = tuple[MatchType, bytes]
+TransformFunc = Callable[[bytes], tuple[bytes, "_MatchCounts"]]
 LogFunc = Callable[[str], None]
-FailHandler = Callable[[str, Optional[Exception]], None]
+FailHandler = Callable[[str, Exception | None], None]
 
 # Get the version from package metadata.
 VERSION: str
@@ -298,14 +299,14 @@ def print_stderr(msg: str) -> None:
     print(msg, file=sys.stderr)
 
 
-def _fail_exit(msg: str, e: Optional[Exception] = None) -> None:
+def _fail_exit(msg: str, e: Exception | None = None) -> None:
     if e:
         msg = "%s: %s" % (msg, e) if msg else str(e)
     print("error: " + msg, file=sys.stderr)
     sys.exit(1)
 
 
-def _fail_exception(msg: str, e: Optional[Exception] = None) -> None:
+def _fail_exception(msg: str, e: Exception | None = None) -> None:
     raise ValueError(msg) from e
 
 
@@ -343,13 +344,13 @@ def _overlap(match1: MatchType, match2: MatchType) -> bool:
 
 
 def _sort_drop_overlaps(
-    matches: List[PatternPair],
-    source_name: Optional[str] = None,
+    matches: list[PatternPair],
+    source_name: str | None = None,
     log: LogFunc = no_log,
-) -> List[PatternPair]:
+) -> list[PatternPair]:
     """Select and sort a set of disjoint intervals, omitting ones that overlap."""
-    non_overlaps: List[PatternPair] = []
-    starts: List[int] = []
+    non_overlaps: list[PatternPair] = []
+    starts: list[int] = []
     for match, replacement in matches:
         index: int = bisect.bisect_left(starts, match.start())
         if index > 0:
@@ -385,8 +386,8 @@ def _sort_drop_overlaps(
     return non_overlaps
 
 
-def _apply_replacements(input_bytes: bytes, matches: List[PatternPair]) -> bytes:
-    out: List[bytes] = []
+def _apply_replacements(input_bytes: bytes, matches: list[PatternPair]) -> bytes:
+    out: list[bytes] = []
     pos: int = 0
     for match, replacement in matches:
         out.append(input_bytes[pos : match.start()])
@@ -408,20 +409,20 @@ class _MatchCounts:
 
 def multi_replace(
     input_bytes: bytes,
-    patterns: List[PatternType],
+    patterns: list[PatternType],
     is_path: bool = False,
-    source_name: Optional[str] = None,
+    source_name: str | None = None,
     log: LogFunc = no_log,
-) -> Tuple[bytes, _MatchCounts]:
+) -> tuple[bytes, _MatchCounts]:
     """
     Replace all occurrences in the input given a list of patterns (regex,
     replacement), simultaneously, so that no replacement affects any other.
     """
-    matches: List[PatternPair] = []
+    matches: list[PatternPair] = []
     for regex, replacement in patterns:
         for match in regex.finditer(input_bytes):
             matches.append((match, replacement))
-    valid_matches: List[PatternPair] = _sort_drop_overlaps(
+    valid_matches: list[PatternPair] = _sort_drop_overlaps(
         matches, source_name=source_name, log=log
     )
     result: bytes = _apply_replacements(input_bytes, valid_matches)
@@ -441,7 +442,7 @@ def multi_replace(
 _name_pat = re.compile(r"\w+")
 
 
-def _split_name(name: str) -> Tuple[str, List[str]]:
+def _split_name(name: str) -> tuple[str, list[str]]:
     """
     Split a CamelCase or underscore-formatted name into words.
     Return separator and list of words.
@@ -501,7 +502,7 @@ def _transform_expr(expr: str, transform: Callable[[str], str]) -> str:
     return transformed
 
 
-def all_case_variants(expr: str) -> List[str]:
+def all_case_variants(expr: str) -> list[str]:
     """
     Return all casing variations of an expression.
     Note: This operates on strings and is called before pattern compilation.
@@ -540,7 +541,7 @@ def move_file(source_path: str, dest_path: str, clobber: bool = False) -> None:
 
 
 def transform_stream(
-    transform: Optional[TransformFunc],
+    transform: TransformFunc | None,
     stream_in: BinaryIO,
     stream_out: BinaryIO,
     by_line: bool = False,
@@ -567,7 +568,7 @@ def transform_stream(
 
 
 def transform_file(
-    transform: Optional[TransformFunc],
+    transform: TransformFunc | None,
     source_path: str,
     dest_path: str,
     orig_suffix: str = BACKUP_SUFFIX,
@@ -625,7 +626,7 @@ def transform_file(
 
 def rewrite_file(
     path: str,
-    patterns: List[PatternType],
+    patterns: list[PatternType],
     do_renames: bool = False,
     do_contents: bool = False,
     by_line: bool = False,
@@ -654,13 +655,13 @@ def rewrite_file(
 
 
 def walk_files(
-    paths: List[str],
+    paths: list[str],
     include_pat: str = ".*",
     exclude_pat: str = DEFAULT_EXCLUDE_PAT,
-) -> List[str]:
+) -> list[str]:
     include_re = re.compile(include_pat)
     exclude_re = re.compile(exclude_pat)
-    out: List[str] = []
+    out: list[str] = []
 
     for path in paths:
         if os.path.isfile(path):
@@ -685,8 +686,8 @@ def walk_files(
 
 
 def rewrite_files(
-    root_paths: List[str],
-    patterns: List[PatternType],
+    root_paths: list[str],
+    patterns: list[PatternType],
     do_renames: bool = False,
     do_contents: bool = False,
     include_pat: str = ".*",
@@ -728,8 +729,8 @@ def parse_patterns(
     insensitive: bool = False,
     dotall: bool = False,
     preserve_case: bool = False,
-) -> List[PatternType]:
-    patterns: List[PatternType] = []
+) -> list[PatternType]:
+    patterns: list[PatternType] = []
     flags = (re.IGNORECASE if insensitive else 0) | (re.DOTALL if dotall else 0)
     for line in patterns_str.splitlines():
         bits = None
@@ -741,7 +742,7 @@ def parse_patterns(
                 (regex, replacement) = bits
                 if literal:
                     regex = re.escape(regex)
-                pairs: List[Tuple[str, str]] = []
+                pairs: list[tuple[str, str]] = []
                 if preserve_case:
                     pairs += zip(all_case_variants(regex), all_case_variants(replacement))
                 pairs.append((regex, replacement))
