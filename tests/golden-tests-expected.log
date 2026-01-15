@@ -642,6 +642,7 @@ Location: /Users/levy/wrk/github/repren/tests/tmp-dir/.claude/skills/repren/SKIL
           (/Users/levy/wrk/github/repren/tests/tmp-dir/.claude/skills/repren)
 
 Claude Code will now automatically use repren for refactoring tasks.
+To uninstall, remove this directory: /Users/levy/wrk/github/repren/tests/tmp-dir/.claude/skills/repren
 
 ----------------------------------------------------------------------
 Tip: Commit .claude/skills/ to share this skill with your team.
@@ -671,6 +672,7 @@ Location: /Users/levy/wrk/github/repren/tests/tmp-dir/test-home/.claude/skills/r
           (~/.claude/skills/repren)
 
 Claude Code will now automatically use repren for refactoring tasks.
+To uninstall, remove this directory: /Users/levy/wrk/github/repren/tests/tmp-dir/test-home/.claude/skills/repren
 
 
 # Verify global skill file exists and has content

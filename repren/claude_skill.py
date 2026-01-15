@@ -87,6 +87,7 @@ def install_skill(install_dir: str | None = None) -> None:
         print(f"\nLocation: {skill_file}")
         print(f"          ({location_path})")
         print("\nClaude Code will now automatically use repren for refactoring tasks.")
+        print(f"To uninstall, remove this directory: {skill_dir}")
 
         # Show tip for project installs
         if install_dir is not None:
