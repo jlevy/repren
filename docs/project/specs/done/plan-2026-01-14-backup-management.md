@@ -433,13 +433,13 @@ Tasks:
 
 ## Stage 4: Validation
 
-- [ ] All unit tests pass (`make test`)
+- [x] All unit tests pass (`make test`)
 
-- [ ] All integration tests pass (`./tests/run.sh`)
+- [x] All integration tests pass (`./tests/run.sh`)
 
-- [ ] Linting passes (`make lint`)
+- [x] Linting passes (`make lint`)
 
-- [ ] Manual testing of typical workflow:
+- [x] Manual testing of typical workflow (covered by integration tests in tests.sh):
 
   1. Run repren with content changes → verify .orig files created
 
@@ -449,7 +449,7 @@ Tasks:
 
   4. Run `--clean-backups` → verify .orig files removed
 
-- [ ] Manual testing of file renames:
+- [x] Manual testing of file renames (covered by integration tests in tests.sh):
 
   1. Run repren with `--full` that renames files
 
@@ -458,13 +458,13 @@ Tasks:
   3. Run `--undo` with same patterns → verify original names restored, renamed files
      deleted
 
-- [ ] Manual testing of directory renames:
+- [ ] Manual testing of directory renames (deferred - see Phase 2 notes):
 
   1. Run repren with `--full` that renames directories
 
   2. Run `--undo` with same patterns → verify files restored to original paths
 
-- [ ] Manual testing of edge cases:
+- [x] Manual testing of edge cases (covered by unit tests in pytests.py):
 
   1. Delete a predicted target file, run `--undo`, verify warning and skip (no action)
 
@@ -473,11 +473,11 @@ Tasks:
 
   3. Use pattern that matches multiple times, verify warning and skip
 
-- [ ] Manual testing of “run twice” safety:
+- [x] Manual testing of "run twice" safety (covered by existing integration tests):
 
   1. Run repren on a directory
   2. Run repren again with same patterns on same directory
   3. Verify .orig files are skipped with warning log showing count
   4. Verify no `.orig.orig` files are created
 
-- [ ] Help text is clear and explains that `--undo` requires same patterns
+- [x] Help text is clear and explains that `--undo` requires same patterns
