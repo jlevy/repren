@@ -403,13 +403,13 @@ Tasks:
 
 Tasks:
 
-- [ ] Implement `clean_backups()` function
+- [x] Implement `clean_backups()` function
 
-- [ ] Add `--clean-backups` CLI argument
+- [x] Add `--clean-backups` CLI argument
 
-- [ ] Add mutual exclusion with `--from`/`--to`/`-p` options
+- [x] Add mutual exclusion with `--from`/`--to`/`-p` options
 
-- [ ] Add tests for clean functionality
+- [x] Add tests for clean functionality
 
 ### Phase 4: Documentation and polish
 

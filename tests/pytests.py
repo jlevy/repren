@@ -8,6 +8,7 @@ import pytest
 
 from repren.repren import (
     _split_name,
+    clean_backups,
     find_backup_files,
     parse_patterns,
     to_lower_camel,
@@ -388,3 +389,97 @@ class TestUndoCLI:
         assert result.returncode != 0
         # Should complain about missing patterns
         assert "patterns" in result.stderr.lower() or "from" in result.stderr.lower()
+
+
+# --- Clean backups tests ---
+
+
+class TestCleanBackups:
+    """Tests for clean_backups function."""
+
+    def test_clean_backups_removes_orig_files(self):
+        """Should remove all .orig backup files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            normal_file = Path(tmpdir, "file.txt")
+            backup_file1 = Path(tmpdir, "file.txt.orig")
+            backup_file2 = Path(tmpdir, "other.txt.orig")
+
+            normal_file.write_text("content")
+            backup_file1.write_text("backup1")
+            backup_file2.write_text("backup2")
+
+            removed = clean_backups([tmpdir])
+
+            assert removed == 2
+            assert normal_file.exists()
+            assert not backup_file1.exists()
+            assert not backup_file2.exists()
+
+    def test_clean_backups_custom_suffix(self):
+        """Should remove files with custom backup suffix."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_bak = Path(tmpdir, "file.txt.bak")
+            backup_orig = Path(tmpdir, "file.txt.orig")
+
+            backup_bak.write_text("backup bak")
+            backup_orig.write_text("backup orig")
+
+            removed = clean_backups([tmpdir], backup_suffix=".bak")
+
+            assert removed == 1
+            assert not backup_bak.exists()
+            assert backup_orig.exists()  # Should not be removed
+
+    def test_clean_backups_dry_run(self):
+        """Dry run should not remove files."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_file = Path(tmpdir, "file.txt.orig")
+            backup_file.write_text("backup")
+
+            removed = clean_backups([tmpdir], dry_run=True)
+
+            assert removed == 1  # Would have removed
+            assert backup_file.exists()  # But file still exists
+
+    def test_clean_backups_respects_include_exclude(self):
+        """Should respect include and exclude patterns."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup1 = Path(tmpdir, "file1.txt.orig")
+            backup2 = Path(tmpdir, "file2.py.orig")
+
+            backup1.write_text("backup1")
+            backup2.write_text("backup2")
+
+            removed = clean_backups([tmpdir], include_pat=r".*\.txt\.orig$")
+
+            assert removed == 1
+            assert not backup1.exists()
+            assert backup2.exists()
+
+
+class TestCleanBackupsCLI:
+    """Tests for --clean-backups CLI argument."""
+
+    def test_clean_backups_standalone(self):
+        """--clean-backups should work without patterns."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_file = Path(tmpdir, "file.txt.orig")
+            backup_file.write_text("backup")
+
+            result = subprocess.run(
+                ["uv", "run", "repren", "--clean-backups", tmpdir],
+                capture_output=True,
+                text=True,
+            )
+
+            assert result.returncode == 0
+            assert not backup_file.exists()
+
+    def test_clean_backups_conflicts_with_patterns(self):
+        """--clean-backups should conflict with --from/--to."""
+        result = subprocess.run(
+            ["uv", "run", "repren", "--clean-backups", "--from", "a", "--to", "b", "."],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode != 0

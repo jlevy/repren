@@ -902,6 +902,38 @@ def undo_backups(
     return restored, skipped
 
 
+def clean_backups(
+    root_paths: list[str],
+    backup_suffix: str = BACKUP_SUFFIX,
+    include_pat: str = ".*",
+    exclude_pat: str = DEFAULT_EXCLUDE_PAT,
+    dry_run: bool = False,
+    log: LogFunc = no_log,
+) -> int:
+    """
+    Remove backup files.
+
+    Returns the count of files removed (or that would be removed in dry_run mode).
+    """
+    backup_files = find_backup_files(
+        root_paths,
+        backup_suffix=backup_suffix,
+        include_pat=include_pat,
+        exclude_pat=exclude_pat,
+    )
+
+    removed = 0
+    for backup_path in backup_files:
+        if not dry_run:
+            os.remove(backup_path)
+            log(f"- remove: {backup_path}")
+        else:
+            log(f"- remove (dry-run): {backup_path}")
+        removed += 1
+
+    return removed
+
+
 # --- Invocation ---
 
 
@@ -1080,6 +1112,12 @@ def _run_cli() -> None:
         dest="undo",
         action="store_true",
     )
+    parser.add_argument(
+        "--clean-backups",
+        help="remove backup files (standalone mode, no patterns needed)",
+        dest="clean_backups",
+        action="store_true",
+    )
     parser.add_argument("root_paths", nargs="*", help="root paths to process")
 
     if "--usage" in sys.argv:
@@ -1118,6 +1156,26 @@ def _run_cli() -> None:
         log(f"Found {len(paths)} files in: {', '.join(options.root_paths)}")
         for path in paths:
             log(f"- {path}")
+        return  # We're done!
+
+    # Handle --clean-backups mode (standalone, no patterns needed)
+    if options.clean_backups:
+        if options.pat_file or options.from_pat or options.to_pat:
+            parser.error("--clean-backups cannot be used with --patterns or --from/--to")
+        if len(options.root_paths) == 0:
+            parser.error("--clean-backups requires paths to process")
+        if options.dry_run:
+            log("Dry run: No files will be changed")
+        removed = clean_backups(
+            options.root_paths,
+            backup_suffix=options.backup_suffix,
+            include_pat=options.include_pat,
+            exclude_pat=options.exclude_pat,
+            dry_run=options.dry_run,
+            log=log,
+        )
+        action_word = "Would remove" if options.dry_run else "Removed"
+        log(f"{action_word} {removed} backup file(s)")
         return  # We're done!
 
     # log("Settings: %s" % options)
