@@ -24,7 +24,7 @@ test:
 	./tests/run.sh
 
 update-golden:
-	./tests/run.sh || cp tests/tests-actual.log tests/tests-expected.log
+	./tests/run.sh || cp tests/golden-tests-actual.log tests/golden-tests-expected.log
 
 upgrade:
 	uv sync --upgrade --all-extras --dev
