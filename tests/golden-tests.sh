@@ -233,6 +233,34 @@ run --format json --undo --full --from Humpty --to Dumpty test-json
 run --format json --clean-backups test-json
 
 
+# Claude skill installation tests.
+
+# Test project-local install (creates .claude/skills/repren/)
+run --install-claude-skill --install-dir=.
+
+# Verify project skill file exists and has content
+test -f .claude/skills/repren/SKILL.md && echo "Project skill file created"
+grep -q "repren" .claude/skills/repren/SKILL.md && echo "Project skill content verified"
+
+# Test global install (uses temp directory to avoid polluting user's home)
+mkdir -p test-home
+HOME_BACKUP="$HOME"
+HOME="$(pwd)/test-home"
+export HOME
+
+run --install-claude-skill
+
+# Verify global skill file exists and has content
+test -f test-home/.claude/skills/repren/SKILL.md && echo "Global skill file created"
+grep -q "repren" test-home/.claude/skills/repren/SKILL.md && echo "Global skill content verified"
+
+# Restore HOME and clean up test directories
+HOME="$HOME_BACKUP"
+export HOME
+rm -rf test-home
+rm -rf .claude
+
+
 # TODO: More test coverage:
 # - Regex and capturing groups.
 # - CamelCase and whole word support.

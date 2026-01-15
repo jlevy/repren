@@ -7,7 +7,6 @@ making it available either globally across all projects or within a specific pro
 
 import sys
 from pathlib import Path
-from typing import Literal
 
 
 def get_skill_content() -> str:
@@ -39,54 +38,32 @@ def get_skill_content() -> str:
             ) from e
 
 
-def install_skill(
-    scope: Literal["global", "project"] | None = None, interactive: bool = True
-) -> None:
+def install_skill(install_dir: str | None = None) -> None:
     """Install repren skill for Claude Code.
 
     Args:
-        scope: Where to install the skill:
-            - 'global': ~/.claude/skills/repren (available everywhere)
-            - 'project': .claude/skills/repren (current project only)
-            - None: Ask user interactively (if interactive=True) or default to 'global'
-        interactive: Whether to prompt user for choices. If False, uses defaults.
+        install_dir: Base directory for installation. The skill will be installed to
+            {install_dir}/.claude/skills/repren/SKILL.md
+            - None (default): Install to home directory (~/.claude/skills/repren)
+            - '.': Install to current directory (./.claude/skills/repren)
+            - Any path: Install to that path
 
     The skill will be installed as SKILL.md in the appropriate directory,
     making it automatically available to Claude Code.
     """
-    # Determine installation scope
-    if scope is None and interactive:
-        print("\n" + "=" * 70)
-        print("Install repren skill for Claude Code")
-        print("=" * 70)
-        print("\nWhere should the skill be installed?\n")
-        print("  [1] Global (~/.claude/skills)")
-        print("      Available in all projects (recommended)")
-        print()
-        print("  [2] Project (.claude/skills)")
-        print("      Current project only, can be committed for team")
-        print()
-
-        try:
-            choice = input("Choose [1]: ").strip() or "1"
-        except (EOFError, KeyboardInterrupt):
-            print("\n\nCancelled.")
-            sys.exit(0)
-
-        scope = "global" if choice == "1" else "project"
-    elif scope is None:
-        # Non-interactive default
-        scope = "global"
-
     # Determine installation directory
-    if scope == "global":
-        skill_dir = Path.home() / ".claude" / "skills" / "repren"
+    if install_dir is None:
+        # Default: global install to home directory
+        base_dir = Path.home()
         location_desc = "globally"
         location_path = "~/.claude/skills/repren"
-    else:  # scope == 'project'
-        skill_dir = Path.cwd() / ".claude" / "skills" / "repren"
-        location_desc = "in current project"
-        location_path = ".claude/skills/repren"
+    else:
+        # User-specified directory
+        base_dir = Path(install_dir).resolve()
+        location_desc = f"to {base_dir}"
+        location_path = str(base_dir / ".claude" / "skills" / "repren")
+
+    skill_dir = base_dir / ".claude" / "skills" / "repren"
 
     # Load skill content from package data
     try:
@@ -111,7 +88,8 @@ def install_skill(
         print(f"          ({location_path})")
         print("\nClaude Code will now automatically use repren for refactoring tasks.")
 
-        if scope == "project":
+        # Show tip for project installs
+        if install_dir is not None:
             print("\n" + "-" * 70)
             print("Tip: Commit .claude/skills/ to share this skill with your team.")
             print("-" * 70)
@@ -132,8 +110,8 @@ def main() -> None:
     """Command-line interface for skill installation.
 
     Can be run directly for testing:
-        python -m repren.claude_skill --global
-        python -m repren.claude_skill --project
+        python -m repren.claude_skill
+        python -m repren.claude_skill --claude-dir .
     """
     import argparse
 
@@ -142,39 +120,22 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s                    # Interactive mode (asks where to install)
-  %(prog)s --global           # Install globally (~/.claude/skills)
-  %(prog)s --project          # Install in current project (.claude/skills)
-  %(prog)s --global --quiet   # Non-interactive global install
+  %(prog)s                    # Install globally (~/.claude/skills)
+  %(prog)s --claude-dir .     # Install in current directory (./.claude/skills)
+  %(prog)s --claude-dir /path # Install to /path/.claude/skills
         """,
     )
 
-    scope_group = parser.add_mutually_exclusive_group()
-    scope_group.add_argument(
-        "--global",
-        dest="scope",
-        action="store_const",
-        const="global",
-        help="Install globally (~/.claude/skills) - available everywhere",
-    )
-    scope_group.add_argument(
-        "--project",
-        dest="scope",
-        action="store_const",
-        const="project",
-        help="Install in current project (.claude/skills) - shareable via git",
-    )
-
     parser.add_argument(
-        "--quiet",
-        dest="interactive",
-        action="store_false",
-        help="Non-interactive mode (use defaults, no prompts)",
+        "--claude-dir",
+        dest="install_dir",
+        metavar="DIR",
+        help="directory for .claude/skills/repren (defaults to home directory)",
     )
 
     args = parser.parse_args()
 
-    install_skill(scope=args.scope, interactive=args.interactive)
+    install_skill(install_dir=args.install_dir)
 
 
 if __name__ == "__main__":
