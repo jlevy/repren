@@ -135,8 +135,7 @@ There are many tools for search/replace and refactoring. Here's how repren compa
 | Case-preserving variants | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Language-agnostic | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | Structural/AST-aware | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
-| Dry run + backups + undo | ✅ | ❌ | ❌ | Preview | Preview | Preview | ✅ |
-| Interactive interface | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| Interactivity | Dry run, backups, undo | ❌ | ❌ | Interactive review | Interactive review | Interactive review | Dry run, backups, undo |
 | Dependencies | Python 3.10+ (no other deps) | Varies (OS/shell) | Binary (Rust) | Binary (Rust) | Binary (Rust) | Binary (OCaml) | Binary (Rust) |
 
 **When to use each:**
