@@ -303,10 +303,11 @@ run -t -p patterns-misc
 
 
 # Stdin/stdout mode.
+# Note: We use PYTHONUNBUFFERED to ensure deterministic output order between stdout and stderr
 
-echo 'foo bar foo' | run --from foo --to bar
+PYTHONUNBUFFERED=1 bash -c 'echo "foo bar foo" | uv run repren --from foo --to bar'
 
-echo 'figure 1 and figure 2' | run --from 'figure ([0-9]+)' --to 'Fig. \1'
+PYTHONUNBUFFERED=1 bash -c 'echo "figure 1 and figure 2" | uv run repren --from "figure ([0-9]+)" --to "Fig. \1"'
 
 
 # Quiet mode.

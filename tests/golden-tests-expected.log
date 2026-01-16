@@ -756,14 +756,15 @@ Using 5 patterns:
 
 
 # Stdin/stdout mode.
+# Note: We use PYTHONUNBUFFERED to ensure deterministic output order between stdout and stderr
 
-echo 'foo bar foo' | run --from foo --to bar
+PYTHONUNBUFFERED=1 bash -c 'echo "foo bar foo" | uv run repren --from foo --to bar'
 Using 1 patterns:
   'foo' -> 'bar'
 bar bar bar
 Read 12 chars, made 2 replacements (0 skipped due to overlaps)
 
-echo 'figure 1 and figure 2' | run --from 'figure ([0-9]+)' --to 'Fig. \1'
+PYTHONUNBUFFERED=1 bash -c 'echo "figure 1 and figure 2" | uv run repren --from "figure ([0-9]+)" --to "Fig. \1"'
 Using 1 patterns:
   'figure ([0-9]+)' -> 'Fig. \1'
 Fig. 1 and Fig. 2
