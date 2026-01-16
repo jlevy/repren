@@ -255,21 +255,22 @@ class TestClaudeSkill:
 
 ## Coverage Summary
 
-### Current State (Post v2-revs Merge)
+### Current State
 
 | Component | Statements | Covered | Coverage |
 |-----------|------------|---------|----------|
 | `repren/__init__.py` | 2 | 2 | 100% |
-| `repren/repren.py` | 502 | 233 | 46% |
+| `repren/repren.py` | 503 | 246 | 49% |
 | `repren/claude_skill.py` | 82 | 37 | 45% |
-| **Total** | **586** | **235** | **40%** |
+| **Total** | **587** | **285** | **49%** |
 
 ### Coverage Trend
 
 - **Before v2-revs:** 50% (458 statements)
 - **After v2-revs:** 40% (586 statements)
-- **After adding new tests:** 46% (587 statements, 315 missed)
-- **Improvement:** +37 lines covered in `claude_skill.py` (0% → 45%)
+- **After skill + CLI tests:** 46% (587 statements, 315 missed)
+- **After unit tests for core functions:** 49% (587 statements, 302 missed)
+- **Improvement:** +13 lines covered in `repren.py` for `multi_replace()` and `_sort_drop_overlaps()`
 
 ---
 
@@ -286,13 +287,18 @@ class TestClaudeSkill:
 8. ~~**`--install-skill`**~~ - Golden + unit tests added
 9. ~~**File collision handling**~~ - Tests rename with `.1` suffix
 10. ~~**`claude_skill.py`**~~ - 45% coverage (was 0%)
+11. ~~**`multi_replace()` direct tests**~~ - 9 unit tests added (single/multiple patterns, capturing groups, overlaps, unicode)
+12. ~~**`_sort_drop_overlaps()`**~~ - 7 unit tests added (no overlaps, left/right/nested overlaps, sorting)
+13. ~~**Moving files across directories**~~ - Golden test added for path-based renaming
 
 ### Remaining Gaps
 
-#### Lower Priority (Unit Tests)
-1. **`multi_replace()` direct tests** - Currently only indirect coverage
-2. **`_sort_drop_overlaps()`** - Edge case handling
-3. **Moving files across directories** - Noted as TODO in golden-tests.sh
+All identified gaps have been addressed. Future work could include:
+
+#### Optional Enhancements
+- **Additional edge cases** for multi-file moves with complex directory structures
+- **Performance testing** with large codebases
+- **CamelCase and whole word** pattern interactions
 
 ---
 

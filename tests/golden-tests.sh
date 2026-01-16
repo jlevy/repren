@@ -146,11 +146,23 @@ run --walk-only --exclude='beech|maple' original
 run --walk-only --include='A.*|M.*|oak' --exclude='Mex.*' original
 
 
-# Moving files.
+# Moving files across directories.
 
-# TODO: Fix this.
-# cp -a original test9
-# run --renames --from stuff/trees --to another-dir test9
+cp -a original test-move
+
+# First, let's see what files exist
+ls_portable test-move/stuff/trees
+
+# Create target directory structure (repren expects parent dirs to exist for moves)
+mkdir -p test-move/relocated
+
+# Rename files from stuff/trees to relocated directory
+# This tests path-based renaming that effectively moves files
+run --renames --from 'stuff/trees' --to 'relocated' test-move
+
+# Show result - files should have moved
+ls_portable test-move/stuff/trees 2>/dev/null || echo "(directory removed or empty)"
+ls_portable test-move/relocated
 
 
 # Backup management: undo and clean-backups.

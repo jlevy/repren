@@ -7,9 +7,11 @@ from pathlib import Path
 import pytest
 
 from repren.repren import (
+    _sort_drop_overlaps,
     _split_name,
     clean_backups,
     find_backup_files,
+    multi_replace,
     parse_patterns,
     to_lower_camel,
     to_lower_underscore,
@@ -626,3 +628,232 @@ class TestClaudeSkillCLI:
             finally:
                 if old_home:
                     os.environ["HOME"] = old_home
+
+
+# --- multi_replace tests ---
+
+
+class TestMultiReplace:
+    """Direct tests for the multi_replace function."""
+
+    def test_single_pattern(self):
+        """Single pattern replacement."""
+        patterns = parse_patterns("foo\tbar")
+        result, counts = multi_replace(b"foo baz foo", patterns)
+
+        assert result == b"bar baz bar"
+        assert counts.found == 2
+        assert counts.valid == 2
+
+    def test_no_matches(self):
+        """No matches should return input unchanged."""
+        patterns = parse_patterns("xyz\tabc")
+        result, counts = multi_replace(b"foo baz foo", patterns)
+
+        assert result == b"foo baz foo"
+        assert counts.found == 0
+        assert counts.valid == 0
+
+    def test_multiple_patterns(self):
+        """Multiple non-overlapping patterns."""
+        patterns = parse_patterns("foo\tFOO\nbar\tBAR")
+        result, counts = multi_replace(b"foo bar baz", patterns)
+
+        assert result == b"FOO BAR baz"
+        assert counts.found == 2
+        assert counts.valid == 2
+
+    def test_capturing_group(self):
+        """Pattern with capturing group and back-reference."""
+        # parse_patterns expects actual tab separator
+        patterns = parse_patterns("figure ([0-9]+)\tFigure \\1")
+        result, counts = multi_replace(b"See figure 1 and figure 23", patterns)
+
+        assert result == b"See Figure 1 and Figure 23"
+        assert counts.found == 2
+        assert counts.valid == 2
+
+    def test_overlapping_patterns_first_wins(self):
+        """When patterns overlap, first match (by position) wins."""
+        # Create patterns where "foobar" and "foo" could both match
+        patterns = parse_patterns("foobar\tLONG\nfoo\tSHORT")
+        result, counts = multi_replace(b"foobar", patterns)
+
+        # "foobar" matches first, so "foo" is dropped as overlapping
+        assert result == b"LONG"
+        assert counts.found == 2  # Both patterns matched
+        assert counts.valid == 1  # But only one was applied (no overlap)
+
+    def test_nested_overlap(self):
+        """Inner match nested within outer match should be dropped."""
+        # "abcd" contains "bc" - both match but overlap
+        patterns = parse_patterns("abcd\tOUTER\nbc\tINNER")
+        result, counts = multi_replace(b"abcd", patterns)
+
+        assert result == b"OUTER"
+        assert counts.found == 2
+        assert counts.valid == 1
+
+    def test_adjacent_non_overlapping(self):
+        """Adjacent but non-overlapping matches should both apply."""
+        patterns = parse_patterns("foo\tFOO\nbar\tBAR")
+        result, counts = multi_replace(b"foobar", patterns)
+
+        assert result == b"FOOBAR"
+        assert counts.found == 2
+        assert counts.valid == 2
+
+    def test_empty_input(self):
+        """Empty input should return empty output."""
+        patterns = parse_patterns("foo\tbar")
+        result, counts = multi_replace(b"", patterns)
+
+        assert result == b""
+        assert counts.found == 0
+        assert counts.valid == 0
+
+    def test_unicode_content(self):
+        """Unicode content should be handled correctly."""
+        patterns = parse_patterns("café\tcoffee")
+        result, counts = multi_replace("Un café s'il vous plaît".encode("utf-8"), patterns)
+
+        assert result == "Un coffee s'il vous plaît".encode("utf-8")
+        assert counts.found == 1
+        assert counts.valid == 1
+
+
+# --- _sort_drop_overlaps tests ---
+
+
+class TestSortDropOverlaps:
+    """Direct tests for _sort_drop_overlaps function."""
+
+    def _make_match(self, pattern: str, text: str, pos: int = 0):
+        """Helper to create a match object at a specific position."""
+        import re
+
+        regex = re.compile(pattern.encode("utf-8"))
+        for m in regex.finditer(text.encode("utf-8")):
+            if m.start() >= pos:
+                return m
+        return None
+
+    def test_no_overlaps(self):
+        """Non-overlapping matches should all be kept."""
+        import re
+
+        text = b"foo bar baz"
+        matches = []
+        for pattern, replacement in [(b"foo", b"FOO"), (b"bar", b"BAR"), (b"baz", b"BAZ")]:
+            regex = re.compile(pattern)
+            for m in regex.finditer(text):
+                matches.append((m, replacement))
+
+        result = _sort_drop_overlaps(matches)
+
+        assert len(result) == 3
+        # Results should be sorted by position
+        assert result[0][1] == b"FOO"
+        assert result[1][1] == b"BAR"
+        assert result[2][1] == b"BAZ"
+
+    def test_overlapping_left(self):
+        """Match overlapping with previous match should be dropped."""
+        import re
+
+        text = b"foobar"
+        matches = []
+        # "foo" at position 0-3
+        regex1 = re.compile(b"foo")
+        for m in regex1.finditer(text):
+            matches.append((m, b"ONE"))
+        # "oob" at position 1-4 overlaps with "foo"
+        regex2 = re.compile(b"oob")
+        for m in regex2.finditer(text):
+            matches.append((m, b"TWO"))
+
+        result = _sort_drop_overlaps(matches)
+
+        assert len(result) == 1
+        assert result[0][1] == b"ONE"  # First by position wins
+
+    def test_overlapping_right(self):
+        """Match overlapping with next match should be dropped."""
+        import re
+
+        text = b"foobar"
+        matches = []
+        # "oob" at position 1-4
+        regex1 = re.compile(b"oob")
+        for m in regex1.finditer(text):
+            matches.append((m, b"ONE"))
+        # "bar" at position 3-6 overlaps with "oob"
+        regex2 = re.compile(b"bar")
+        for m in regex2.finditer(text):
+            matches.append((m, b"TWO"))
+
+        result = _sort_drop_overlaps(matches)
+
+        assert len(result) == 1
+        # "oob" starts at 1, "bar" starts at 3, so "oob" is inserted first
+        # "bar" overlaps with "oob" on its left and gets dropped
+        assert result[0][1] == b"ONE"
+
+    def test_nested_match(self):
+        """Match completely nested inside another should be dropped."""
+        import re
+
+        text = b"abcdef"
+        matches = []
+        # "bcde" at position 1-5
+        regex1 = re.compile(b"bcde")
+        for m in regex1.finditer(text):
+            matches.append((m, b"OUTER"))
+        # "cd" at position 2-4 is inside "bcde"
+        regex2 = re.compile(b"cd")
+        for m in regex2.finditer(text):
+            matches.append((m, b"INNER"))
+
+        result = _sort_drop_overlaps(matches)
+
+        assert len(result) == 1
+        assert result[0][1] == b"OUTER"
+
+    def test_empty_input(self):
+        """Empty match list should return empty list."""
+        result = _sort_drop_overlaps([])
+        assert result == []
+
+    def test_single_match(self):
+        """Single match should be returned as-is."""
+        import re
+
+        text = b"foo"
+        regex = re.compile(b"foo")
+        matches = [(m, b"bar") for m in regex.finditer(text)]
+
+        result = _sort_drop_overlaps(matches)
+
+        assert len(result) == 1
+        assert result[0][1] == b"bar"
+
+    def test_maintains_sorted_order(self):
+        """Output should always be sorted by match position."""
+        import re
+
+        text = b"aaa bbb ccc"
+        matches = []
+        # Add matches in reverse order
+        for pattern, replacement in [(b"ccc", b"C"), (b"bbb", b"B"), (b"aaa", b"A")]:
+            regex = re.compile(pattern)
+            for m in regex.finditer(text):
+                matches.append((m, replacement))
+
+        result = _sort_drop_overlaps(matches)
+
+        assert len(result) == 3
+        # Should be sorted by position regardless of input order
+        assert result[0][0].start() < result[1][0].start() < result[2][0].start()
+        assert result[0][1] == b"A"
+        assert result[1][1] == b"B"
+        assert result[2][1] == b"C"

@@ -431,11 +431,37 @@ Found 3 files in: original
 - original/stuff/words/oak
 
 
-# Moving files.
+# Moving files across directories.
 
-# TODO: Fix this.
-# cp -a original test9
-# run --renames --from stuff/trees --to another-dir test9
+cp -a original test-move
+
+# First, let's see what files exist
+ls_portable test-move/stuff/trees
+-rw-r--r-- beech.txt
+-rw-r--r-- maple.txt
+-rw-r--r-- oak.txt
+
+# Create target directory structure (repren expects parent dirs to exist for moves)
+mkdir -p test-move/relocated
+
+# Rename files from stuff/trees to relocated directory
+# This tests path-based renaming that effectively moves files
+run --renames --from 'stuff/trees' --to 'relocated' test-move
+Using 1 patterns:
+  'stuff/trees' -> 'relocated'
+Found 12 files in: test-move
+- rename: test-move/stuff/trees/beech.txt -> test-move/relocated/beech.txt
+- rename: test-move/stuff/trees/maple.txt -> test-move/relocated/maple.txt
+- rename: test-move/stuff/trees/oak.txt -> test-move/relocated/oak.txt
+Read 3 files (0 chars), found 0 matches (0 skipped due to overlaps)
+Changed 3 files (0 rewritten and 3 renamed)
+
+# Show result - files should have moved
+ls_portable test-move/stuff/trees 2>/dev/null || echo "(directory removed or empty)"
+ls_portable test-move/relocated
+-rw-r--r-- beech.txt
+-rw-r--r-- maple.txt
+-rw-r--r-- oak.txt
 
 
 # Backup management: undo and clean-backups.
