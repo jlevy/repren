@@ -137,7 +137,7 @@ There are many tools for search/replace and refactoring. Here's how repren compa
 | Structural/AST-aware | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
 | Dry run + backups + undo | ✅ | ❌ | ❌ | Preview | Preview | Preview | ✅ |
 | Interactive interface | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ |
-| Install method | Python (zero deps) | Varies (OS/shell) | Binary | Binary | Binary | Binary | Binary |
+| Dependencies | Python 3.10+ (no other deps) | Varies (OS/shell) | Binary (Rust) | Binary (Rust) | Binary (Rust) | Binary (OCaml) | Binary (Rust) |
 
 **When to use each:**
 
