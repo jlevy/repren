@@ -3,7 +3,7 @@
 ## Instructions
 
 Run full format/typecheck/lint/test cycle and review code following
-@shortcut:precommit-process.md.
+@shortcut-precommit-process.md.
 
 Create beads for all the following tasks (confirming open tasks for them do not already
 exist). Name all tasks with a “Cleanup: ” title to make them easy to spot.
@@ -34,9 +34,9 @@ issues.
 
 6. **Dead code**: Review the code base for any dead code and remove it.
 
-7. **Remove trivial tests**: Follow @shortcut:cleanup-remove-trivial-tests.md.
+7. **Remove trivial tests**: Follow @shortcut-cleanup-remove-trivial-tests.md.
 
-8. **Update docstrings**: Follow @shortcut:cleanup-update-docstrings.md.
+8. **Update docstrings**: Follow @shortcut-cleanup-update-docstrings.md.
 
 9. **Consolidate constants and settings**: Determine what files hold shared settings
    (such as `settings.ts` or similar).

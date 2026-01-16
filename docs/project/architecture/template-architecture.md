@@ -3,7 +3,7 @@
 Last updated: YYYY-MM-DD
 
 Maintenance: When revising this doc you must follow instructions in
-@shortcut:revise-architecture-doc.md.
+@shortcut-revise-architecture-doc.md.
 
 ## Overview
 

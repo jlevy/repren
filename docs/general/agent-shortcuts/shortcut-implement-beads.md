@@ -13,7 +13,7 @@ Instructions:
    If the user did not specify which beads, check all open beads.
    Beads are usually linked to specs so be sure to find specs that are relevant (for
    that bead or an umbrella bead) for each if possible and review those specs.
-   Follow all rules and workflows and follow @shortcut:precommit-process.md to commit
+   Follow all rules and workflows and follow @shortcut-precommit-process.md to commit
    code and commit or sync beads changes after each bead.
 
 4. Repeat this for all beads where you know how to fix them.

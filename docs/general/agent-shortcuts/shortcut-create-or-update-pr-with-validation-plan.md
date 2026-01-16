@@ -5,7 +5,7 @@ Instructions:
 Create a to-do list with the following items then perform all of them:
 
 1. **Review and commit:** If code is not committed, follow
-   @shortcut:precommit-process.md and sure everything is committed.
+   @shortcut-precommit-process.md and sure everything is committed.
    Be sure that you’ve already followed the pre-commit rules before (or at least after)
    the last commit. If not, follow the full pre-commit review process and commit.
 
@@ -16,7 +16,7 @@ Create a to-do list with the following items then perform all of them:
    If isn’t clear, stop and ask!
 
 3. **Create or update the Validation Plan:** Carefully follow
-   @shortcut:create-or-update-pr-with-validation-plan.md for this process.
+   @shortcut-create-or-update-pr-with-validation-plan.md for this process.
 
 4. **Summarize for the user:** Summarize what you have done for the user but don’t add
    new information in the summary; be sure that all information is in the validation

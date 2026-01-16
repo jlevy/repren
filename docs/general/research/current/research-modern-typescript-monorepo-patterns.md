@@ -29,7 +29,7 @@
 | **publint** | ^0.3.0 | [npmjs.com/package/publint](https://www.npmjs.com/package/publint) |
 | **@changesets/cli** | ^2.29.0 | [github.com/changesets/changesets/releases](https://github.com/changesets/changesets/releases) |
 | **@types/node** | ^24.0.0 | Should match Node.js major version (^25.0.0 also available) |
-| **actions/checkout** | v5 | [github.com/actions/checkout/releases](https://github.com/actions/checkout/releases) — v6 available, uses Node 24 |
+| **actions/checkout** | v6 | [github.com/actions/checkout/releases](https://github.com/actions/checkout/releases) — Latest (v6.0.2), requires Runner v2.329.0+ |
 | **actions/setup-node** | v6 | [github.com/actions/setup-node/releases](https://github.com/actions/setup-node/releases) |
 | **pnpm/action-setup** | v4 | [github.com/pnpm/action-setup/releases](https://github.com/pnpm/action-setup/releases) |
 | **changesets/action** | v1 | [github.com/changesets/action](https://github.com/changesets/action) |
@@ -142,13 +142,15 @@ recommendations from the TypeScript and JavaScript ecosystem maintainers.
 superior disk efficiency and stricter dependency management than npm or yarn.
 
 **Key Configuration** (`pnpm-workspace.yaml`):
+
 ```yaml
 packages:
-  - "packages/*"
-  - "apps/*"
+  - 'packages/*'
+  - 'apps/*'
 ```
 
 **Root `.npmrc`**:
+
 ```ini
 save-workspace-protocol=true
 prefer-workspace-packages=true
@@ -173,6 +175,7 @@ if there’s only one package initially.
 This prevents restructuring when adding new packages later.
 
 **Recommended Directory Structure**:
+
 ```
 project-root/
   .changeset/
@@ -224,6 +227,7 @@ Internal code organization (`core/`, `cli/`, `adapters/`) creates natural split 
 Modern TypeScript monorepos use a shared base configuration extended by each package.
 
 **`tsconfig.base.json`**:
+
 ```json
 {
   "compilerOptions": {
@@ -242,6 +246,7 @@ Modern TypeScript monorepos use a shared base configuration extended by each pac
 ```
 
 **Package-level `tsconfig.json`**:
+
 ```json
 {
   "extends": "../../tsconfig.base.json",
@@ -329,24 +334,24 @@ Key advantages:
 tsup configurations.
 
 **Configuration (`tsdown.config.ts`)**:
+
 ```typescript
-import { defineConfig } from "tsdown";
+import { defineConfig } from 'tsdown';
 
 export default defineConfig({
   entry: {
-    index: "src/index.ts",
-    cli: "src/cli/index.ts",
-    adapter: "src/adapters/index.ts",
-    bin: "src/bin.ts"
+    index: 'src/index.ts',
+    cli: 'src/cli/index.ts',
+    adapter: 'src/adapters/index.ts',
+    bin: 'src/bin.ts',
   },
-  format: ["esm", "cjs"],
-  platform: "node",
-  target: "node24",
+  format: ['esm', 'cjs'],
+  platform: 'node',
+  target: 'node24',
   sourcemap: true,
   dts: true,
   clean: true,
-  banner: ({ fileName }) =>
-    fileName.startsWith("bin.") ? "#!/usr/bin/env node\n" : ""
+  banner: ({ fileName }) => (fileName.startsWith('bin.') ? '#!/usr/bin/env node\n' : ''),
 });
 ```
 
@@ -390,6 +395,7 @@ The `exports` field in `package.json` enables:
 **Critical rule**: The `"types"` condition must come first in each export block.
 
 **Example `package.json` exports**:
+
 ```json
 {
   "name": "@scope/package-name",
@@ -484,6 +490,7 @@ use:
 3. **Dynamic imports**: Only load the SDK when the subpath is actually imported
 
 **`package.json` configuration**:
+
 ```json
 {
   "peerDependencies": {
@@ -498,10 +505,11 @@ use:
 ```
 
 **Implementation pattern** (`src/adapters/mcp/index.ts`):
+
 ```typescript
 export async function createMcpServer(options: McpServerOptions) {
   // Dynamic import only when this code path is executed
-  const { Server } = await import("@modelcontextprotocol/sdk/server");
+  const { Server } = await import('@modelcontextprotocol/sdk/server');
   return new Server(options);
 }
 ```
@@ -540,6 +548,7 @@ It checks:
 - Common configuration mistakes
 
 **Integration**:
+
 ```json
 {
   "scripts": {
@@ -590,6 +599,7 @@ Changesets provides:
 1. Initialize: `pnpm add -Dw @changesets/cli && pnpm changeset init`
 
 2. Configure `.changeset/config.json`:
+
 ```json
 {
   "$schema": "https://unpkg.com/@changesets/config/schema.json",
@@ -604,6 +614,7 @@ Changesets provides:
 ```
 
 3. Root scripts:
+
 ```json
 {
   "scripts": {
@@ -719,8 +730,7 @@ export default defineConfig({
 ```ts
 // src/index.ts
 declare const __VERSION__: string;
-export const VERSION: string =
-  typeof __VERSION__ !== 'undefined' ? __VERSION__ : 'development';
+export const VERSION: string = typeof __VERSION__ !== 'undefined' ? __VERSION__ : 'development';
 ```
 
 **Comparison with Python (uv-dynamic-versioning)**:
@@ -745,6 +755,7 @@ This provides full traceability without manual intervention.
 **Status**: Recommended
 
 **`.github/workflows/ci.yml`**:
+
 ```yaml
 name: CI
 
@@ -757,7 +768,7 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - uses: pnpm/action-setup@v4
         with:
@@ -781,7 +792,8 @@ jobs:
 - Node.js 24 is the current LTS ("Krypton", active until Oct 2026, maintained until Apr
   2028\)
 
-- `actions/checkout@v5` requires Actions Runner v2.327.1+ (node24 runtime)
+- `actions/checkout@v6` requires Actions Runner v2.329.0+ (stores credentials under
+  $RUNNER_TEMP)
 
 - `pnpm/action-setup@v4` includes built-in caching
 
@@ -802,6 +814,7 @@ jobs:
 **Status**: Recommended
 
 **`.github/workflows/release.yml`**:
+
 ```yaml
 name: Release
 
@@ -817,7 +830,7 @@ jobs:
   release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
@@ -829,7 +842,7 @@ jobs:
         with:
           node-version: 24
           cache: pnpm
-          registry-url: "https://registry.npmjs.org"
+          registry-url: 'https://registry.npmjs.org'
 
       - run: pnpm install --frozen-lockfile
 
@@ -868,11 +881,13 @@ Prettier provides consistent code formatting across the project.
 Configure it once and let it handle all formatting decisions automatically.
 
 **Installation**:
+
 ```bash
 pnpm add -Dw prettier eslint-config-prettier
 ```
 
 **`.prettierrc`**:
+
 ```json
 {
   "$schema": "https://json.schemastore.org/prettierrc",
@@ -887,6 +902,7 @@ pnpm add -Dw prettier eslint-config-prettier
 ```
 
 **`.prettierignore`**:
+
 ```
 dist
 node_modules
@@ -925,6 +941,7 @@ Use `eslint-config-prettier` to disable ESLint rules that conflict with Prettier
 Structure format and lint scripts to support both auto-fix and CI verification modes.
 
 **Root `package.json` scripts**:
+
 ```json
 {
   "scripts": {
@@ -989,6 +1006,7 @@ and having no Node.js runtime dependency for the hook runner itself.
 | Monorepo support | Excellent (`root:` option) | Requires workarounds |
 
 **Installation**:
+
 ```bash
 pnpm add -Dw lefthook
 npx lefthook install
@@ -1025,6 +1043,7 @@ Run checks in parallel, operate only on staged files, and use caching aggressive
 5. **Cache everything**: ESLint cache, TypeScript build info, etc.
 
 **Example `lefthook.yml` (pre-commit)**:
+
 ```yaml
 pre-commit:
   parallel: true
@@ -1032,14 +1051,14 @@ pre-commit:
   commands:
     # Auto-format with prettier (~500ms)
     format:
-      glob: "*.{js,ts,tsx,json}"
+      glob: '*.{js,ts,tsx,json}'
       run: npx prettier --write --log-level warn {staged_files}
       stage_fixed: true
       priority: 1
 
     # Lint with auto-fix and caching (~1s first, ~200ms cached)
     lint:
-      glob: "*.{js,ts,tsx}"
+      glob: '*.{js,ts,tsx}'
       run: >
         npx eslint
         --cache
@@ -1050,17 +1069,18 @@ pre-commit:
 
     # Type check with incremental mode (~2s)
     typecheck:
-      glob: "*.{ts,tsx}"
+      glob: '*.{ts,tsx}'
       run: npx tsc --noEmit --incremental
       priority: 3
 ```
 
 **Monorepo considerations**: Use `root:` to scope commands to specific packages:
+
 ```yaml
 commands:
   lint:
-    root: "packages/core/"
-    glob: "*.{ts,tsx}"
+    root: 'packages/core/'
+    glob: '*.{ts,tsx}'
     run: npx eslint --fix {staged_files}
 ```
 
@@ -1090,6 +1110,7 @@ pre-commit.
 4. **Provide clear escape hatch**: Document `--no-verify` for emergencies
 
 **Example `lefthook.yml` (pre-push)**:
+
 ```yaml
 pre-push:
   commands:
@@ -1160,6 +1181,7 @@ Local hooks and CI should complement each other:
 Never skip CI because hooks passed—hooks can be bypassed with `--no-verify`.
 
 **Root `package.json` integration**:
+
 ```json
 {
   "scripts": {
@@ -1193,6 +1215,7 @@ making it easy to separate low-risk minor/patch updates from potentially breakin
 updates.
 
 **Installation**:
+
 ```bash
 pnpm add -Dw npm-check-updates
 ```
@@ -1241,6 +1264,7 @@ Add structured upgrade scripts to your root `package.json` that encode your upgr
 workflow. This makes upgrades consistent and discoverable.
 
 **Root `package.json` scripts**:
+
 ```json
 {
   "scripts": {
@@ -1298,6 +1322,7 @@ pnpm ncu --target minor -u -ws && pnpm install && pnpm test
 ```
 
 For selective package updates:
+
 ```bash
 # Upgrade specific packages only
 pnpm ncu --filter "@scope/*" --target minor -u
@@ -1311,6 +1336,7 @@ upgrades. Options:
 1. **Use `--legacy-peer-deps`** (npm): `npm install --legacy-peer-deps`
 
 2. **Pin conflicting versions**: Lock specific versions in `pnpm.overrides`:
+
    ```json
    {
      "pnpm": {
@@ -1442,12 +1468,14 @@ GitHub Packages provides a private npm registry with standard npm semantics.
 - Repository name should match organization/scope
 
 **Publisher `.npmrc`**:
+
 ```ini
 @your-org:registry=https://npm.pkg.github.com
 //npm.pkg.github.com/:_authToken=${NODE_AUTH_TOKEN}
 ```
 
 **Consumer `.npmrc`**:
+
 ```ini
 @your-org:registry=https://npm.pkg.github.com/
 //npm.pkg.github.com/:_authToken=YOUR_GITHUB_TOKEN
@@ -1511,6 +1539,7 @@ pnpm add ../path-to-monorepo/packages/package-name
 ```
 
 Or use `pnpm link`:
+
 ```bash
 # In package directory
 pnpm link --global
@@ -1609,7 +1638,7 @@ export const DEFAULT_OUTPUT_DIR = './output';
 import { resolve } from 'node:path';
 import { DEFAULT_OUTPUT_DIR } from '../../settings.js';
 
-export { DEFAULT_OUTPUT_DIR };  // Re-export for CLI convenience
+export { DEFAULT_OUTPUT_DIR }; // Re-export for CLI convenience
 
 export function getOutputDir(override?: string): string {
   return resolve(process.cwd(), override ?? DEFAULT_OUTPUT_DIR);
@@ -1643,8 +1672,7 @@ export default {
 // src/index.ts (node-free)
 declare const __VERSION__: string;
 
-export const VERSION: string =
-  typeof __VERSION__ !== 'undefined' ? __VERSION__ : 'development';
+export const VERSION: string = typeof __VERSION__ !== 'undefined' ? __VERSION__ : 'development';
 ```
 
 **Assessment**: Build-time injection eliminates runtime Node.js dependencies for values
@@ -1667,10 +1695,12 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative } from 'node:path';
 
 const SRC_DIR = 'src';
-const NODE_ALLOWED_DIRS = ['cli'];  // Only CLI can use node:
+const NODE_ALLOWED_DIRS = ['cli']; // Only CLI can use node:
 const NODE_IMPORT_PATTERN = /from\s+['"]node:/g;
 
-function getAllTsFiles(dir: string): string[] { /* recursive scan */ }
+function getAllTsFiles(dir: string): string[] {
+  /* recursive scan */
+}
 
 describe('Node-free core library', () => {
   it('source files outside cli/ should not import from node:', () => {
@@ -1678,7 +1708,7 @@ describe('Node-free core library', () => {
 
     for (const file of getAllTsFiles(SRC_DIR)) {
       const rel = relative(SRC_DIR, file);
-      if (NODE_ALLOWED_DIRS.some(d => rel.startsWith(d + '/'))) continue;
+      if (NODE_ALLOWED_DIRS.some((d) => rel.startsWith(d + '/'))) continue;
 
       const content = readFileSync(file, 'utf-8');
       if (NODE_IMPORT_PATTERN.test(content)) {
@@ -2081,16 +2111,16 @@ For projects just getting started, a minimal configuration:
 
 ```javascript
 // eslint.config.js
-import js from "@eslint/js";
-import tseslint from "typescript-eslint";
-import prettier from "eslint-config-prettier";
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import prettier from 'eslint-config-prettier';
 
 export default [
   js.configs.recommended,
   ...tseslint.configs.recommended,
   prettier, // Must be last to override conflicting rules
   {
-    ignores: ["**/dist/**", "**/node_modules/**", "**/.pnpm-store/**"],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/.pnpm-store/**'],
   },
 ];
 ```
@@ -2102,9 +2132,9 @@ This catches more bugs but requires tsconfig integration:
 
 ```javascript
 // eslint.config.js
-import js from "@eslint/js";
-import tseslint from "typescript-eslint";
-import prettier from "eslint-config-prettier";
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import prettier from 'eslint-config-prettier';
 
 // Type-aware ESLint configuration using flat config.
 // Uses TypeScript's project service for precise, cross-project type information.
@@ -2112,7 +2142,7 @@ import prettier from "eslint-config-prettier";
 // Apply type-checked configs only to TypeScript files
 const typedRecommended = tseslint.configs.recommendedTypeChecked.map((cfg) => ({
   ...cfg,
-  files: ["**/*.ts", "**/*.tsx"],
+  files: ['**/*.ts', '**/*.tsx'],
   languageOptions: {
     ...(cfg.languageOptions ?? {}),
     parserOptions: {
@@ -2125,7 +2155,7 @@ const typedRecommended = tseslint.configs.recommendedTypeChecked.map((cfg) => ({
 
 const typedStylistic = tseslint.configs.stylisticTypeChecked.map((cfg) => ({
   ...cfg,
-  files: ["**/*.ts", "**/*.tsx"],
+  files: ['**/*.ts', '**/*.tsx'],
   languageOptions: {
     ...(cfg.languageOptions ?? {}),
     parserOptions: {
@@ -2139,12 +2169,7 @@ const typedStylistic = tseslint.configs.stylisticTypeChecked.map((cfg) => ({
 export default [
   // Global ignores
   {
-    ignores: [
-      "**/dist/**",
-      "**/node_modules/**",
-      "**/.pnpm-store/**",
-      "eslint.config.*",
-    ],
+    ignores: ['**/dist/**', '**/node_modules/**', '**/.pnpm-store/**', 'eslint.config.*'],
   },
 
   // Base JS rules
@@ -2159,59 +2184,59 @@ export default [
 
   // TypeScript-specific rules
   {
-    files: ["**/*.ts", "**/*.tsx"],
+    files: ['**/*.ts', '**/*.tsx'],
     rules: {
       // === Code Style ===
       // Enforce curly braces for all control statements (prevents bugs)
-      curly: ["error", "all"],
+      curly: ['error', 'all'],
       // Consistent brace style: opening on same line, closing on new line
-      "brace-style": ["error", "1tbs", { allowSingleLine: false }],
+      'brace-style': ['error', '1tbs', { allowSingleLine: false }],
 
       // === Unused Variables ===
       // Allow underscore prefix for intentionally unused vars/args
-      "@typescript-eslint/no-unused-vars": [
-        "error",
+      '@typescript-eslint/no-unused-vars': [
+        'error',
         {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
         },
       ],
 
       // === Promise Safety (Critical for Node.js) ===
       // Catch unhandled promises (common source of silent failures)
-      "@typescript-eslint/no-floating-promises": "error",
+      '@typescript-eslint/no-floating-promises': 'error',
       // Prevent passing promises where void is expected (e.g., event handlers)
-      "@typescript-eslint/no-misused-promises": [
-        "error",
+      '@typescript-eslint/no-misused-promises': [
+        'error',
         { checksVoidReturn: { attributes: false } },
       ],
       // Catch awaiting non-promise values
-      "@typescript-eslint/await-thenable": "error",
+      '@typescript-eslint/await-thenable': 'error',
       // Prevent confusing void expressions in unexpected places
-      "@typescript-eslint/no-confusing-void-expression": "error",
+      '@typescript-eslint/no-confusing-void-expression': 'error',
 
       // === Type Import Consistency ===
       // Enforce `import type` for type-only imports (better tree-shaking)
-      "@typescript-eslint/consistent-type-imports": [
-        "error",
+      '@typescript-eslint/consistent-type-imports': [
+        'error',
         {
-          prefer: "type-imports",
-          fixStyle: "separate-type-imports",
+          prefer: 'type-imports',
+          fixStyle: 'separate-type-imports',
           disallowTypeAnnotations: true,
         },
       ],
       // Prevent side effects in type-only imports
-      "@typescript-eslint/no-import-type-side-effects": "error",
+      '@typescript-eslint/no-import-type-side-effects': 'error',
 
       // === Restricted Patterns ===
       // Forbid inline import() type expressions (prefer proper imports)
-      "no-restricted-syntax": [
-        "error",
+      'no-restricted-syntax': [
+        'error',
         {
-          selector: "TSImportType",
+          selector: 'TSImportType',
           message:
-            "Inline import() type expressions are not allowed. Use a proper import statement at the top of the file instead.",
+            'Inline import() type expressions are not allowed. Use a proper import statement at the top of the file instead.',
         },
       ],
     },
@@ -2220,21 +2245,21 @@ export default [
   // === File-Specific Overrides ===
   // Relax rules for test files where dynamic behavior is expected
   {
-    files: ["**/*.test.ts", "**/*.spec.ts", "**/tests/**/*.ts"],
+    files: ['**/*.test.ts', '**/*.spec.ts', '**/tests/**/*.ts'],
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "@typescript-eslint/no-unsafe-assignment": "off",
-      "@typescript-eslint/no-unsafe-member-access": "off",
-      "@typescript-eslint/no-unsafe-call": "off",
+      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-unsafe-assignment': 'off',
+      '@typescript-eslint/no-unsafe-member-access': 'off',
+      '@typescript-eslint/no-unsafe-call': 'off',
     },
   },
 
   // Relax rules for scripts/tooling
   {
-    files: ["**/scripts/**/*.ts", "**/tools/**/*.ts"],
+    files: ['**/scripts/**/*.ts', '**/tools/**/*.ts'],
     rules: {
-      "@typescript-eslint/no-explicit-any": "off",
-      "no-console": "off",
+      '@typescript-eslint/no-explicit-any': 'off',
+      'no-console': 'off',
     },
   },
 ];
@@ -2256,6 +2281,7 @@ export default [
 
 1. **`no-floating-promises`**: Catches unhandled promises—a common source of silent
    failures in Node.js:
+
    ```typescript
    // Bad: Promise result ignored, errors swallowed
    saveData();
@@ -2266,14 +2292,16 @@ export default [
 
 2. **`consistent-type-imports`**: Enforces `import type` for type-only imports, enabling
    better tree-shaking and clearer intent:
+
    ```typescript
    // Bad: Runtime import for type-only usage
-   import { SomeType } from "./types";
+   import { SomeType } from './types';
    // Good: Explicit type import
-   import type { SomeType } from "./types";
+   import type { SomeType } from './types';
    ```
 
 3. **`curly: ['error', 'all']`**: Prevents bugs from missing braces:
+
    ```typescript
    // Bad: Easy to introduce bugs when adding lines
    if (condition) doSomething();
@@ -2301,6 +2329,7 @@ const first = array[0]!; // ESLint may wrongly flag this as unnecessary
 ```
 
 If you encounter false positives, consider disabling the rule:
+
 ```javascript
 rules: {
   "@typescript-eslint/no-unnecessary-type-assertion": "off",
@@ -2363,22 +2392,21 @@ For CLI packages, consider restricting console usage to centralized output funct
 
 ```typescript
 // tsdown.config.ts
-import { defineConfig } from "tsdown";
+import { defineConfig } from 'tsdown';
 
 export default defineConfig({
   entry: {
-    index: "src/index.ts",
-    cli: "src/cli/index.ts",
-    bin: "src/bin.ts"
+    index: 'src/index.ts',
+    cli: 'src/cli/index.ts',
+    bin: 'src/bin.ts',
   },
-  format: ["esm", "cjs"],
-  platform: "node",
-  target: "node24",
+  format: ['esm', 'cjs'],
+  platform: 'node',
+  target: 'node24',
   sourcemap: true,
   dts: true,
   clean: true,
-  banner: ({ fileName }) =>
-    fileName.startsWith("bin.") ? "#!/usr/bin/env node\n" : ""
+  banner: ({ fileName }) => (fileName.startsWith('bin.') ? '#!/usr/bin/env node\n' : ''),
 });
 ```
 
@@ -2397,14 +2425,14 @@ pre-commit:
   commands:
     # Auto-format with prettier (~500ms)
     format:
-      glob: "*.{js,ts,tsx,json,yaml,yml}"
+      glob: '*.{js,ts,tsx,json,yaml,yml}'
       run: npx prettier --write --log-level warn {staged_files}
       stage_fixed: true
       priority: 1
 
     # Lint with auto-fix and caching (~1s first, ~200ms cached)
     lint:
-      glob: "*.{js,ts,tsx}"
+      glob: '*.{js,ts,tsx}'
       run: >
         npx eslint
         --cache
@@ -2415,7 +2443,7 @@ pre-commit:
 
     # Type check with incremental mode (~2s)
     typecheck:
-      glob: "*.{ts,tsx}"
+      glob: '*.{ts,tsx}'
       run: npx tsc --noEmit --incremental
       priority: 3
 
@@ -2471,26 +2499,27 @@ pre-push:
 ```
 
 **Monorepo variant** (scope commands to packages):
+
 ```yaml
 pre-commit:
   parallel: true
 
   commands:
     format-core:
-      root: "packages/core/"
-      glob: "*.{ts,tsx}"
+      root: 'packages/core/'
+      glob: '*.{ts,tsx}'
       run: npx prettier --write --log-level warn {staged_files}
       stage_fixed: true
 
     lint-core:
-      root: "packages/core/"
-      glob: "*.{ts,tsx}"
+      root: 'packages/core/'
+      glob: '*.{ts,tsx}'
       run: npx eslint --cache --fix {staged_files}
       stage_fixed: true
 
     typecheck-core:
-      root: "packages/core/"
-      glob: "*.{ts,tsx}"
+      root: 'packages/core/'
+      glob: '*.{ts,tsx}'
       run: npx tsc -p tsconfig.json --noEmit --incremental
 ```
 
@@ -2518,13 +2547,14 @@ that can be queried programmatically:
 ```
 
 **Simple help script** (`scripts/help.ts`):
+
 ```typescript
-import { readFileSync } from "node:fs";
+import { readFileSync } from 'node:fs';
 
-const pkg = JSON.parse(readFileSync("package.json", "utf-8"));
-const info = pkg["scripts-info"] ?? {};
+const pkg = JSON.parse(readFileSync('package.json', 'utf-8'));
+const info = pkg['scripts-info'] ?? {};
 
-console.log("\nAvailable scripts:\n");
+console.log('\nAvailable scripts:\n');
 for (const [name, desc] of Object.entries(info)) {
   console.log(`  ${name.padEnd(20)} ${desc}`);
 }
