@@ -43,6 +43,7 @@ $dir/golden-tests.sh 2>&1 \
   | perl -pe '$|=1; s/[0-9.:T-]*Z/__TIMESTAMP/g' \
   | perl -pe '$|=1; s|/private/tmp/|/tmp/|g' \
   | perl -pe "\$|=1; s|$dir/tmp-dir|__TESTDIR__|g" \
+  | perl -ne 'print unless /^pwd$/' \
   > $new_output
 
 echo "Tests done."
