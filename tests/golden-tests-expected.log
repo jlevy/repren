@@ -635,14 +635,14 @@ run --format json --clean-backups test-json
 run --install-claude-skill --install-dir=.
 
 ======================================================================
-✓ Repren skill installed to /Users/levy/wrk/github/repren/tests/tmp-dir
+✓ Repren skill installed to __TESTDIR__
 ======================================================================
 
-Location: /Users/levy/wrk/github/repren/tests/tmp-dir/.claude/skills/repren/SKILL.md
-          (/Users/levy/wrk/github/repren/tests/tmp-dir/.claude/skills/repren)
+Location: __TESTDIR__/.claude/skills/repren/SKILL.md
+          (__TESTDIR__/.claude/skills/repren)
 
 Claude Code will now automatically use repren for refactoring tasks.
-To uninstall, remove this directory: /Users/levy/wrk/github/repren/tests/tmp-dir/.claude/skills/repren
+To uninstall, remove this directory: __TESTDIR__/.claude/skills/repren
 
 ----------------------------------------------------------------------
 Tip: Commit .claude/skills/ to share this skill with your team.
@@ -668,11 +668,11 @@ run --install-claude-skill
 ✓ Repren skill installed globally
 ======================================================================
 
-Location: /Users/levy/wrk/github/repren/tests/tmp-dir/test-home/.claude/skills/repren/SKILL.md
+Location: __TESTDIR__/test-home/.claude/skills/repren/SKILL.md
           (~/.claude/skills/repren)
 
 Claude Code will now automatically use repren for refactoring tasks.
-To uninstall, remove this directory: /Users/levy/wrk/github/repren/tests/tmp-dir/test-home/.claude/skills/repren
+To uninstall, remove this directory: __TESTDIR__/test-home/.claude/skills/repren
 
 
 # Verify global skill file exists and has content
