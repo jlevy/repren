@@ -128,16 +128,16 @@ There are many tools for search/replace and refactoring. Here's how repren compa
 
 ### Comparison
 
-| Feature | repren | [sed/awk/perl](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549) | [sd](https://github.com/chmln/sd) | [fastmod](https://github.com/facebookincubator/fastmod) | [ast-grep](https://ast-grep.github.io/) | [comby](https://comby.dev/) |
-| --- | --- | --- | --- | --- | --- | --- |
-| Simultaneous edits and swaps (foo↔bar) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| File/directory renaming | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Case-preserving variants | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Language-agnostic | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ |
-| Structural/AST-aware | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ |
-| Dry run + backups + undo | ✅ | ❌ | ❌ | Preview | Preview | Preview |
-| Interactive interface | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ |
-| Install method | Python (zero deps) | Varies (OS/shell) | Binary | Binary | Binary | Binary |
+| Feature | repren | [sed/awk/perl](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549) | [sd](https://github.com/chmln/sd) | [fastmod](https://github.com/facebookincubator/fastmod) | [ast-grep](https://ast-grep.github.io/) | [comby](https://comby.dev/) | [rnr](https://github.com/ismaelgv/rnr) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Simultaneous edits and swaps (foo↔bar) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| File/directory renaming | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Case-preserving variants | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Language-agnostic | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+| Structural/AST-aware | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Dry run + backups + undo | ✅ | ❌ | ❌ | Preview | Preview | Preview | ✅ |
+| Interactive interface | ❌ | ❌ | ❌ | ✅ | ✅ | ✅ | ❌ |
+| Install method | Python (zero deps) | Varies (OS/shell) | Binary | Binary | Binary | Binary | Binary |
 
 **When to use each:**
 
@@ -153,10 +153,8 @@ There are many tools for search/replace and refactoring. Here's how repren compa
 - **ast-grep**: Language-aware refactoring where you need to match code structure (e.g.,
   function calls, not just text). Supports 40+ languages.
 - **comby**: Structural matching across languages without learning AST syntax.
-
-For file renaming only (no content replacement),
-[rnr](https://github.com/ismaelgv/rnr) is a capable Rust-based alternative with regex
-support and dry-run mode.
+- **rnr**: File/directory renaming only (no content replacement). Has dry-run by default,
+  backup option, and undo via dump files.
 
 ## Installation
 
