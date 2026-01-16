@@ -483,3 +483,146 @@ class TestCleanBackupsCLI:
             text=True,
         )
         assert result.returncode != 0
+
+
+# --- Claude Skill tests ---
+
+
+class TestClaudeSkillContent:
+    """Tests for Claude skill content loading."""
+
+    def test_get_skill_content_returns_markdown(self):
+        """get_skill_content should return valid markdown content."""
+        from repren.claude_skill import get_skill_content
+
+        content = get_skill_content()
+
+        assert isinstance(content, str)
+        assert len(content) > 100  # Should have substantial content
+        assert "repren" in content.lower()
+        # Should be valid markdown with headers
+        assert "#" in content
+
+    def test_skill_content_has_required_sections(self):
+        """Skill content should have essential sections for Claude."""
+        from repren.claude_skill import get_skill_content
+
+        content = get_skill_content()
+
+        # Should have usage examples
+        assert "example" in content.lower() or "--from" in content
+        # Should mention key features
+        assert "pattern" in content.lower() or "replace" in content.lower()
+
+
+class TestClaudeSkillInstallation:
+    """Tests for Claude skill installation."""
+
+    def test_install_skill_global_creates_file(self):
+        """install_skill with global scope should create file in ~/.claude/skills."""
+        from repren.claude_skill import install_skill
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Mock HOME to use temp directory
+            import os
+
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmpdir
+
+            try:
+                install_skill(scope="global", interactive=False)
+
+                skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
+                assert skill_file.exists()
+                content = skill_file.read_text()
+                assert "repren" in content.lower()
+            finally:
+                if old_home:
+                    os.environ["HOME"] = old_home
+
+    def test_install_skill_project_creates_file(self):
+        """install_skill with project scope should create file in .claude/skills."""
+        from repren.claude_skill import install_skill
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            import os
+
+            old_cwd = os.getcwd()
+            os.chdir(tmpdir)
+
+            try:
+                install_skill(scope="project", interactive=False)
+
+                skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
+                assert skill_file.exists()
+                content = skill_file.read_text()
+                assert "repren" in content.lower()
+            finally:
+                os.chdir(old_cwd)
+
+    def test_install_skill_content_matches_package(self):
+        """Installed skill content should match package content."""
+        from repren.claude_skill import get_skill_content, install_skill
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            import os
+
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmpdir
+
+            try:
+                install_skill(scope="global", interactive=False)
+
+                skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
+                installed_content = skill_file.read_text()
+                package_content = get_skill_content()
+
+                assert installed_content == package_content
+            finally:
+                if old_home:
+                    os.environ["HOME"] = old_home
+
+
+class TestClaudeSkillCLI:
+    """Tests for Claude skill CLI options."""
+
+    def test_skill_instructions_prints_content(self):
+        """--skill-instructions should print skill content."""
+        result = subprocess.run(
+            ["uv", "run", "repren", "--skill-instructions"],
+            capture_output=True,
+            text=True,
+        )
+
+        assert result.returncode == 0
+        assert "repren" in result.stdout.lower()
+        # Should have markdown content
+        assert "#" in result.stdout
+
+    def test_install_skill_with_scope(self):
+        """--install-claude-skill with --skill-scope should work."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            import os
+
+            old_home = os.environ.get("HOME")
+            os.environ["HOME"] = tmpdir
+
+            try:
+                result = subprocess.run(
+                    [
+                        "uv",
+                        "run",
+                        "repren",
+                        "--install-claude-skill",
+                        "--skill-scope=global",
+                    ],
+                    capture_output=True,
+                    text=True,
+                )
+
+                assert result.returncode == 0
+                skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
+                assert skill_file.exists()
+            finally:
+                if old_home:
+                    os.environ["HOME"] = old_home

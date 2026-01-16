@@ -49,37 +49,26 @@ Python unit tests for internal functions. Current coverage: **40%** (586 stateme
 | **Stdin/stdout** | ✅ | `echo 'foo' \| run --from foo --to bar` |
 | **Quiet mode** | ✅ | `-q` with diff to verify silent changes |
 | **Moving files** | ❌ | (noted as TODO in golden-tests.sh) |
-| **File collisions** | ❌ | Rename to existing name |
+| **File collisions** | ✅ | Adds `.1` suffix when target exists |
 | **Error cases** | ✅ | Invalid regex `'[invalid(regex'` |
+| **Skill installation** | ✅ | `--install-claude-skill --skill-scope=global` |
+| **Skill instructions** | ✅ | `--skill-instructions` prints SKILL.md |
 
 ---
 
-## New in v2-revs: Untested Components
+## New in v2-revs: Now Tested ✅
 
 ### 1. Claude Code Skill Installation (`repren/claude_skill.py`)
 
-**Coverage: 0%** (82 statements, all missed)
+**Coverage: 45%** (82 statements, 37 covered)
 
-This new module provides `repren --install-skill` functionality. Functions needing tests:
+This module provides `repren --install-skill` functionality. Now has:
 
-| Function | Purpose | Test Approach |
-|----------|---------|---------------|
-| `get_skill_content()` | Load SKILL.md from package | Unit test |
-| `install_skill()` | Install to ~/.claude or .claude | Integration test with temp dirs |
-| `main()` | CLI argument parsing | Golden test or subprocess |
-
-**Recommended golden test additions:**
-```bash
-# Test skill installation (use temp directory)
-export HOME=$(mktemp -d)
-run --install-skill --global --quiet
-test -f "$HOME/.claude/skills/repren/SKILL.md" && echo "Global install OK"
-
-# Test project-level install
-mkdir -p test-skill-project && cd test-skill-project
-run --install-skill --project --quiet
-test -f ".claude/skills/repren/SKILL.md" && echo "Project install OK"
-```
+| Test Type | Coverage |
+|-----------|----------|
+| Unit tests (`pytests.py`) | `get_skill_content()`, `install_skill()` global/project |
+| Golden tests | `--skill-instructions`, `--install-claude-skill --skill-scope=global` |
+| CLI tests | `--install-claude-skill` with scope validation |
 
 ### 2. JSON Output Format
 
@@ -272,20 +261,21 @@ class TestClaudeSkill:
 |-----------|------------|---------|----------|
 | `repren/__init__.py` | 2 | 2 | 100% |
 | `repren/repren.py` | 502 | 233 | 46% |
-| `repren/claude_skill.py` | 82 | 0 | 0% |
+| `repren/claude_skill.py` | 82 | 37 | 45% |
 | **Total** | **586** | **235** | **40%** |
 
 ### Coverage Trend
 
 - **Before v2-revs:** 50% (458 statements)
 - **After v2-revs:** 40% (586 statements)
-- **Cause:** New `claude_skill.py` (82 lines, 0% covered) + expanded `repren.py`
+- **After adding new tests:** 46% (587 statements, 315 missed)
+- **Improvement:** +37 lines covered in `claude_skill.py` (0% → 45%)
 
 ---
 
 ## Recommended Priority
 
-### Completed (Now Tested in Golden Tests) ✅
+### Completed (Now Tested) ✅
 1. ~~**Regex capturing groups**~~ - Tested with `\1` back-reference
 2. ~~**`--literal` mode**~~ - Tested
 3. ~~**Stdin/stdout piping**~~ - Tested
@@ -293,18 +283,16 @@ class TestClaudeSkill:
 5. ~~**`--at-once` + `--dotall`**~~ - Multiline patterns tested
 6. ~~**`-t` / `--parse-only`**~~ - Tested
 7. ~~**`-q` quiet mode**~~ - Tested
+8. ~~**`--install-skill`**~~ - Golden + unit tests added
+9. ~~**File collision handling**~~ - Tests rename with `.1` suffix
+10. ~~**`claude_skill.py`**~~ - 45% coverage (was 0%)
 
 ### Remaining Gaps
 
-#### High Priority (Golden Tests)
-1. **`--install-skill`** - New feature needs coverage
-2. **File collision handling** - When rename target already exists
-
 #### Lower Priority (Unit Tests)
-3. **`multi_replace()` direct tests** - Currently only indirect coverage
-4. **`_sort_drop_overlaps()`** - Edge case handling
-5. **`install_skill()` with temp dirs** - Installation paths
-6. **`claude_skill.py`** - 0% coverage (82 statements)
+1. **`multi_replace()` direct tests** - Currently only indirect coverage
+2. **`_sort_drop_overlaps()`** - Edge case handling
+3. **Moving files across directories** - Noted as TODO in golden-tests.sh
 
 ---
 

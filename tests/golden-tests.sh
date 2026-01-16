@@ -312,6 +312,36 @@ diff original/humpty-dumpty.txt test-quiet/humpty-dumpty.txt || expect_error
 run --from '[invalid(regex' --to 'bar' original || expect_error
 
 
+# Skill instructions (print mode - safe to test without side effects).
+
+run --skill-instructions | head -5
+
+
+# Install skill (use temp HOME to avoid modifying real config).
+
+export ORIG_HOME="$HOME"
+export HOME=$(mktemp -d)
+
+run --install-claude-skill --skill-scope=global 2>&1 | grep -E '(installed|repren)' | grep -v Location
+
+test -f "$HOME/.claude/skills/repren/SKILL.md" && echo "Global skill file exists: OK"
+
+export HOME="$ORIG_HOME"
+
+
+# File collision handling (rename to existing file).
+
+cp -a original test-collision
+
+# Create a file that would conflict with the rename target
+touch test-collision/dumpty-dumpty.txt
+
+# Rename should handle collision (add numeric suffix or similar)
+run --renames --from humpty --to dumpty test-collision
+
+ls_portable test-collision | grep dumpty
+
+
 # TODO: More test coverage:
 # - CamelCase and whole word support.
 # - Large stress test (rename a variable in a large source package and recompile).

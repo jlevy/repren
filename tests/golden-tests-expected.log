@@ -774,6 +774,53 @@ error: error parsing pattern: unterminated character set at position 0: ['[inval
 (got expected error: status 1)
 
 
+# Skill instructions (print mode - safe to test without side effects).
+
+run --skill-instructions | head -5
+---
+name: repren
+description: Performs simultaneous multi-pattern search-and-replace, file/directory renaming, and case-preserving refactoring across codebases. Use for bulk refactoring, global find-and-replace, or when user mentions repren, multi-file rename, or pattern-based transformations.
+allowed-tools: Bash(repren:*), Bash(uvx repren:*), Read, Write
+---
+
+
+# Install skill (use temp HOME to avoid modifying real config).
+
+export ORIG_HOME="$HOME"
+export HOME=$(mktemp -d)
+
+run --install-claude-skill --skill-scope=global 2>&1 | grep -E '(installed|repren)' | grep -v Location
+✓ Repren skill installed globally
+          (~/.claude/skills/repren)
+Claude Code will now automatically use repren for refactoring tasks.
+
+test -f "$HOME/.claude/skills/repren/SKILL.md" && echo "Global skill file exists: OK"
+Global skill file exists: OK
+
+export HOME="$ORIG_HOME"
+
+
+# File collision handling (rename to existing file).
+
+cp -a original test-collision
+
+# Create a file that would conflict with the rename target
+touch test-collision/dumpty-dumpty.txt
+
+# Rename should handle collision (add numeric suffix or similar)
+run --renames --from humpty --to dumpty test-collision
+Using 1 patterns:
+  'humpty' -> 'dumpty'
+Found 13 files in: test-collision
+- rename: test-collision/humpty-dumpty.txt -> test-collision/dumpty-dumpty.txt
+Read 1 files (0 chars), found 0 matches (0 skipped due to overlaps)
+Changed 1 files (0 rewritten and 1 renamed)
+
+ls_portable test-collision | grep dumpty
+-rw-r--r-- dumpty-dumpty.txt
+-rw-r--r-- dumpty-dumpty.txt.1
+
+
 # TODO: More test coverage:
 # - CamelCase and whole word support.
 # - Large stress test (rename a variable in a large source package and recompile).
