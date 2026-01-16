@@ -49,6 +49,9 @@ uv run pytest -s tests/pytests.py  # one test, showing outputs
 # Run integration tests:
 ./tests/run.sh
 
+# Update golden test baseline (when expected test output changes intentionally):
+make update-golden
+
 # Build and install current dev executables, to let you use your dev copies
 # as local tools:
 uv tool install --editable .
@@ -71,6 +74,51 @@ source .venv/bin/activate
 ```
 
 See [uv docs](https://docs.astral.sh/uv/) for details.
+
+## Test Infrastructure
+
+The project uses two complementary test approaches:
+
+### Unit Tests (`tests/pytests.py`)
+
+Standard pytest unit tests for internal functions like case conversion, pattern parsing,
+and backup management.
+
+```shell
+uv run pytest tests/pytests.py
+```
+
+### Golden Tests (`tests/golden-tests.sh`)
+
+Shell-based integration tests that exercise the full CLI. These tests capture CLI output
+and compare it against a committed baseline (`tests/golden-tests-expected.log`).
+
+**Running golden tests:**
+```shell
+./tests/run.sh    # Runs tests and compares output to expected baseline
+```
+
+**Updating the baseline when output changes intentionally:**
+```shell
+make update-golden
+```
+
+This is useful when:
+- Adding new CLI features that produce different output
+- Fixing bugs that change output format
+- Adding new test cases to `golden-tests.sh`
+
+The `run.sh` script:
+1. Copies `tests/work-dir` to `tests/tmp-dir` for isolation
+2. Runs `golden-tests.sh` in the temp directory
+3. Normalizes output (removes timestamps, line numbers, etc.)
+4. Compares against `golden-tests-expected.log`
+
+**Adding new golden tests:**
+1. Edit `tests/golden-tests.sh` to add new test commands
+2. Run `make update-golden` to capture the new expected output
+3. Review the diff in `tests/golden-tests-expected.log`
+4. Commit both the script changes and the updated expected log
 
 ## IDE setup
 

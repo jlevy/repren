@@ -758,6 +758,7 @@ def transform_stream(
         (new_contents, new_counts) = (
             transform(contents) if transform else (contents, _MatchCounts())
         )
+        counts.add(new_counts)
         stream_out.write(new_contents)
     return counts
 
