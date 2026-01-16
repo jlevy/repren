@@ -659,7 +659,6 @@ Project skill content verified
 mkdir -p test-home
 HOME_BACKUP="$HOME"
 HOME="$(pwd)/test-home"
-pwd
 export HOME
 
 run --install-claude-skill
