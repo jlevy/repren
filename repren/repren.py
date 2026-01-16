@@ -62,7 +62,7 @@ regular expression and replacement. For example:
 # Sample pattern file
 frobinator<tab>glurp
 WhizzleStick<tab>AcmeExtrudedPlasticFunProvider
-figure ([0-9+])<tab>Figure \1
+figure ([0-9+])<tab>Figure \\1
 ```
 
 (Where `<tab>` is an actual tab character.) Each line is a replacement. Empty lines and
@@ -243,37 +243,13 @@ example:
 # Sample pattern file
 frobinator<tab>glurp
 WhizzleStick<tab>AcmeExtrudedPlasticFunProvider
-figure ([0-9+])<tab>Figure \1
+figure ([0-9+])<tab>Figure \\1
 ```
 
 (Where `<tab>` is an actual tab character.)
 
 Empty lines and #-prefixed comments are ignored. Capturing groups and back substitutions
-(such as \1 above) are supported.
-
-## Examples
-
-```
-# Here `patfile` is a patterns file.
-# Rewrite stdin:
-repren --patterns=patfile < input > output
-
-# Shortcut with a single pattern replacement (replace foo with bar):
-repren --from=foo --to=bar < input > output
-
-# Rewrite a few files in place, also requiring matches be on word breaks:
-repren --patterns=patfile --word-breaks myfile1 myfile2 myfile3
-
-# Rewrite whole directory trees. Since this is a big operation, we use
-# `-n` to do a dry run that only prints what would be done:
-repren -n --patterns=patfile --word-breaks --full mydir1
-
-# Now actually do it:
-repren --patterns=patfile --word-breaks --full mydir1
-
-# Same as above, for all case variants:
-repren --patterns=patfile --word-breaks --preserve-case --full mydir1
-```
+(such as \\1 above) are supported.
 
 ## Backup Management
 
@@ -1227,7 +1203,7 @@ def _run_cli() -> None:
     )
     parser.add_argument(
         "--exclude",
-        help="file or directory name regex to exclude ()",
+        help="file or directory name regex to exclude (default: paths starting with '.')",
         dest="exclude_pat",
         default=DEFAULT_EXCLUDE_PAT,
     )
