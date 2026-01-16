@@ -131,18 +131,21 @@ There are many tools for search/replace and refactoring. Here's how repren compa
 
 - **repren**: Bulk renames with file/directory renaming, case preservation, or simultaneous
   swaps. Works on any text file with full backup/undo support.
-- **sed/awk/perl**: Quick one-liners if you know the syntax. See
+- **sed/awk/perl**: Classic approaches for quick one-liners. See
   [classic approaches](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549).
-  Often lack dry-run mode, simultaneous swaps, or cross-platform consistency.
-- **sd**: Simple, fast sed replacement for straightforward find/replace (2-11x faster than
-  sed).
-- **fastmod**: Large codebase refactors where you want interactive human review of each
-  change.
+  Often error-prone for complex patterns and lack dry-run mode, simultaneous swaps, or
+  cross-platform consistency.
+- **sd**: Fast sed replacement (2-11x faster than sed), but limited to simple find/replace
+  without file renaming, case preservation, or multi-pattern swaps.
+- **fastmod**: Good for interactive human review of changes, but lacks case preservation,
+  simultaneous swaps, and file/directory renaming.
 - **ast-grep**: Language-aware refactoring where you need to match code structure (e.g.,
-  function calls, not just text). Supports 40+ languages.
-- **comby**: Structural matching across languages without learning AST syntax.
+  function calls, not just text). Use when semantic understanding matters more than speed.
+- **comby**: Structural matching across languages without learning AST syntax. Useful when
+  you need to match code patterns like balanced braces, but overkill for simple text
+  refactoring.
 - **rnr**: File/directory renaming only (no content replacement). Has dry-run by default,
-  backup option, and undo via dump files.
+  backup option, and undo via dump files. Use repren if you also need content replacement.
 
 ## Installation
 
