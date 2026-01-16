@@ -532,7 +532,7 @@ class TestClaudeSkillInstallation:
             os.environ["HOME"] = tmpdir
 
             try:
-                install_skill(scope="global", interactive=False)
+                install_skill()  # Default is global (uses HOME)
 
                 skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
                 assert skill_file.exists()
@@ -543,24 +543,16 @@ class TestClaudeSkillInstallation:
                     os.environ["HOME"] = old_home
 
     def test_install_skill_project_creates_file(self):
-        """install_skill with project scope should create file in .claude/skills."""
+        """install_skill with install_dir should create file in specified location."""
         from repren.claude_skill import install_skill
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            import os
+            install_skill(install_dir=tmpdir)
 
-            old_cwd = os.getcwd()
-            os.chdir(tmpdir)
-
-            try:
-                install_skill(scope="project", interactive=False)
-
-                skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
-                assert skill_file.exists()
-                content = skill_file.read_text()
-                assert "repren" in content.lower()
-            finally:
-                os.chdir(old_cwd)
+            skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
+            assert skill_file.exists()
+            content = skill_file.read_text()
+            assert "repren" in content.lower()
 
     def test_install_skill_content_matches_package(self):
         """Installed skill content should match package content."""
@@ -573,7 +565,7 @@ class TestClaudeSkillInstallation:
             os.environ["HOME"] = tmpdir
 
             try:
-                install_skill(scope="global", interactive=False)
+                install_skill()  # Default is global (uses HOME)
 
                 skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
                 installed_content = skill_file.read_text()
@@ -601,33 +593,24 @@ class TestClaudeSkillCLI:
         # Should have markdown content
         assert "#" in result.stdout
 
-    def test_install_skill_with_scope(self):
-        """--install-claude-skill with --skill-scope should work."""
+    def test_install_skill_with_install_dir(self):
+        """--install-claude-skill with --install-dir should work."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            import os
+            result = subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "repren",
+                    "--install-claude-skill",
+                    f"--install-dir={tmpdir}",
+                ],
+                capture_output=True,
+                text=True,
+            )
 
-            old_home = os.environ.get("HOME")
-            os.environ["HOME"] = tmpdir
-
-            try:
-                result = subprocess.run(
-                    [
-                        "uv",
-                        "run",
-                        "repren",
-                        "--install-claude-skill",
-                        "--skill-scope=global",
-                    ],
-                    capture_output=True,
-                    text=True,
-                )
-
-                assert result.returncode == 0
-                skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
-                assert skill_file.exists()
-            finally:
-                if old_home:
-                    os.environ["HOME"] = old_home
+            assert result.returncode == 0
+            skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
+            assert skill_file.exists()
 
 
 # --- multi_replace tests ---
@@ -715,9 +698,9 @@ class TestMultiReplace:
     def test_unicode_content(self):
         """Unicode content should be handled correctly."""
         patterns = parse_patterns("café\tcoffee")
-        result, counts = multi_replace("Un café s'il vous plaît".encode("utf-8"), patterns)
+        result, counts = multi_replace("Un café s'il vous plaît".encode(), patterns)
 
-        assert result == "Un coffee s'il vous plaît".encode("utf-8")
+        assert result == "Un coffee s'il vous plaît".encode()
         assert counts.found == 1
         assert counts.valid == 1
 

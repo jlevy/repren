@@ -330,16 +330,32 @@ run --from '[invalid(regex' --to 'bar' original || expect_error
 run --skill-instructions | head -5
 
 
-# Install skill (use temp HOME to avoid modifying real config).
+# Claude skill installation tests.
 
-export ORIG_HOME="$HOME"
-export HOME=$(mktemp -d)
+# Test project-local install (creates .claude/skills/repren/)
+run --install-claude-skill --install-dir=.
 
-run --install-claude-skill --skill-scope=global 2>&1 | grep -E '(installed|repren)' | grep -v Location
+# Verify project skill file exists and has content
+test -f .claude/skills/repren/SKILL.md && echo "Project skill file created"
+grep -q "repren" .claude/skills/repren/SKILL.md && echo "Project skill content verified"
 
-test -f "$HOME/.claude/skills/repren/SKILL.md" && echo "Global skill file exists: OK"
+# Test global install (uses temp directory to avoid polluting user's home)
+mkdir -p test-home
+HOME_BACKUP="$HOME"
+HOME="$(pwd)/test-home"
+export HOME
 
-export HOME="$ORIG_HOME"
+run --install-claude-skill
+
+# Verify global skill file exists and has content
+test -f test-home/.claude/skills/repren/SKILL.md && echo "Global skill file created"
+grep -q "repren" test-home/.claude/skills/repren/SKILL.md && echo "Global skill content verified"
+
+# Restore HOME and clean up test directories
+HOME="$HOME_BACKUP"
+export HOME
+rm -rf test-home
+rm -rf .claude
 
 
 # File collision handling (rename to existing file).
@@ -358,7 +374,6 @@ ls_portable test-collision | grep dumpty
 # TODO: More test coverage:
 # - CamelCase and whole word support.
 # - Large stress test (rename a variable in a large source package and recompile).
-# - File collision handling when rename target exists.
 
 # Leave files installed in case it's helpful to debug anything.
 

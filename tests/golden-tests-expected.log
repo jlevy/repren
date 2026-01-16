@@ -7,8 +7,7 @@ usage: repren [-h] [--version] [--usage] [--from FROM_PAT] [--to TO_PAT] [-p PAT
               [--include INCLUDE_PAT] [--exclude EXCLUDE_PAT] [--at-once] [-t]
               [--walk-only] [-n] [-q] [--format {text,json}]
               [--backup-suffix BACKUP_SUFFIX] [--undo] [--clean-backups]
-              [--install-claude-skill] [--skill-scope {global,project}]
-              [--skill-instructions]
+              [--install-claude-skill] [--install-dir DIR] [--skill-instructions]
               [root_paths ...]
 repren: error: must specify --patterns or both --from and --to
 (got expected error: status 2)
@@ -811,20 +810,62 @@ allowed-tools: Bash(repren:*), Bash(uvx repren:*), Read, Write
 ---
 
 
-# Install skill (use temp HOME to avoid modifying real config).
+# Claude skill installation tests.
 
-export ORIG_HOME="$HOME"
-export HOME=$(mktemp -d)
+# Test project-local install (creates .claude/skills/repren/)
+run --install-claude-skill --install-dir=.
 
-run --install-claude-skill --skill-scope=global 2>&1 | grep -E '(installed|repren)' | grep -v Location
-✓ Repren skill installed globally
-          (~/.claude/skills/repren)
+======================================================================
+✓ Repren skill installed to __TESTDIR__
+======================================================================
+
+Location: __TESTDIR__/.claude/skills/repren/SKILL.md
+          (__TESTDIR__/.claude/skills/repren)
+
 Claude Code will now automatically use repren for refactoring tasks.
+To uninstall, remove this directory: __TESTDIR__/.claude/skills/repren
 
-test -f "$HOME/.claude/skills/repren/SKILL.md" && echo "Global skill file exists: OK"
-Global skill file exists: OK
+----------------------------------------------------------------------
+Tip: Commit .claude/skills/ to share this skill with your team.
+----------------------------------------------------------------------
 
-export HOME="$ORIG_HOME"
+
+# Verify project skill file exists and has content
+test -f .claude/skills/repren/SKILL.md && echo "Project skill file created"
+Project skill file created
+grep -q "repren" .claude/skills/repren/SKILL.md && echo "Project skill content verified"
+Project skill content verified
+
+# Test global install (uses temp directory to avoid polluting user's home)
+mkdir -p test-home
+HOME_BACKUP="$HOME"
+HOME="$(pwd)/test-home"
+export HOME
+
+run --install-claude-skill
+
+======================================================================
+✓ Repren skill installed globally
+======================================================================
+
+Location: __TESTDIR__/test-home/.claude/skills/repren/SKILL.md
+          (~/.claude/skills/repren)
+
+Claude Code will now automatically use repren for refactoring tasks.
+To uninstall, remove this directory: __TESTDIR__/test-home/.claude/skills/repren
+
+
+# Verify global skill file exists and has content
+test -f test-home/.claude/skills/repren/SKILL.md && echo "Global skill file created"
+Global skill file created
+grep -q "repren" test-home/.claude/skills/repren/SKILL.md && echo "Global skill content verified"
+Global skill content verified
+
+# Restore HOME and clean up test directories
+HOME="$HOME_BACKUP"
+export HOME
+rm -rf test-home
+rm -rf .claude
 
 
 # File collision handling (rename to existing file).
@@ -851,7 +892,6 @@ ls_portable test-collision | grep dumpty
 # TODO: More test coverage:
 # - CamelCase and whole word support.
 # - Large stress test (rename a variable in a large source package and recompile).
-# - File collision handling when rename target exists.
 
 # Leave files installed in case it's helpful to debug anything.
 

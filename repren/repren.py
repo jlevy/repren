@@ -176,15 +176,15 @@ making it easy for Claude AI to use repren for bulk refactoring tasks.
 **Quick Install:**
 
 ```bash
-# Recommended: Install globally (available in all projects)
+# Install globally (default, available in all projects)
 uvx repren --install-claude-skill
 
 # Or: Install for current project only (shareable with team via git)
-uvx repren --install-claude-skill --skill-scope=project
+uvx repren --install-claude-skill --install-dir=.
 ```
 
-The installer will prompt you to choose between global (`~/.claude/skills/repren`) or
-project-local (`.claude/skills/repren`) installation.
+By default, the skill installs globally to `~/.claude/skills/repren`. Use `--install-dir=.`
+to install in the current directory's `.claude/skills/repren` instead.
 
 Once installed, Claude Code will automatically use repren for bulk refactoring tasks.
 
@@ -1276,15 +1276,15 @@ def _run_cli() -> None:
     )
     parser.add_argument(
         "--install-claude-skill",
-        help="install Claude Code skill for repren (makes repren available to Claude AI)",
+        help="install Claude Code skill for repren (by default globally to ~/.claude/skills/repren)",
         dest="install_claude_skill",
         action="store_true",
     )
     parser.add_argument(
-        "--skill-scope",
-        help="installation scope for Claude skill: 'global' (~/.claude/skills) or 'project' (.claude/skills)",
-        dest="skill_scope",
-        choices=["global", "project"],
+        "--install-dir",
+        help="parent directory for .claude/skills/repren (e.g., '.' for project, defaults to home for global install)",
+        dest="install_dir",
+        metavar="DIR",
     )
     parser.add_argument(
         "--skill-instructions",
@@ -1308,7 +1308,8 @@ def _run_cli() -> None:
         try:
             from .claude_skill import install_skill
 
-            install_skill(scope=options.skill_scope, interactive=(options.skill_scope is None))
+            # Install to specified directory or home (global) by default
+            install_skill(install_dir=options.install_dir)
             sys.exit(0)
         except ImportError:
             # Fallback if running as standalone script

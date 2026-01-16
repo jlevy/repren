@@ -185,15 +185,15 @@ making it easy for Claude AI to use repren for bulk refactoring tasks.
 **Quick Install:**
 
 ```bash
-# Recommended: Install globally (available in all projects)
+# Install globally (default, available in all projects)
 uvx repren --install-claude-skill
 
 # Or: Install for current project only (shareable with team via git)
-uvx repren --install-claude-skill --skill-scope=project
+uvx repren --install-claude-skill --install-dir=.
 ```
 
-The installer will prompt you to choose between global (`~/.claude/skills/repren`) or
-project-local (`.claude/skills/repren`) installation.
+By default, the skill installs globally to `~/.claude/skills/repren`. Use `--install-dir=.`
+to install in the current directory's `.claude/skills/repren` instead.
 
 Once installed, Claude Code will automatically use repren for bulk refactoring tasks.
 
