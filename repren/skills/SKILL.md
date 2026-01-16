@@ -1,11 +1,11 @@
 ---
 name: repren
 description: Performs simultaneous multi-pattern search-and-replace, file/directory renaming, and case-preserving refactoring across codebases. Use for bulk refactoring, global find-and-replace, or when user mentions repren, multi-file rename, or pattern-based transformations.
-allowed-tools: Bash(repren:*), Bash(uvx repren:*), Read, Write
+allowed-tools: Bash(repren:*), Bash(uvx repren@latest:*), Read, Write
 ---
 # Repren - Multi-Pattern Search and Replace
 
-> **Full documentation: Run `uvx repren --docs` for all options, flags, and advanced
+> **Full documentation: Run `uvx repren@latest --docs` for all options, flags, and advanced
 > usage.**
 
 Multi-pattern search/replace tool for bulk refactoring with simultaneous replacements,
@@ -15,12 +15,12 @@ file/directory renaming, and case-preserving transformations.
 
 **Always start with dry-run** to preview changes:
 ```bash
-uvx repren --from='old_name' --to='new_name' --full --dry-run src/
+uvx repren@latest --from='old_name' --to='new_name' --full --dry-run src/
 ```
 
 Then execute if output looks correct:
 ```bash
-uvx repren --from='old_name' --to='new_name' --full src/
+uvx repren@latest --from='old_name' --to='new_name' --full src/
 ```
 
 ## When to Use Repren
@@ -51,7 +51,7 @@ CONSTANT_OLD	CONSTANT_NEW
 
 Apply all patterns at once:
 ```bash
-uvx repren --patterns=patterns.txt --full src/
+uvx repren@latest --patterns=patterns.txt --full src/
 ```
 
 Repren handles overlapping patterns intelligently: you can swap names (foo↔bar) in a
@@ -61,7 +61,7 @@ single pass.
 
 Handle all case variants automatically:
 ```bash
-uvx repren --from='my_var' --to='my_function' --preserve-case --full src/
+uvx repren@latest --from='my_var' --to='my_function' --preserve-case --full src/
 ```
 
 Transforms: `my_var`→`my_function`, `myVar`→`myFunction`, `MyVar`→`MyFunction`,
@@ -73,7 +73,7 @@ With `--full`, in addition to searching and replacing content, repren will renam
 and directories matching the patterns.
 
 ```bash
-uvx repren --from='old_module' --to='new_module' --full src/
+uvx repren@latest --from='old_module' --to='new_module' --full src/
 ```
 
 Renames files and directories, creating parent directories as needed.
@@ -83,7 +83,7 @@ Files never clobber: numeric suffixes are added if conflicts arise.
 
 Use full Python regex syntax with backreferences:
 ```bash
-uvx repren --from='figure ([0-9]+)' --to='Figure \1' --full docs/
+uvx repren@latest --from='figure ([0-9]+)' --to='Figure \1' --full docs/
 ```
 
 Pattern file example:
@@ -103,7 +103,7 @@ Original files never truncated on errors.
 
 **Always preview changes first:**
 ```bash
-uvx repren --dry-run --patterns=patterns.txt --full mydir/
+uvx repren@latest --dry-run --patterns=patterns.txt --full mydir/
 ```
 
 Shows exactly what would change without modifying files.
@@ -112,14 +112,14 @@ Shows exactly what would change without modifying files.
 
 Restore from backups if needed:
 ```bash
-uvx repren --undo --from='old' --to='new' --full src/
+uvx repren@latest --undo --from='old' --to='new' --full src/
 ```
 
 ### Clean Backups
 
 Remove backups when satisfied:
 ```bash
-uvx repren --clean-backups src/
+uvx repren@latest --clean-backups src/
 ```
 
 ## Common Workflows
@@ -128,64 +128,64 @@ uvx repren --clean-backups src/
 
 1. Preview changes:
 ```bash
-uvx repren --from='OldName' --to='NewName' --preserve-case --word-breaks --full --dry-run src/
+uvx repren@latest --from='OldName' --to='NewName' --preserve-case --word-breaks --full --dry-run src/
 ```
 
 2. Execute if output looks correct:
 ```bash
-uvx repren --from='OldName' --to='NewName' --preserve-case --word-breaks --full src/
+uvx repren@latest --from='OldName' --to='NewName' --preserve-case --word-breaks --full src/
 ```
 
 3. Review changes, test, then clean backups:
 ```bash
-uvx repren --clean-backups src/
+uvx repren@latest --clean-backups src/
 ```
 
 ### Filtering Files
 
 Include only specific file types:
 ```bash
-uvx repren --patterns=patterns.txt --include='.*\.(py|pyi)$' --full src/
+uvx repren@latest --patterns=patterns.txt --include='.*\.(py|pyi)$' --full src/
 ```
 
 Exclude directories:
 ```bash
-uvx repren --patterns=patterns.txt --exclude='tests|node_modules|__pycache__' --full src/
+uvx repren@latest --patterns=patterns.txt --exclude='tests|node_modules|__pycache__' --full src/
 ```
 
 ### Word Boundaries
 
 Match only at word boundaries (safer for variable names):
 ```bash
-uvx repren --from='var' --to='variable' --word-breaks --full src/
+uvx repren@latest --from='var' --to='variable' --word-breaks --full src/
 ```
 
 ### Literal Patterns
 
 Treat patterns as literal strings (not regex):
 ```bash
-uvx repren --from='file.txt' --to='data.txt' --literal --full docs/
+uvx repren@latest --from='file.txt' --to='data.txt' --literal --full docs/
 ```
 
 ### Multi-Line Patterns
 
 Process entire files at once for patterns spanning lines:
 ```bash
-uvx repren --patterns=patterns.txt --at-once --full src/
+uvx repren@latest --patterns=patterns.txt --at-once --full src/
 ```
 
 ## Machine-Readable Output
 
 Use JSON format for programmatic processing:
 ```bash
-uvx repren --format=json --from='old' --to='new' --full src/
+uvx repren@latest --format=json --from='old' --to='new' --full src/
 ```
 
 Returns structured data about all changes made.
 
 ## Key Flags
 
-Most important flags (run `uvx repren --docs` for complete list):
+Most important flags (run `uvx repren@latest --docs` for complete list):
 
 | Flag | Purpose |
 | --- | --- |
