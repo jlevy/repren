@@ -522,6 +522,24 @@ def safe_decode(b: bytes) -> str:
     return b.decode("utf-8", errors="backslashreplace")
 
 
+# --- Markdown rendering (optional, imported dynamically) ---
+# Try to import markdown_renderer from the repren package for enhanced rendering.
+# If not available (e.g., standalone script), markdown is readable as-is.
+
+_markdown_available = False
+
+try:
+    from .markdown_renderer import render_markdown as _render_markdown
+
+    _markdown_available = True
+except ImportError:
+    # Fallback: clean markdown is already readable, just return as-is
+    def _render_markdown(text: str, color: bool = True) -> str:
+        """Fallback: return markdown text unchanged (already readable)."""
+        del color  # Unused in fallback, but required for signature compatibility
+        return text
+
+
 @dataclass
 class _Tally:
     files: int = 0
@@ -1299,7 +1317,8 @@ def _run_cli() -> None:
         sys.exit(0)
 
     # For full --help, add the complete documentation.
-    parser.epilog = __doc__
+    # Only format as markdown if the renderer is available
+    parser.epilog = _render_markdown(__doc__ or "") if _markdown_available else __doc__
 
     options = parser.parse_args()
 

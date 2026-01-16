@@ -1,6 +1,6 @@
 # Research Brief: Modern Python CLI Architecture Patterns
 
-**Last Updated**: 2025-01-14
+**Last Updated**: 2025-01-15
 
 **Status**: Complete
 
@@ -1087,7 +1087,213 @@ commands and makes it easy to update the visual style in one place.
 
 * * *
 
-### 12. Stdout/Stderr Separation
+### 12. Markdown Rendering
+
+**Status**: Recommended
+
+**Details**:
+
+Modern CLIs often need to display markdown content (documentation, help text, API
+responses). As of **Python 3.14**, argparse gained built-in ANSI color support,
+demonstrating that zero-dependency terminal formatting is now a viable pattern.
+
+**Option A: Zero Dependencies (Minimal ANSI Renderer)**
+
+For CLIs that want to avoid dependencies, you can implement a lightweight markdown
+renderer using ANSI escape codes. This approach was inspired by Python 3.14's argparse
+color support:
+
+```python
+# lib/markdown_renderer.py
+import re
+
+class ANSI:
+    """ANSI escape codes for terminal formatting."""
+    RESET = "\033[0m"
+    BOLD = "\033[1m"
+    DIM = "\033[2m"
+    ITALIC = "\033[3m"
+
+    # Colors
+    GREEN = "\033[32m"
+    BLUE = "\033[34m"
+    CYAN = "\033[36m"
+    BRIGHT_BLUE = "\033[94m"
+    BRIGHT_BLACK = "\033[90m"
+
+
+def render_markdown(text: str, color: bool = True) -> str:
+    """Render markdown with ANSI escape codes (zero dependencies)."""
+    if not color:
+        return _strip_markdown(text)
+
+    lines = text.split("\n")
+    result = []
+    in_code_block = False
+
+    for line in lines:
+        # Code blocks
+        if line.startswith("```"):
+            in_code_block = not in_code_block
+            result.append(f"{ANSI.DIM}───{ANSI.RESET}" if color else "───")
+            continue
+
+        if in_code_block:
+            result.append(f"{ANSI.GREEN}{line}{ANSI.RESET}")
+            continue
+
+        # Headers
+        if line.startswith("# "):
+            result.append(f"{ANSI.BOLD}{ANSI.BRIGHT_BLUE}{line[2:]}{ANSI.RESET}")
+        elif line.startswith("## "):
+            result.append(f"{ANSI.BOLD}{ANSI.BLUE}{line[3:]}{ANSI.RESET}")
+        elif line.startswith("### "):
+            result.append(f"{ANSI.BOLD}{ANSI.CYAN}{line[4:]}{ANSI.RESET}")
+        # Lists
+        elif re.match(r"^[-*]\s+", line):
+            content = re.sub(r"^[-*]\s+", "", line)
+            result.append(f"{ANSI.BRIGHT_BLACK}•{ANSI.RESET} {_format_inline(content)}")
+        else:
+            result.append(_format_inline(line))
+
+    return "\n".join(result)
+
+
+def _format_inline(text: str) -> str:
+    """Apply inline formatting (bold, italic, code, links)."""
+    # Inline code
+    text = re.sub(r"`([^`]+)`", lambda m: f"{ANSI.GREEN}{m.group(1)}{ANSI.RESET}", text)
+    # Bold
+    text = re.sub(r"\*\*(.+?)\*\*", lambda m: f"{ANSI.BOLD}{m.group(1)}{ANSI.RESET}", text)
+    # Italic
+    text = re.sub(
+        r"(?<!\*)\*(?!\*)(.+?)(?<!\*)\*(?!\*)",
+        lambda m: f"{ANSI.ITALIC}{m.group(1)}{ANSI.RESET}",
+        text,
+    )
+    # Links
+    text = re.sub(
+        r"\[([^\]]+)\]\(([^)]+)\)",
+        lambda m: f"{ANSI.CYAN}{m.group(1)}{ANSI.RESET} {ANSI.DIM}({m.group(2)}){ANSI.RESET}",
+        text,
+    )
+    return text
+
+
+def _strip_markdown(text: str) -> str:
+    """Strip markdown formatting for non-color output."""
+    text = re.sub(r"^#{1,6}\s+", "", text, flags=re.MULTILINE)
+    text = re.sub(r"`([^`]+)`", r"\1", text)
+    text = re.sub(r"\*\*(.+?)\*\*", r"\1", text)
+    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r"\1 (\2)", text)
+    return text
+```
+
+**Usage**:
+
+```python
+from .lib.markdown_renderer import render_markdown
+
+@app.command("docs")
+def docs_command() -> None:
+    """Show documentation."""
+    doc_text = """
+# My CLI Tool
+
+This tool provides **powerful** features:
+
+- Fast execution
+- Zero dependencies
+- Works with `any platform`
+
+[Learn more](https://example.com)
+"""
+    print(render_markdown(doc_text))
+```
+
+**When to use**: Perfect for CLIs that prioritize zero dependencies (like repren).
+Lightweight (~50 lines of code), no external dependencies, and good enough for most
+documentation display needs.
+
+**Option B: Rich (Full-Featured)**
+
+When dependencies are acceptable, **Rich remains the best choice** for markdown rendering.
+It provides comprehensive markdown support with tables, syntax highlighting, and
+sophisticated formatting:
+
+```python
+from rich.console import Console
+from rich.markdown import Markdown
+
+console = Console()
+
+@app.command("docs")
+def docs_command() -> None:
+    """Show documentation."""
+    doc_text = """
+# My CLI Tool
+
+This tool provides **powerful** features:
+
+| Feature | Status |
+|---------|--------|
+| Speed   | ✓      |
+| Tables  | ✓      |
+
+```python
+def hello():
+    print("world")
+```
+
+[Learn more](https://example.com)
+"""
+    md = Markdown(doc_text)
+    console.print(md)
+```
+
+**Additional Rich features**:
+- Tables and advanced markdown features
+- Syntax highlighting for code blocks (20+ languages)
+- Smart text wrapping and alignment
+- Emoji support
+- Link detection and styling
+- Automatic theme adaptation
+
+**When to use**: For CLIs where dependencies are acceptable and you want comprehensive
+markdown rendering with tables, syntax highlighting, and advanced formatting.
+
+**Python 3.14 argparse color support**:
+
+Python 3.14 added native color support to argparse, which works similarly to the
+zero-dependency approach above:
+
+```python
+import argparse
+
+parser = argparse.ArgumentParser(
+    description="My CLI tool",
+    color=True,  # New in Python 3.14 (default is True)
+)
+```
+
+The `color` parameter:
+- Defaults to `True` for colored help output
+- Respects `NO_COLOR` and `PYTHON_COLORS` environment variables
+- Uses ANSI escape sequences internally
+- Can be disabled with `color=False`
+
+This demonstrates that ANSI-based terminal formatting is now considered standard practice
+in modern Python CLIs.
+
+**Assessment**: For zero-dependency CLIs, a minimal ANSI renderer (~50 lines) provides
+good markdown display for documentation and help text. For feature-rich CLIs, Rich
+provides the best markdown rendering experience with tables, syntax highlighting, and
+advanced formatting. Python 3.14's argparse color support validates the zero-dependency
+ANSI approach as a modern, standard pattern.
+
+* * *
+
+### 13. Stdout/Stderr Separation
 
 **Status**: Essential
 
@@ -1133,7 +1339,7 @@ enables CLI tools to be composed in pipelines.
 
 * * *
 
-### 13. Error Handling with Custom Exceptions
+### 14. Error Handling with Custom Exceptions
 
 **Status**: Recommended
 
@@ -1205,7 +1411,7 @@ Exit codes follow Unix conventions for proper integration with shell scripts.
 
 * * *
 
-### 14. Testing with CliRunner
+### 15. Testing with CliRunner
 
 **Status**: Recommended
 
@@ -1277,7 +1483,7 @@ Tests can verify exit codes, stdout/stderr output, and side effects.
 
 * * *
 
-### 15. Interactive Prompts with Questionary
+### 16. Interactive Prompts with Questionary
 
 **Status**: Situational
 
@@ -1334,7 +1540,7 @@ Always support a `--yes` flag to enable non-interactive automation.
 
 * * *
 
-### 16. Documentation Command
+### 17. Documentation Command
 
 **Status**: Recommended
 
@@ -1410,17 +1616,19 @@ especially valuable for CLIs with many subcommands.
 
 11. **Pair text and JSON formatters** for each data domain
 
-12. **Use git-based versioning** via uv-dynamic-versioning
+12. **Render markdown** using minimal ANSI renderer (zero deps) or Rich (full-featured)
 
-13. **Define global options at app level** using Typer’s callback
+13. **Use git-based versioning** via uv-dynamic-versioning
 
-14. **Support `--color auto|always|never`** and respect `NO_COLOR` env var
+14. **Define global options at app level** using Typer's callback
 
-15. **Support --dry-run** for safe testing of destructive commands
+15. **Support `--color auto|always|never`** and respect `NO_COLOR` env var
 
-16. **Test with CliRunner** for isolated, fast tests
+16. **Support --dry-run** for safe testing of destructive commands
 
-17. **Add docs/schema/examples commands** for human and machine documentation
+17. **Test with CliRunner** for isolated, fast tests
+
+18. **Add docs/schema/examples commands** for human and machine documentation
 
 * * *
 
@@ -1442,6 +1650,22 @@ especially valuable for CLIs with many subcommands.
 - [BasedPyright](https://docs.basedpyright.com/) — Type checker
 
 - [questionary](https://questionary.readthedocs.io/) — Interactive prompts
+
+- [Python 3.14 argparse](https://docs.python.org/3/library/argparse.html) — Built-in
+  argument parser with color support (Python 3.14+)
+
+### Markdown Rendering
+
+- [Rich Markdown](https://rich.readthedocs.io/en/stable/markdown.html) — Full-featured
+  markdown rendering with Rich
+
+- [md2ansi](https://github.com/Open-Technology-Foundation/md2ansi) — Markdown to ANSI
+  terminal formatter
+
+- [markdown-ansi](https://pypi.org/project/markdown-ansi/) — Simple markdown renderer
+
+- [Tutorial: Rendering Markdown in the Terminal](https://dimiro1.dev/rendering-markdown-in-the-terminal/)
+  — Building a custom renderer
 
 ### Related Documentation
 
