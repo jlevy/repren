@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 """
-Sync documentation from docs/repren-manual.md to repren/repren.py and README.md.
+Sync documentation from docs/repren-docs.md to repren/repren.py and README.md.
 
 The manual is the single source of truth. This script:
 1. Updates the docstring in repren/repren.py
@@ -14,7 +14,7 @@ from pathlib import Path
 
 def read_manual(repo_root: Path) -> str:
     """Read the manual content."""
-    manual_path = repo_root / "docs" / "repren-manual.md"
+    manual_path = repo_root / "docs" / "repren-docs.md"
     return manual_path.read_text()
 
 
@@ -82,7 +82,7 @@ def update_readme(repo_root: Path, manual: str) -> bool:
 def main() -> int:
     repo_root = Path(__file__).parent.parent
 
-    print("Reading manual from docs/repren-manual.md...")
+    print("Reading manual from docs/repren-docs.md...")
     manual = read_manual(repo_root)
 
     success = True

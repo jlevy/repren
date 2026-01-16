@@ -186,13 +186,18 @@ making it easy for Claude AI to use repren for bulk refactoring tasks.
 uvx repren --install-skill
 
 # Or: Install for current project only (shareable with team via git)
-uvx repren --install-skill --install-dir=.
+uvx repren --install-skill --agent-base=./.claude
 ```
 
 By default, the skill installs globally to `~/.claude/skills/repren`. Use
-`--install-dir=.` to install in the current directory’s `.claude/skills/repren` instead.
+`--agent-base=./.claude` to install in the current project instead.
+Re-running the command will update an existing installation.
 
 Once installed, Claude Code will automatically use repren for bulk refactoring tasks.
+
+**Requirements:** Skill installation requires repren to be installed as a package
+(via `uv tool install repren` or `pip install repren`). The standalone script does
+not support skill installation.
 
 **Manual Installation:**
 
@@ -1334,9 +1339,9 @@ def _run_cli() -> None:
         action="store_true",
     )
     parser.add_argument(
-        "--install-dir",
-        help="parent directory for .claude/skills/repren (e.g., '.' for project, defaults to home for global install)",
-        dest="install_dir",
+        "--agent-base",
+        help="agent config directory for skills (e.g., './.claude' for project, defaults to ~/.claude)",
+        dest="agent_base",
         metavar="DIR",
     )
     parser.add_argument(
@@ -1369,8 +1374,8 @@ def _run_cli() -> None:
         try:
             from .claude_skill import install_skill
 
-            # Install to specified directory or home (global) by default
-            install_skill(install_dir=options.install_dir)
+            # Install to specified agent base or ~/.claude by default
+            install_skill(agent_base=options.agent_base)
             sys.exit(0)
         except ImportError:
             # Fallback if running as standalone script

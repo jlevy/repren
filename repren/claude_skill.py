@@ -38,32 +38,32 @@ def get_skill_content() -> str:
             ) from e
 
 
-def install_skill(install_dir: str | None = None) -> None:
+def install_skill(agent_base: str | None = None) -> None:
     """Install repren skill for Claude Code.
 
     Args:
-        install_dir: Base directory for installation. The skill will be installed to
-            {install_dir}/.claude/skills/repren/SKILL.md
-            - None (default): Install to home directory (~/.claude/skills/repren)
-            - '.': Install to current directory (./.claude/skills/repren)
-            - Any path: Install to that path
+        agent_base: The agent's configuration directory where skills are stored.
+            The skill will be installed to {agent_base}/skills/repren/SKILL.md
+            - None (default): Install globally to ~/.claude/skills/repren
+            - './.claude': Install to current project's .claude/skills/repren
+            - Any path: Install to that agent base directory
 
     The skill will be installed as SKILL.md in the appropriate directory,
     making it automatically available to Claude Code.
     """
     # Determine installation directory
-    if install_dir is None:
-        # Default: global install to home directory
-        base_dir = Path.home()
+    if agent_base is None:
+        # Default: global install to ~/.claude
+        base_dir = Path.home() / ".claude"
         location_desc = "globally"
         location_path = "~/.claude/skills/repren"
     else:
-        # User-specified directory
-        base_dir = Path(install_dir).resolve()
+        # User-specified agent base directory
+        base_dir = Path(agent_base).resolve()
         location_desc = f"to {base_dir}"
-        location_path = str(base_dir / ".claude" / "skills" / "repren")
+        location_path = str(base_dir / "skills" / "repren")
 
-    skill_dir = base_dir / ".claude" / "skills" / "repren"
+    skill_dir = base_dir / "skills" / "repren"
 
     # Load skill content from package data
     try:
@@ -89,8 +89,8 @@ def install_skill(install_dir: str | None = None) -> None:
         print("\nClaude Code will now automatically use repren for refactoring tasks.")
         print(f"To uninstall, remove this directory: {skill_dir}")
 
-        # Show tip for project installs
-        if install_dir is not None:
+        # Show tip for project installs (when not using default global location)
+        if agent_base is not None:
             print("\n" + "-" * 70)
             print("Tip: Commit .claude/skills/ to share this skill with your team.")
             print("-" * 70)
@@ -112,7 +112,7 @@ def main() -> None:
 
     Can be run directly for testing:
         python -m repren.claude_skill
-        python -m repren.claude_skill --claude-dir .
+        python -m repren.claude_skill --agent-base ./.claude
     """
     import argparse
 
@@ -121,22 +121,22 @@ def main() -> None:
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
-  %(prog)s                    # Install globally (~/.claude/skills)
-  %(prog)s --claude-dir .     # Install in current directory (./.claude/skills)
-  %(prog)s --claude-dir /path # Install to /path/.claude/skills
+  %(prog)s                        # Install globally (~/.claude/skills)
+  %(prog)s --agent-base ./.claude # Install in current project (./.claude/skills)
+  %(prog)s --agent-base /path     # Install to /path/skills
         """,
     )
 
     parser.add_argument(
-        "--claude-dir",
-        dest="install_dir",
+        "--agent-base",
+        dest="agent_base",
         metavar="DIR",
-        help="directory for .claude/skills/repren (defaults to home directory)",
+        help="agent config directory (defaults to ~/.claude)",
     )
 
     args = parser.parse_args()
 
-    install_skill(install_dir=args.install_dir)
+    install_skill(agent_base=args.agent_base)
 
 
 if __name__ == "__main__":

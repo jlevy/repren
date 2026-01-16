@@ -7,7 +7,7 @@ usage: repren [-h] [--version] [--docs] [--from FROM_PAT] [--to TO_PAT] [-p PAT_
               [--include INCLUDE_PAT] [--exclude EXCLUDE_PAT] [--at-once] [-t]
               [--walk-only] [-n] [-q] [--format {text,json}]
               [--backup-suffix BACKUP_SUFFIX] [--undo] [--clean-backups]
-              [--install-skill] [--install-dir DIR] [--skill]
+              [--install-skill] [--agent-base DIR] [--skill]
               [root_paths ...]
 repren: error: must specify --patterns or both --from and --to
 
@@ -817,10 +817,10 @@ allowed-tools: Bash(repren:*), Bash(uvx repren:*), Read, Write
 # Claude skill installation tests.
 
 # Test project-local install (creates .claude/skills/repren/)
-run --install-skill --install-dir=.
+run --install-skill --agent-base=./.claude
 
 ======================================================================
-✓ Repren skill installed to __TESTDIR__
+✓ Repren skill installed to __TESTDIR__/.claude
 ======================================================================
 
 Location: __TESTDIR__/.claude/skills/repren/SKILL.md

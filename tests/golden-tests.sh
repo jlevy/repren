@@ -333,7 +333,7 @@ run --skill | head -5
 # Claude skill installation tests.
 
 # Test project-local install (creates .claude/skills/repren/)
-run --install-skill --install-dir=.
+run --install-skill --agent-base=./.claude
 
 # Verify project skill file exists and has content
 test -f .claude/skills/repren/SKILL.md && echo "Project skill file created"

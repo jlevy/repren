@@ -543,13 +543,15 @@ class TestClaudeSkillInstallation:
                     os.environ["HOME"] = old_home
 
     def test_install_skill_project_creates_file(self):
-        """install_skill with install_dir should create file in specified location."""
+        """install_skill with agent_base should create file in specified location."""
         from repren.claude_skill import install_skill
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            install_skill(install_dir=tmpdir)
+            # agent_base IS the .claude directory itself
+            agent_base = Path(tmpdir) / ".claude"
+            install_skill(agent_base=str(agent_base))
 
-            skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
+            skill_file = agent_base / "skills" / "repren" / "SKILL.md"
             assert skill_file.exists()
             content = skill_file.read_text()
             assert "repren" in content.lower()
@@ -593,23 +595,25 @@ class TestClaudeSkillCLI:
         # Should have markdown content
         assert "#" in result.stdout
 
-    def test_install_skill_with_install_dir(self):
-        """--install-skill with --install-dir should work."""
+    def test_install_skill_with_agent_base(self):
+        """--install-skill with --agent-base should work."""
         with tempfile.TemporaryDirectory() as tmpdir:
+            # agent_base IS the .claude directory itself
+            agent_base = Path(tmpdir) / ".claude"
             result = subprocess.run(
                 [
                     "uv",
                     "run",
                     "repren",
                     "--install-skill",
-                    f"--install-dir={tmpdir}",
+                    f"--agent-base={agent_base}",
                 ],
                 capture_output=True,
                 text=True,
             )
 
             assert result.returncode == 0
-            skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
+            skill_file = agent_base / "skills" / "repren" / "SKILL.md"
             assert skill_file.exists()
 
 

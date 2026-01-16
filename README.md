@@ -195,13 +195,18 @@ making it easy for Claude AI to use repren for bulk refactoring tasks.
 uvx repren --install-skill
 
 # Or: Install for current project only (shareable with team via git)
-uvx repren --install-skill --install-dir=.
+uvx repren --install-skill --agent-base=./.claude
 ```
 
 By default, the skill installs globally to `~/.claude/skills/repren`. Use
-`--install-dir=.` to install in the current directory’s `.claude/skills/repren` instead.
+`--agent-base=./.claude` to install in the current project instead.
+Re-running the command will update an existing installation.
 
 Once installed, Claude Code will automatically use repren for bulk refactoring tasks.
+
+**Requirements:** Skill installation requires repren to be installed as a package
+(via `uv tool install repren` or `pip install repren`). The standalone script does
+not support skill installation.
 
 **Manual Installation:**
 
