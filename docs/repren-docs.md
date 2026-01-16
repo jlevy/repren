@@ -174,42 +174,27 @@ repren --format=json --from=foo --to=bar --full src/
 
 ### Claude Code Skill
 
-repren includes a built-in skill for [Claude Code](https://claude.com/claude-code),
-making it easy for Claude AI to use repren for bulk refactoring tasks.
+repren includes a built-in skill for [Claude Code](https://claude.com/claude-code), so
+Claude can use repren for bulk refactoring tasks.
 
-**Quick Install:**
+**Install:**
 
 ```bash
-# Install globally (default, available in all projects)
+# Install globally (available in all projects):
 uvx repren --install-skill
 
-# Or: Install for current project only (shareable with team via git)
+# Or install for current project only (shareable via git):
 uvx repren --install-skill --agent-base=./.claude
 ```
 
-By default, the skill installs globally to `~/.claude/skills/repren`. Use
-`--agent-base=./.claude` to install in the current project instead.
-Re-running the command will update an existing installation.
+Re-run to update an existing installation.
 
-Once installed, Claude Code will automatically use repren for bulk refactoring tasks.
+**Manual install:** Run `uvx repren --skill` and save to
+`~/.claude/skills/repren/SKILL.md` (global) or `.claude/skills/repren/SKILL.md`
+(project).
 
-**Requirements:** Skill installation requires repren to be installed as a package
-(via `uv tool install repren` or `pip install repren`). The standalone script does
-not support skill installation.
-
-**Manual Installation:**
-
-To view the skill content for manual installation, run:
-
-```bash
-uvx repren --skill
-```
-
-Then save the output to `~/.claude/skills/repren/SKILL.md` (global) or
-`.claude/skills/repren/SKILL.md` (project).
-
-**Learn More:** See the [Claude Code documentation](https://code.claude.com/) and
-[Agent Skills repository](https://github.com/anthropics/skills).
+**Learn more:** [Claude Code docs](https://claude.ai/code) and
+[Skills repository](https://github.com/anthropics/skills).
 
 ## Try It
 

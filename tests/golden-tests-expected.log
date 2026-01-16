@@ -13,7 +13,6 @@ repren: error: must specify --patterns or both --from and --to
 
 Run `repren --help` for usage.
 Run `repren --docs` for full docs.
-Run `repren --skill` for coding agent skill instructions.
 (got expected error: status 2)
 
 # Text replacements, no renames.
