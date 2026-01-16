@@ -5,8 +5,8 @@ allowed-tools: Bash(repren:*), Bash(uvx repren@latest:*), Read, Write
 ---
 # Repren - Multi-Pattern Search and Replace
 
-> **Full documentation: Run `uvx repren@latest --docs` for all options, flags, and advanced
-> usage.**
+> **Full documentation: Run `uvx repren@latest --docs` for all options, flags, and
+> advanced usage.**
 
 Multi-pattern search/replace tool for bulk refactoring with simultaneous replacements,
 file/directory renaming, and case-preserving transformations.
@@ -76,8 +76,8 @@ and directories matching the patterns.
 uvx repren@latest --from='old_module' --to='new_module' --full src/
 ```
 
-Renames files and directories, creating parent directories as needed.
-Files never clobber: numeric suffixes are added if conflicts arise.
+Renames files and directories, creating parent directories as needed. Files never
+clobber: numeric suffixes are added if conflicts arise.
 
 ### Regex Patterns with Capture Groups
 
@@ -96,8 +96,8 @@ class Old(\w+)	class New\1
 
 ### Atomic Operations with Backups
 
-All modifications create `.orig` backup files automatically.
-Original files never truncated on errors.
+All modifications create `.orig` backup files automatically. Original files never
+truncated on errors.
 
 ### Dry Run
 

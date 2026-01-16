@@ -109,11 +109,10 @@ extension “.orig”. If directory paths are provided, it applies replacements 
 to all files in the supplied paths that are not in the exclude pattern.
 If no arguments are supplied, it reads from stdin and writes to stdout.
 
-## Alternatives
+## Comparison to Alternatives
 
-There are many tools for search/replace and refactoring. Here's how repren compares:
-
-### Comparison
+There are many tools for search/replace and refactoring.
+Here’s how repren compares:
 
 | Feature | repren | [sed/awk/perl](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549) | [sd](https://github.com/chmln/sd) | [fastmod](https://github.com/facebookincubator/fastmod) | [ast-grep](https://ast-grep.github.io/) | [comby](https://comby.dev/) | [rnr](https://github.com/ismaelgv/rnr) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
@@ -127,23 +126,26 @@ There are many tools for search/replace and refactoring. Here's how repren compa
 
 **When to use each:**
 
-- **repren**: Bulk renames with file/directory renaming, case preservation, or simultaneous
-  swaps. Works on any text file with full backup/undo support.
-- **sed/awk/perl**: Classic approaches for quick one-liners. See
+- **repren**: Bulk renames with file/directory renaming, case preservation, or
+  simultaneous swaps. Works on any text file with full backup/undo support.
+- **sed/awk/perl**: Classic approaches for quick one-liners.
+  See
   [classic approaches](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549).
   Often error-prone for complex patterns and lack dry-run mode, simultaneous swaps, or
   cross-platform consistency.
-- **sd**: Fast sed replacement (2-11x faster than sed), but limited to simple find/replace
-  without file renaming, case preservation, or multi-pattern swaps.
-- **fastmod**: Good for interactive human review of changes, but lacks case preservation,
-  simultaneous swaps, and file/directory renaming.
+- **sd**: Fast sed replacement (2-11x faster than sed), but limited to simple
+  find/replace without file renaming, case preservation, or multi-pattern swaps.
+- **fastmod**: Good for interactive human review of changes, but lacks case
+  preservation, simultaneous swaps, and file/directory renaming.
 - **ast-grep**: Language-aware refactoring where you need to match code structure (e.g.,
-  function calls, not just text). Use when semantic understanding matters more than speed.
-- **comby**: Structural matching across languages without learning AST syntax. Useful when
-  you need to match code patterns like balanced braces, but overkill for simple text
-  refactoring.
-- **rnr**: File/directory renaming only (no content replacement). Has dry-run by default,
-  backup option, and undo via dump files. Use repren if you also need content replacement.
+  function calls, not just text).
+  Use when semantic understanding matters more than speed.
+- **comby**: Structural matching across languages without learning AST syntax.
+  Useful when you need to match code patterns like balanced braces, but overkill for
+  simple text refactoring.
+- **rnr**: File/directory renaming only (no content replacement).
+  Has dry-run by default, backup option, and undo via dump files.
+  Use repren if you also need content replacement.
 
 ## Installation
 
@@ -164,36 +166,13 @@ script somewhere convenient and make it executable.
 
 ## Agent Use
 
-### Why Agents Should Use repren
+repren is ideal for use by AI coding agents (Claude Code, Codex, etc.)
+since it is powerful, simple to use, and self-documenting.
+Just tell agents to run `uvx repren@latest --help` and they have everything they need,
+including the ability to install it as a skill.
+Agents can use `--format=json` for machine-parseable output.
 
-repren is designed for use by AI coding agents (Claude Code, Codex, etc.)
-as well as humans.
-
-AST-based tools (ast-grep, Semgrep, ts-morph) can be better for focused, language-aware
-semantic refactoring.
-But repren is ideal for fast, large code or doc text refactoring, file/directory
-renaming, or any serious larger-scale renaming effort:
-
-| Feature | repren | AST tools | Built-in Edit |
-| --- | --- | --- | --- |
-| Simultaneous renames and swaps (foo↔bar) | ✅ | ❌ | ❌ |
-| File/directory renaming | ✅ | Some | ❌ |
-| Case-preserving variants | ✅ | ❌ | ❌ |
-| Works on any text file | ✅ | ❌ | ✅ |
-| Dry runs, backups, undo system | ✅ | ❌ | ❌ |
-
-### JSON Output
-
-Use `--format=json` for machine-parseable output:
-
-```bash
-repren --format=json --from=foo --to=bar --full src/
-```
-
-### Claude Code Skill
-
-repren includes a built-in skill for [Claude Code](https://claude.com/claude-code), so
-Claude can use repren for bulk refactoring tasks.
+repren includes a built-in skill for Claude Code or other agents.
 
 **Install:**
 
