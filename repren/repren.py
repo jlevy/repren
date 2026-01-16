@@ -403,15 +403,15 @@ from re import Match, Pattern
 from typing import Any, BinaryIO, Literal, NoReturn
 
 # override decorator is only available in Python 3.12+
-try:
-    from typing import override  # type: ignore[attr-defined]
-except ImportError:
+if sys.version_info >= (3, 12):
+    from typing import override
+else:
     # For Python 3.10 and 3.11, create a no-op decorator
     from typing import TypeVar
 
     _F = TypeVar("_F", bound=Callable[..., Any])
 
-    def override(method: _F, /) -> _F:  # type: ignore[misc]
+    def override(method: _F, /) -> _F:
         return method
 
 
