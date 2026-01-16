@@ -111,21 +111,36 @@ If no arguments are supplied, it reads from stdin and writes to stdout.
 
 ## Alternatives
 
-Aren’t there standard tools for this already?
+There are many tools for search/replace and refactoring. Here's how repren compares:
 
-It’s a bit surprising, but not really.
-Getting the features right is a bit tricky, I guess.
-The
-[standard](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549)
-[answers](http://stackoverflow.com/questions/6840332/rename-multiple-files-by-replacing-a-particular-pattern-in-the-filenames-using-a)
-like *sed*, *perl*, *awk*, *rename*, *Vim* macros, or even IDE refactoring tools, often
-cover specific cases, but tend to be error-prone or not offer specific features you
-probably want. Things like nondestructive mode, file renaming as well as search/replace,
-multiple simultaneous renames/swaps, or renaming enclosing parent directories.
-Also many of these vary by platform, which adds to the corner cases.
-Inevitably you end up digging through the darker corners of a man page, doing
-semi-automated things in an IDE, or writing hacked scripts that are an embarrassment to
-share.
+### Comparison
+
+| Feature | repren | [sed/awk/perl](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549) | [sd](https://github.com/chmln/sd) | [fastmod](https://github.com/facebookincubator/fastmod) | [ast-grep](https://ast-grep.github.io/) | [comby](https://comby.dev/) | [rnr](https://github.com/ismaelgv/rnr) |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| Simultaneous edits and swaps (foo↔bar) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| File/directory renaming | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Case-preserving variants | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
+| Language-agnostic | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
+| Structural/AST-aware | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Interactivity | Dry run, backups, undo | ❌ | ❌ | Interactive review | Interactive review | Interactive review | Dry run, backups, undo |
+| Dependencies | Python 3.10+ (no other deps) | Varies (OS/shell) | Binary (Rust) | Binary (Rust) | Binary (Rust) | Binary (OCaml) | Binary (Rust) |
+
+**When to use each:**
+
+- **repren**: Bulk renames with file/directory renaming, case preservation, or simultaneous
+  swaps. Works on any text file with full backup/undo support.
+- **sed/awk/perl**: Quick one-liners if you know the syntax. See
+  [classic approaches](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549).
+  Often lack dry-run mode, simultaneous swaps, or cross-platform consistency.
+- **sd**: Simple, fast sed replacement for straightforward find/replace (2-11x faster than
+  sed).
+- **fastmod**: Large codebase refactors where you want interactive human review of each
+  change.
+- **ast-grep**: Language-aware refactoring where you need to match code structure (e.g.,
+  function calls, not just text). Supports 40+ languages.
+- **comby**: Structural matching across languages without learning AST syntax.
+- **rnr**: File/directory renaming only (no content replacement). Has dry-run by default,
+  backup option, and undo via dump files.
 
 ## Installation
 
