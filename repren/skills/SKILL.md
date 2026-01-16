@@ -5,7 +5,7 @@ allowed-tools: Bash(repren:*), Bash(uvx repren:*), Read, Write
 ---
 # Repren - Multi-Pattern Search and Replace
 
-> **📖 Full documentation: Run `uvx repren --help` for all options, flags, and advanced
+> **Full documentation: Run `uvx repren --docs` for all options, flags, and advanced
 > usage.**
 
 Multi-pattern search/replace tool for bulk refactoring with simultaneous replacements,
@@ -185,7 +185,7 @@ Returns structured data about all changes made.
 
 ## Key Flags
 
-Most important flags (run `uvx repren --help` for complete list):
+Most important flags (run `uvx repren --docs` for complete list):
 
 | Flag | Purpose |
 | --- | --- |

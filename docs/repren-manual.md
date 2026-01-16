@@ -27,8 +27,9 @@ It’s more powerful than classic options like `perl -pie`, `rpl`, or `sed`:
   once, without requiring a temporary intermediate rename.
 
 - **Good hygiene:** It is careful: it has a nondestructive “dry run” mode and prints
-  clear stats on its changes. It leaves backups. File operations are done atomically, so
-  interruptions never leave a previously existing file truncated or partly edited.
+  clear stats on its changes.
+  It leaves backups. File operations are done atomically, so interruptions never leave a
+  previously existing file truncated or partly edited.
 
 - **Case preserving options:** It supports “magic” case-preserving renames that let you
   find and rename identifiers with case variants (lowerCamel, UpperCamel,
@@ -41,20 +42,21 @@ It’s more powerful than classic options like `perl -pie`, `rpl`, or `sed`:
   machine-parseable JSON output (`--format=json`) for easy integration with scripts and
   agents.
 
-- **Self-documenting:** It is packaged with its own nice documentation! Run with
-  `--help` for these full docs.
+- **Self-documenting:** It is packaged with its own nice documentation!
+  Run `repren --docs` for full documentation.
 
 If file paths are provided, repren replaces those files in place, leaving a backup with
 extension “.orig” (controlled by the `--backup-suffix` option).
 
 If directory paths are provided, it applies replacements recursively to all files in the
-supplied paths that are not in the exclude pattern. If no arguments are supplied, it
-reads from stdin and writes to stdout.
+supplied paths that are not in the exclude pattern.
+If no arguments are supplied, it reads from stdin and writes to stdout.
 
 ## Examples
 
 Patterns can be supplied in a text file, with one or more replacements consisting of
-regular expression and replacement. For example:
+regular expression and replacement.
+For example:
 
 ```
 # Sample pattern file
@@ -63,8 +65,9 @@ WhizzleStick<tab>AcmeExtrudedPlasticFunProvider
 figure ([0-9+])<tab>Figure \1
 ```
 
-(Where `<tab>` is an actual tab character.) Each line is a replacement. Empty lines and
-#-prefixed comments are ignored.
+(Where `<tab>` is an actual tab character.)
+Each line is a replacement.
+Empty lines and #-prefixed comments are ignored.
 
 As a short-cut, a single replacement can be specified on the command line using `--from`
 (match) and `--to` (replacement).
@@ -99,28 +102,30 @@ repren --patterns=patfile --word-breaks --preserve-case --full --include='.*[.]p
 
 ## Usage
 
-Run `repren --help` for full usage and flags.
+Run `repren --docs` for full usage and flags.
 
 If file paths are provided, repren replaces those files in place, leaving a backup with
 extension “.orig”. If directory paths are provided, it applies replacements recursively
-to all files in the supplied paths that are not in the exclude pattern. If no arguments
-are supplied, it reads from stdin and writes to stdout.
+to all files in the supplied paths that are not in the exclude pattern.
+If no arguments are supplied, it reads from stdin and writes to stdout.
 
 ## Alternatives
 
 Aren’t there standard tools for this already?
 
-It’s a bit surprising, but not really. Getting the features right is a bit tricky, I
-guess. The
+It’s a bit surprising, but not really.
+Getting the features right is a bit tricky, I guess.
+The
 [standard](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549)
 [answers](http://stackoverflow.com/questions/6840332/rename-multiple-files-by-replacing-a-particular-pattern-in-the-filenames-using-a)
 like *sed*, *perl*, *awk*, *rename*, *Vim* macros, or even IDE refactoring tools, often
 cover specific cases, but tend to be error-prone or not offer specific features you
 probably want. Things like nondestructive mode, file renaming as well as search/replace,
-multiple simultaneous renames/swaps, or renaming enclosing parent directories. Also many
-of these vary by platform, which adds to the corner cases. Inevitably you end up digging
-through the darker corners of a man page, doing semi-automated things in an IDE, or
-writing hacked scripts that are an embarrassment to share.
+multiple simultaneous renames/swaps, or renaming enclosing parent directories.
+Also many of these vary by platform, which adds to the corner cases.
+Inevitably you end up digging through the darker corners of a man page, doing
+semi-automated things in an IDE, or writing hacked scripts that are an embarrassment to
+share.
 
 ## Installation
 
@@ -143,12 +148,13 @@ script somewhere convenient and make it executable.
 
 ### Why Agents Should Use repren
 
-repren is designed for use by AI coding agents (Claude Code, Codex, etc.) as well as
-humans.
+repren is designed for use by AI coding agents (Claude Code, Codex, etc.)
+as well as humans.
 
 AST-based tools (ast-grep, Semgrep, ts-morph) can be better for focused, language-aware
-semantic refactoring. But repren is ideal for fast, large code or doc text refactoring,
-file/directory renaming, or any serious larger-scale renaming effort:
+semantic refactoring.
+But repren is ideal for fast, large code or doc text refactoring, file/directory
+renaming, or any serious larger-scale renaming effort:
 
 | Feature | repren | AST tools | Built-in Edit |
 | --- | --- | --- | --- |
@@ -175,14 +181,14 @@ making it easy for Claude AI to use repren for bulk refactoring tasks.
 
 ```bash
 # Install globally (default, available in all projects)
-uvx repren --install-claude-skill
+uvx repren --install-skill
 
 # Or: Install for current project only (shareable with team via git)
-uvx repren --install-claude-skill --install-dir=.
+uvx repren --install-skill --install-dir=.
 ```
 
-By default, the skill installs globally to `~/.claude/skills/repren`. Use `--install-dir=.`
-to install in the current directory's `.claude/skills/repren` instead.
+By default, the skill installs globally to `~/.claude/skills/repren`. Use
+`--install-dir=.` to install in the current directory’s `.claude/skills/repren` instead.
 
 Once installed, Claude Code will automatically use repren for bulk refactoring tasks.
 
@@ -191,7 +197,7 @@ Once installed, Claude Code will automatically use repren for bulk refactoring t
 To view the skill content for manual installation, run:
 
 ```bash
-uvx repren --skill-instructions
+uvx repren --skill
 ```
 
 Then save the output to `~/.claude/skills/repren/SKILL.md` (global) or
@@ -225,8 +231,9 @@ Dry run: Would have changed 2 files, including 0 renames
 ```
 
 That was a dry run, so if it looks good, it’s easy to repeat that a second time,
-dropping the `--dry-run` flag. If this is in git, we’d do a git diff to verify, test,
-then commit it all. If we messed up, there are still .orig files present.
+dropping the `--dry-run` flag.
+If this is in git, we’d do a git diff to verify, test, then commit it all.
+If we messed up, there are still .orig files present.
 
 ## Patterns
 
@@ -234,8 +241,8 @@ Patterns can be supplied using the `--from` and `--to` syntax above, but that on
 for a single pattern.
 
 In general, you can perform multiple simultaneous replacements by putting them in a
-*patterns file*. Each line consists of a regular expression and replacement. For
-example:
+*patterns file*. Each line consists of a regular expression and replacement.
+For example:
 
 ```
 # Sample pattern file
@@ -246,8 +253,8 @@ figure ([0-9+])<tab>Figure \1
 
 (Where `<tab>` is an actual tab character.)
 
-Empty lines and #-prefixed comments are ignored. Capturing groups and back substitutions
-(such as \1 above) are supported.
+Empty lines and #-prefixed comments are ignored.
+Capturing groups and back substitutions (such as \1 above) are supported.
 
 ## Examples
 
@@ -336,15 +343,15 @@ repren --clean-backups mydir/
 - All pattern matching is via standard
   [Python regular expressions](https://docs.python.org/3/library/re.html).
 
-- As with sed, replacements are made line by line by default. Memory permitting,
-  replacements may be done on entire files using `--at-once`.
+- As with sed, replacements are made line by line by default.
+  Memory permitting, replacements may be done on entire files using `--at-once`.
 
 - As with sed, replacement text may include backreferences to groups within the regular
   expression, using the usual syntax: \1, \2, etc.
 
 - In the pattern file, both the regular expression and the replacement may contain the
-  usual escapes `\\n`, `\\t`, etc. (To match a multi-line pattern, containing `\\n`, you
-  must use `--at-once`.)
+  usual escapes `\\n`, `\\t`, etc.
+  (To match a multi-line pattern, containing `\\n`, you must use `--at-once`.)
 
 - Replacements are all matched on each input file, then all replaced, so it’s possible
   to swap or otherwise change names in ways that would require multiple steps if done
@@ -359,29 +366,30 @@ repren --clean-backups mydir/
 
 - The case-preserving option works by adding all case variants to the pattern
   replacements, e.g. if the pattern file has foo_bar -> xxx_yyy, the replacements fooBar
-  -> xxxYyy, FooBar -> XxxYyy, FOO_BAR -> XXX_YYY are also made. Assumes each pattern
-  has one casing convention.
+  -> xxxYyy, FooBar -> XxxYyy, FOO_BAR -> XXX_YYY are also made.
+  Assumes each pattern has one casing convention.
 
 - The same logic applies to filenames, with patterns applied to the full file path with
   slashes replaced and then parent directories created as needed, e.g.
   `my/path/to/filename` can be rewritten to `my/other/path/to/otherfile`. (Use caution
   and test with `-n`, especially when using absolute path arguments!)
 
-- Files are never clobbered by renames. If a target already exists, or multiple files
-  are renamed to the same target, numeric suffixes will be added to make the files
-  distinct (".1", “.2”, etc.).
+- Files are never clobbered by renames.
+  If a target already exists, or multiple files are renamed to the same target, numeric
+  suffixes will be added to make the files distinct (".1", “.2”, etc.).
 
 - Files are created at a temporary location, then renamed, so original files are left
-  intact in case of unexpected errors. File permissions are preserved.
+  intact in case of unexpected errors.
+  File permissions are preserved.
 
-- Backups are created of all modified files, with the suffix “.orig”. The suffix can be
-  customized with `--backup-suffix`.
+- Backups are created of all modified files, with the suffix “.orig”.
+  The suffix can be customized with `--backup-suffix`.
 
 - By default, recursive searching omits paths starting with “.”. This may be adjusted
   with `--exclude`. Files ending in the backup suffix (`.orig` by default) are always
   ignored.
 
 - Data is handled as bytes internally, allowing it to work with any encoding or binary
-  files. File contents are not decoded unless necessary (e.g., for logging). However,
-  patterns are specified as strings in the pattern file and command line arguments, and
-  file paths are handled as strings for filesystem operations.
+  files. File contents are not decoded unless necessary (e.g., for logging).
+  However, patterns are specified as strings in the pattern file and command line
+  arguments, and file paths are handled as strings for filesystem operations.

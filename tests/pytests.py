@@ -581,9 +581,9 @@ class TestClaudeSkillCLI:
     """Tests for Claude skill CLI options."""
 
     def test_skill_instructions_prints_content(self):
-        """--skill-instructions should print skill content."""
+        """--skill should print skill content."""
         result = subprocess.run(
-            ["uv", "run", "repren", "--skill-instructions"],
+            ["uv", "run", "repren", "--skill"],
             capture_output=True,
             text=True,
         )
@@ -594,14 +594,14 @@ class TestClaudeSkillCLI:
         assert "#" in result.stdout
 
     def test_install_skill_with_install_dir(self):
-        """--install-claude-skill with --install-dir should work."""
+        """--install-skill with --install-dir should work."""
         with tempfile.TemporaryDirectory() as tmpdir:
             result = subprocess.run(
                 [
                     "uv",
                     "run",
                     "repren",
-                    "--install-claude-skill",
+                    "--install-skill",
                     f"--install-dir={tmpdir}",
                 ],
                 capture_output=True,

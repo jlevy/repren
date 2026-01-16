@@ -6,7 +6,8 @@ The codebase uses **two complementary test approaches**:
 
 ### 1. Golden Tests (`tests/golden-tests.sh` → `tests/golden-tests-expected.log`)
 
-Shell-based integration tests that capture CLI output and compare against expected results. This approach is excellent for:
+Shell-based integration tests that capture CLI output and compare against expected
+results. This approach is excellent for:
 - Testing actual user-facing behavior
 - Catching regressions in output format
 - Validating end-to-end workflows
@@ -14,14 +15,15 @@ Shell-based integration tests that capture CLI output and compare against expect
 
 ### 2. Unit Tests (`tests/pytests.py`)
 
-Python unit tests for internal functions. Current coverage: **40%** (586 statements, 351 missed)
+Python unit tests for internal functions.
+Current coverage: **40%** (586 statements, 351 missed)
 
----
+* * *
 
 ## Golden Test Coverage Matrix
 
 | Feature | Tested | Commands/Patterns Used |
-|---------|--------|------------------------|
+| --- | --- | --- |
 | **Basic replacement** | ✅ | `--from Humpty --to Dumpty` |
 | **Dry run** | ✅ | `-n` / `--dry-run` |
 | **Case sensitive** | ✅ | `--from humpty` (no match for `Humpty`) |
@@ -51,10 +53,10 @@ Python unit tests for internal functions. Current coverage: **40%** (586 stateme
 | **Moving files** | ❌ | (noted as TODO in golden-tests.sh) |
 | **File collisions** | ✅ | Adds `.1` suffix when target exists |
 | **Error cases** | ✅ | Invalid regex `'[invalid(regex'` |
-| **Skill installation** | ✅ | `--install-claude-skill --skill-scope=global` |
-| **Skill instructions** | ✅ | `--skill-instructions` prints SKILL.md |
+| **Skill installation** | ✅ | `--install-skill --skill-scope=global` |
+| **Skill instructions** | ✅ | `--skill` prints SKILL.md |
 
----
+* * *
 
 ## New in v2-revs: Now Tested ✅
 
@@ -62,13 +64,14 @@ Python unit tests for internal functions. Current coverage: **40%** (586 stateme
 
 **Coverage: 45%** (82 statements, 37 covered)
 
-This module provides `repren --install-skill` functionality. Now has:
+This module provides `repren --install-skill` functionality.
+Now has:
 
 | Test Type | Coverage |
-|-----------|----------|
+| --- | --- |
 | Unit tests (`pytests.py`) | `get_skill_content()`, `install_skill()` global/project |
-| Golden tests | `--skill-instructions`, `--install-claude-skill --skill-scope=global` |
-| CLI tests | `--install-claude-skill` with scope validation |
+| Golden tests | `--skill`, `--install-skill --skill-scope=global` |
+| CLI tests | `--install-skill` with scope validation |
 
 ### 2. JSON Output Format
 
@@ -81,7 +84,7 @@ The v2-revs branch added comprehensive golden tests for JSON output:
 - `--format json --undo`
 - `--format json --clean-backups`
 
----
+* * *
 
 ## Proposed Golden Test Enhancements
 
@@ -190,16 +193,17 @@ test -f ".claude/skills/repren/SKILL.md" && echo "Project skill install: OK"
 cd ..
 ```
 
----
+* * *
 
 ## Unit Test Gaps (pytests.py)
 
-The golden tests cover CLI behavior well, but some internal functions lack direct unit tests:
+The golden tests cover CLI behavior well, but some internal functions lack direct unit
+tests:
 
 ### Functions Needing Unit Tests
 
 | Function | Current Coverage | Priority |
-|----------|------------------|----------|
+| --- | --- | --- |
 | `multi_replace()` | Indirect only | High |
 | `_sort_drop_overlaps()` | Not tested | High |
 | `transform_stream()` | Not tested | Medium |
@@ -251,14 +255,14 @@ class TestClaudeSkill:
         assert skill_file.exists()
 ```
 
----
+* * *
 
 ## Coverage Summary
 
 ### Current State
 
 | Component | Statements | Covered | Coverage |
-|-----------|------------|---------|----------|
+| --- | --- | --- | --- |
 | `repren/__init__.py` | 2 | 2 | 100% |
 | `repren/repren.py` | 503 | 246 | 49% |
 | `repren/claude_skill.py` | 82 | 37 | 45% |
@@ -270,13 +274,15 @@ class TestClaudeSkill:
 - **After v2-revs:** 40% (586 statements)
 - **After skill + CLI tests:** 46% (587 statements, 315 missed)
 - **After unit tests for core functions:** 49% (587 statements, 302 missed)
-- **Improvement:** +13 lines covered in `repren.py` for `multi_replace()` and `_sort_drop_overlaps()`
+- **Improvement:** +13 lines covered in `repren.py` for `multi_replace()` and
+  `_sort_drop_overlaps()`
 
----
+* * *
 
 ## Recommended Priority
 
 ### Completed (Now Tested) ✅
+
 1. ~~**Regex capturing groups**~~ - Tested with `\1` back-reference
 2. ~~**`--literal` mode**~~ - Tested
 3. ~~**Stdin/stdout piping**~~ - Tested
@@ -287,46 +293,51 @@ class TestClaudeSkill:
 8. ~~**`--install-skill`**~~ - Golden + unit tests added
 9. ~~**File collision handling**~~ - Tests rename with `.1` suffix
 10. ~~**`claude_skill.py`**~~ - 45% coverage (was 0%)
-11. ~~**`multi_replace()` direct tests**~~ - 9 unit tests added (single/multiple patterns, capturing groups, overlaps, unicode)
-12. ~~**`_sort_drop_overlaps()`**~~ - 7 unit tests added (no overlaps, left/right/nested overlaps, sorting)
+11. ~~**`multi_replace()` direct tests**~~ - 9 unit tests added (single/multiple
+    patterns, capturing groups, overlaps, unicode)
+12. ~~**`_sort_drop_overlaps()`**~~ - 7 unit tests added (no overlaps, left/right/nested
+    overlaps, sorting)
 13. ~~**Moving files across directories**~~ - Golden test added for path-based renaming
 
 ### Remaining Gaps
 
-All identified gaps have been addressed. Future work could include:
+All identified gaps have been addressed.
+Future work could include:
 
 #### Optional Enhancements
+
 - **Additional edge cases** for multi-file moves with complex directory structures
 - **Performance testing** with large codebases
 - **CamelCase and whole word** pattern interactions
 
----
+* * *
 
 ## Bug Fixes During Analysis
 
 ### Fixed: `--at-once` mode not applying changes
 
 The `transform_stream()` function had a bug where `counts` was not updated with
-`new_counts` in at-once mode, causing files to not be rewritten even when matches
-were found. Fixed in `repren.py:761` by adding `counts.add(new_counts)`.
+`new_counts` in at-once mode, causing files to not be rewritten even when matches were
+found. Fixed in `repren.py:761` by adding `counts.add(new_counts)`.
 
----
+* * *
 
 ## Test Infrastructure Notes
 
-1. **Golden tests renamed:** `tests.sh` → `golden-tests.sh`, `tests-expected.log` → `golden-tests-expected.log`
+1. **Golden tests renamed:** `tests.sh` → `golden-tests.sh`, `tests-expected.log` →
+   `golden-tests-expected.log`
 
 2. **Run tests with:**
    ```bash
    # All tests (unit + golden)
    make test
-
+   
    # Just golden tests
    ./tests/run.sh
-
+   
    # Update golden baseline after intentional changes
    make update-golden
-
+   
    # Unit tests with coverage
    uv run pytest --cov=repren --cov-report=term-missing tests/pytests.py
    ```

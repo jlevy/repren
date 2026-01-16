@@ -6,8 +6,8 @@ Actions, when using the
 
 Thanks to
 [the dynamic versioning plugin](https://github.com/ninoseki/uv-dynamic-versioning/) and
-the [`publish.yml`
-workflow](https://github.com/jlevy/repren/blob/master/.github/workflows/publish.yml),
+the
+[`publish.yml` workflow](https://github.com/jlevy/repren/blob/master/.github/workflows/publish.yml),
 you can simply create tagged releases (using the tag name format matching your version,
 e.g. `1.0.2`) on GitHub and the tag will trigger a release build, which then uploads it
 to PyPI.
@@ -19,7 +19,7 @@ Here is the simplest way to do it.
 
 1. **Get a PyPI account** at [pypi.org](https://pypi.org/) and sign in.
 
-2. **Pick a name for the project** that isn't already taken.
+2. **Pick a name for the project** that isn’t already taken.
 
    - Go to `https://pypi.org/project/PROJECT` to see if another project with that name
      already exits.
@@ -30,27 +30,28 @@ Here is the simplest way to do it.
 
    - Go to [the publishing settings page](https://pypi.org/manage/account/publishing/).
 
-   - Find "Trusted Publisher Management" and register your GitHub repo as a new
-     "pending" trusted publisher.
+   - Find “Trusted Publisher Management” and register your GitHub repo as a new
+     “pending” trusted publisher.
 
    - Enter the project name, repo owner, repo name, and `publish.yml` as the workflow
-     name. (You can leave the "environment name" field blank.)
+     name. (You can leave the “environment name” field blank.)
 
 4. **Create a release** on GitHub:
 
-   - Commit code and make sure it's running correctly.
+   - Commit code and make sure it’s running correctly.
 
    - Go to your GitHub project page, then click on Actions tab.
 
    - Confirm all tests are passing in the last CI workflow.
-     (If you want, you can even publish this template when it's empty as just a stub
+     (If you want, you can even publish this template when it’s empty as just a stub
      project, to try all this out.)
 
    - Go to your GitHub project page, click on Releases.
 
    - Fill in the tag and the release name.
      Select to create a new tag, and pick a version.
-     A good option is `0.1.0` (matching `pattern = "default-unprefixed"` in pyproject.toml).
+     A good option is `0.1.0` (matching `pattern = "default-unprefixed"` in
+     pyproject.toml).
 
    - Submit to create the release.
 
@@ -113,10 +114,10 @@ Follow this checklist for each new release.
    ```shell
    # Get the last release tag:
    LAST_TAG=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
-
+   
    # View commits since last release:
    git log ${LAST_TAG}..HEAD --oneline
-
+   
    # View full diff:
    git diff ${LAST_TAG}..HEAD
    ```
@@ -126,22 +127,22 @@ Follow this checklist for each new release.
    ```shell
    NEW_TAG="X.Y.Z"  # Replace with actual version (unprefixed)
    LAST_TAG=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
-
+   
    gh release create "${NEW_TAG}" \
      --title "${NEW_TAG}" \
      --notes "$(cat <<'EOF'
    ## What's Changed
-
+   
    [Summarize changes here--see format guide below]
-
+   
    ### Full Changelog
-
+   
    https://github.com/jlevy/repren/compare/${LAST_TAG}...${NEW_TAG}
    EOF
    )"
    ```
 
-   Alternatively, use `--generate-notes` for GitHub's auto-generated notes, or
+   Alternatively, use `--generate-notes` for GitHub’s auto-generated notes, or
    `--notes-file FILENAME` to read from a file.
 
 7. **Verify the release published successfully:**
@@ -149,7 +150,7 @@ Follow this checklist for each new release.
    ```shell
    # Check the release workflow:
    gh run list --workflow=publish.yml --limit 1
-
+   
    # Verify on PyPI (may take a minute):
    # https://pypi.org/project/repren
    ```
@@ -201,5 +202,4 @@ Guidelines:
 
 * * *
 
-*This project uses
-[simple-modern-uv](https://github.com/jlevy/simple-modern-uv).*
+*This project uses [simple-modern-uv](https://github.com/jlevy/simple-modern-uv).*

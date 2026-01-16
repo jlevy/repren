@@ -2,14 +2,18 @@
 # --- Start of tests ---
 
 run || expect_error
-usage: repren [-h] [--version] [--usage] [--from FROM_PAT] [--to TO_PAT] [-p PAT_FILE]
+usage: repren [-h] [--version] [--docs] [--from FROM_PAT] [--to TO_PAT] [-p PAT_FILE]
               [--full] [--renames] [--literal] [-i] [--dotall] [--preserve-case] [-b]
               [--include INCLUDE_PAT] [--exclude EXCLUDE_PAT] [--at-once] [-t]
               [--walk-only] [-n] [-q] [--format {text,json}]
               [--backup-suffix BACKUP_SUFFIX] [--undo] [--clean-backups]
-              [--install-claude-skill] [--install-dir DIR] [--skill-instructions]
+              [--install-skill] [--install-dir DIR] [--skill]
               [root_paths ...]
 repren: error: must specify --patterns or both --from and --to
+
+Run `repren --help` for usage.
+Run `repren --docs` for full docs.
+Run `repren --skill` for coding agent skill instructions.
 (got expected error: status 2)
 
 # Text replacements, no renames.
@@ -802,7 +806,7 @@ error: error parsing pattern: unterminated character set at position 0: ['[inval
 
 # Skill instructions (print mode - safe to test without side effects).
 
-run --skill-instructions | head -5
+run --skill | head -5
 ---
 name: repren
 description: Performs simultaneous multi-pattern search-and-replace, file/directory renaming, and case-preserving refactoring across codebases. Use for bulk refactoring, global find-and-replace, or when user mentions repren, multi-file rename, or pattern-based transformations.
@@ -813,7 +817,7 @@ allowed-tools: Bash(repren:*), Bash(uvx repren:*), Read, Write
 # Claude skill installation tests.
 
 # Test project-local install (creates .claude/skills/repren/)
-run --install-claude-skill --install-dir=.
+run --install-skill --install-dir=.
 
 ======================================================================
 ✓ Repren skill installed to __TESTDIR__
@@ -840,9 +844,10 @@ Project skill content verified
 mkdir -p test-home
 HOME_BACKUP="$HOME"
 HOME="$(pwd)/test-home"
+pwd
 export HOME
 
-run --install-claude-skill
+run --install-skill
 
 ======================================================================
 ✓ Repren skill installed globally

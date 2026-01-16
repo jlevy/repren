@@ -327,13 +327,13 @@ run --from '[invalid(regex' --to 'bar' original || expect_error
 
 # Skill instructions (print mode - safe to test without side effects).
 
-run --skill-instructions | head -5
+run --skill | head -5
 
 
 # Claude skill installation tests.
 
 # Test project-local install (creates .claude/skills/repren/)
-run --install-claude-skill --install-dir=.
+run --install-skill --install-dir=.
 
 # Verify project skill file exists and has content
 test -f .claude/skills/repren/SKILL.md && echo "Project skill file created"
@@ -345,7 +345,7 @@ HOME_BACKUP="$HOME"
 HOME="$(pwd)/test-home"
 export HOME
 
-run --install-claude-skill
+run --install-skill
 
 # Verify global skill file exists and has content
 test -f test-home/.claude/skills/repren/SKILL.md && echo "Global skill file created"
