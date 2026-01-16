@@ -809,7 +809,7 @@ run --skill | head -5
 ---
 name: repren
 description: Performs simultaneous multi-pattern search-and-replace, file/directory renaming, and case-preserving refactoring across codebases. Use for bulk refactoring, global find-and-replace, or when user mentions repren, multi-file rename, or pattern-based transformations.
-allowed-tools: Bash(repren:*), Bash(uvx repren:*), Read, Write
+allowed-tools: Bash(repren:*), Bash(uvx repren@latest:*), Read, Write
 ---
 
 
