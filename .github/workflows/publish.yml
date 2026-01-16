@@ -31,9 +31,6 @@ jobs:
       - name: Install all dependencies
         run: uv sync --all-extras
 
-      - name: Generate README.md
-        run: uv run python devtools/generate_readme.py
-
       - name: Run tests
         run: uv run pytest
 
