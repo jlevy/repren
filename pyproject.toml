@@ -128,6 +128,7 @@ reportAny = false
 reportExplicitAny = false
 reportImplicitStringConcatenation = false
 reportPrivateUsage = false
+reportImplicitOverride = false
 # These require more type annotations to enable:
 reportUnknownParameterType = false
 reportMissingParameterType = false

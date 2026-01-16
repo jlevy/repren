@@ -400,7 +400,20 @@ import sys
 from collections.abc import Callable
 from dataclasses import dataclass
 from re import Match, Pattern
-from typing import Any, BinaryIO, Literal, NoReturn, override
+from typing import Any, BinaryIO, Literal, NoReturn
+
+# override decorator is only available in Python 3.12+
+try:
+    from typing import override  # type: ignore[attr-defined]
+except ImportError:
+    # For Python 3.10 and 3.11, create a no-op decorator
+    from typing import TypeVar
+
+    _F = TypeVar("_F", bound=Callable[..., Any])
+
+    def override(method: _F, /) -> _F:  # type: ignore[misc]
+        return method
+
 
 # Type aliases for clarity.
 OutputFormat = Literal["text", "json"]
