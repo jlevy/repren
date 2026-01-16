@@ -146,11 +146,23 @@ run --walk-only --exclude='beech|maple' original
 run --walk-only --include='A.*|M.*|oak' --exclude='Mex.*' original
 
 
-# Moving files.
+# Moving files across directories.
 
-# TODO: Fix this.
-# cp -a original test9
-# run --renames --from stuff/trees --to another-dir test9
+cp -a original test-move
+
+# First, let's see what files exist
+ls_portable test-move/stuff/trees
+
+# Create target directory structure (repren expects parent dirs to exist for moves)
+mkdir -p test-move/relocated
+
+# Rename files from stuff/trees to relocated directory
+# This tests path-based renaming that effectively moves files
+run --renames --from 'stuff/trees' --to 'relocated' test-move
+
+# Show result - files should have moved
+ls_portable test-move/stuff/trees 2>/dev/null || echo "(directory removed or empty)"
+ls_portable test-move/relocated
 
 
 # Backup management: undo and clean-backups.
@@ -233,10 +245,120 @@ run --format json --undo --full --from Humpty --to Dumpty test-json
 run --format json --clean-backups test-json
 
 
+# Regex and capturing groups.
+
+cp -a original test-regex
+
+# Create test file with figures
+echo 'See figure 1 and figure 23 for details.' > test-regex/figures.txt
+
+# Test capturing group replacement
+run --from 'figure ([0-9]+)' --to 'Figure \1' test-regex/figures.txt
+
+cat test-regex/figures.txt
+
+
+# Literal mode.
+
+cp -a original test-literal
+
+# Create file with regex special chars
+echo 'Match foo.bar and fooXbar here.' > test-literal/special.txt
+
+# Without --literal: . matches any char (matches both foo.bar and fooXbar)
+run --from 'foo.bar' --to 'REPLACED' test-literal/special.txt
+
+cat test-literal/special.txt
+
+# Reset and test with --literal (only exact match)
+cp -a original test-literal2
+echo 'Match foo.bar and fooXbar here.' > test-literal2/special.txt
+
+run --literal --from 'foo.bar' --to 'REPLACED' test-literal2/special.txt
+
+cat test-literal2/special.txt
+
+
+# At-once mode (multiline patterns).
+
+cp -a original test-atonce
+
+# Create multiline test file
+printf 'start\nmiddle\nend\n' > test-atonce/multiline.txt
+
+# Default (line-by-line) won't match across lines
+run -n --from 'start.*end' --to 'REPLACED' test-atonce/multiline.txt
+
+# With --at-once and --dotall, pattern spans lines
+run --at-once --dotall --from 'start.*end' --to 'REPLACED' test-atonce/multiline.txt
+
+cat test-atonce/multiline.txt
+
+
+# Parse-only mode.
+
+run -t --from 'foo' --to 'bar'
+
+run -t -p patterns-misc
+
+
+# Stdin/stdout mode.
+# Note: We use PYTHONUNBUFFERED to ensure deterministic output order between stdout and stderr
+
+PYTHONUNBUFFERED=1 bash -c 'echo "foo bar foo" | uv run repren --from foo --to bar'
+
+PYTHONUNBUFFERED=1 bash -c 'echo "figure 1 and figure 2" | uv run repren --from "figure ([0-9]+)" --to "Fig. \1"'
+
+
+# Quiet mode.
+
+cp -a original test-quiet
+
+run -q --from Humpty --to Dumpty test-quiet/humpty-dumpty.txt
+
+# Verify changes were made silently
+diff original/humpty-dumpty.txt test-quiet/humpty-dumpty.txt || expect_error
+
+
+# Error cases.
+
+run --from '[invalid(regex' --to 'bar' original || expect_error
+
+
+# Skill instructions (print mode - safe to test without side effects).
+
+run --skill-instructions | head -5
+
+
+# Install skill (use temp HOME to avoid modifying real config).
+
+export ORIG_HOME="$HOME"
+export HOME=$(mktemp -d)
+
+run --install-claude-skill --skill-scope=global 2>&1 | grep -E '(installed|repren)' | grep -v Location
+
+test -f "$HOME/.claude/skills/repren/SKILL.md" && echo "Global skill file exists: OK"
+
+export HOME="$ORIG_HOME"
+
+
+# File collision handling (rename to existing file).
+
+cp -a original test-collision
+
+# Create a file that would conflict with the rename target
+touch test-collision/dumpty-dumpty.txt
+
+# Rename should handle collision (add numeric suffix or similar)
+run --renames --from humpty --to dumpty test-collision
+
+ls_portable test-collision | grep dumpty
+
+
 # TODO: More test coverage:
-# - Regex and capturing groups.
 # - CamelCase and whole word support.
 # - Large stress test (rename a variable in a large source package and recompile).
+# - File collision handling when rename target exists.
 
 # Leave files installed in case it's helpful to debug anything.
 

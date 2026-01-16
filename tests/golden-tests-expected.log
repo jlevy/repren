@@ -431,11 +431,37 @@ Found 3 files in: original
 - original/stuff/words/oak
 
 
-# Moving files.
+# Moving files across directories.
 
-# TODO: Fix this.
-# cp -a original test9
-# run --renames --from stuff/trees --to another-dir test9
+cp -a original test-move
+
+# First, let's see what files exist
+ls_portable test-move/stuff/trees
+-rw-r--r-- beech.txt
+-rw-r--r-- maple.txt
+-rw-r--r-- oak.txt
+
+# Create target directory structure (repren expects parent dirs to exist for moves)
+mkdir -p test-move/relocated
+
+# Rename files from stuff/trees to relocated directory
+# This tests path-based renaming that effectively moves files
+run --renames --from 'stuff/trees' --to 'relocated' test-move
+Using 1 patterns:
+  'stuff/trees' -> 'relocated'
+Found 12 files in: test-move
+- rename: test-move/stuff/trees/beech.txt -> test-move/relocated/beech.txt
+- rename: test-move/stuff/trees/maple.txt -> test-move/relocated/maple.txt
+- rename: test-move/stuff/trees/oak.txt -> test-move/relocated/oak.txt
+Read 3 files (0 chars), found 0 matches (0 skipped due to overlaps)
+Changed 3 files (0 rewritten and 3 renamed)
+
+# Show result - files should have moved
+ls_portable test-move/stuff/trees 2>/dev/null || echo "(directory removed or empty)"
+ls_portable test-move/relocated
+-rw-r--r-- beech.txt
+-rw-r--r-- maple.txt
+-rw-r--r-- oak.txt
 
 
 # Backup management: undo and clean-backups.
@@ -630,10 +656,202 @@ run --format json --clean-backups test-json
 }
 
 
+# Regex and capturing groups.
+
+cp -a original test-regex
+
+# Create test file with figures
+echo 'See figure 1 and figure 23 for details.' > test-regex/figures.txt
+
+# Test capturing group replacement
+run --from 'figure ([0-9]+)' --to 'Figure \1' test-regex/figures.txt
+Using 1 patterns:
+  'figure ([0-9]+)' -> 'Figure \1'
+Found 1 files in: test-regex/figures.txt
+- modify: test-regex/figures.txt: 2 matches
+Read 1 files (40 chars), found 2 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 0 renamed)
+
+cat test-regex/figures.txt
+See Figure 1 and Figure 23 for details.
+
+
+# Literal mode.
+
+cp -a original test-literal
+
+# Create file with regex special chars
+echo 'Match foo.bar and fooXbar here.' > test-literal/special.txt
+
+# Without --literal: . matches any char (matches both foo.bar and fooXbar)
+run --from 'foo.bar' --to 'REPLACED' test-literal/special.txt
+Using 1 patterns:
+  'foo.bar' -> 'REPLACED'
+Found 1 files in: test-literal/special.txt
+- modify: test-literal/special.txt: 2 matches
+Read 1 files (32 chars), found 2 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 0 renamed)
+
+cat test-literal/special.txt
+Match REPLACED and REPLACED here.
+
+# Reset and test with --literal (only exact match)
+cp -a original test-literal2
+echo 'Match foo.bar and fooXbar here.' > test-literal2/special.txt
+
+run --literal --from 'foo.bar' --to 'REPLACED' test-literal2/special.txt
+Using 1 patterns:
+  'foo\.bar' -> 'REPLACED'
+Found 1 files in: test-literal2/special.txt
+- modify: test-literal2/special.txt: 1 matches
+Read 1 files (32 chars), found 1 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 0 renamed)
+
+cat test-literal2/special.txt
+Match REPLACED and fooXbar here.
+
+
+# At-once mode (multiline patterns).
+
+cp -a original test-atonce
+
+# Create multiline test file
+printf 'start\nmiddle\nend\n' > test-atonce/multiline.txt
+
+# Default (line-by-line) won't match across lines
+run -n --from 'start.*end' --to 'REPLACED' test-atonce/multiline.txt
+Dry run: No files will be changed
+Using 1 patterns:
+  'start.*end' -> 'REPLACED'
+Found 1 files in: test-atonce/multiline.txt
+Read 1 files (17 chars), found 0 matches (0 skipped due to overlaps)
+Dry run: Would have changed 0 files (0 rewritten and 0 renamed)
+
+# With --at-once and --dotall, pattern spans lines
+run --at-once --dotall --from 'start.*end' --to 'REPLACED' test-atonce/multiline.txt
+Using 1 patterns:
+  'start.*end' DOTALL -> 'REPLACED'
+Found 1 files in: test-atonce/multiline.txt
+- modify: test-atonce/multiline.txt: 1 matches
+Read 1 files (17 chars), found 1 matches (0 skipped due to overlaps)
+Changed 1 files (1 rewritten and 0 renamed)
+
+cat test-atonce/multiline.txt
+REPLACED
+
+
+# Parse-only mode.
+
+run -t --from 'foo' --to 'bar'
+Using 1 patterns:
+  'foo' -> 'bar'
+
+run -t -p patterns-misc
+Using 5 patterns:
+  'humpty' -> 'dumpty'
+  'dumpty' -> 'humpty'
+  'beech' -> 'BEECH'
+  'Asia' -> 'Asia!'
+  'Europe' -> 'Europe!'
+
+
+# Stdin/stdout mode.
+# Note: We use PYTHONUNBUFFERED to ensure deterministic output order between stdout and stderr
+
+PYTHONUNBUFFERED=1 bash -c 'echo "foo bar foo" | uv run repren --from foo --to bar'
+Using 1 patterns:
+  'foo' -> 'bar'
+bar bar bar
+Read 12 chars, made 2 replacements (0 skipped due to overlaps)
+
+PYTHONUNBUFFERED=1 bash -c 'echo "figure 1 and figure 2" | uv run repren --from "figure ([0-9]+)" --to "Fig. \1"'
+Using 1 patterns:
+  'figure ([0-9]+)' -> 'Fig. \1'
+Fig. 1 and Fig. 2
+Read 22 chars, made 2 replacements (0 skipped due to overlaps)
+
+
+# Quiet mode.
+
+cp -a original test-quiet
+
+run -q --from Humpty --to Dumpty test-quiet/humpty-dumpty.txt
+
+# Verify changes were made silently
+diff original/humpty-dumpty.txt test-quiet/humpty-dumpty.txt || expect_error
+1c1
+< Humpty Dumpty smiled contemptuously. 'Of course you don't — till I tell you. I meant "there's a nice knock-down argument for you!"'
+---
+> Dumpty Dumpty smiled contemptuously. 'Of course you don't — till I tell you. I meant "there's a nice knock-down argument for you!"'
+3c3
+< 'When I use a word,' Humpty Dumpty said, in rather a scornful tone, 'it means just what I choose it to mean — neither more nor less.'
+---
+> 'When I use a word,' Dumpty Dumpty said, in rather a scornful tone, 'it means just what I choose it to mean — neither more nor less.'
+5c5
+< 'The question is,' said Humpty Dumpty, 'which is to be master — that's all.'
+---
+> 'The question is,' said Dumpty Dumpty, 'which is to be master — that's all.'
+(got expected error: status 1)
+
+
+# Error cases.
+
+run --from '[invalid(regex' --to 'bar' original || expect_error
+error: error parsing pattern: unterminated character set at position 0: ['[invalid(regex', 'bar']: unterminated character set at position 0
+(got expected error: status 1)
+
+
+# Skill instructions (print mode - safe to test without side effects).
+
+run --skill-instructions | head -5
+---
+name: repren
+description: Performs simultaneous multi-pattern search-and-replace, file/directory renaming, and case-preserving refactoring across codebases. Use for bulk refactoring, global find-and-replace, or when user mentions repren, multi-file rename, or pattern-based transformations.
+allowed-tools: Bash(repren:*), Bash(uvx repren:*), Read, Write
+---
+
+
+# Install skill (use temp HOME to avoid modifying real config).
+
+export ORIG_HOME="$HOME"
+export HOME=$(mktemp -d)
+
+run --install-claude-skill --skill-scope=global 2>&1 | grep -E '(installed|repren)' | grep -v Location
+✓ Repren skill installed globally
+          (~/.claude/skills/repren)
+Claude Code will now automatically use repren for refactoring tasks.
+
+test -f "$HOME/.claude/skills/repren/SKILL.md" && echo "Global skill file exists: OK"
+Global skill file exists: OK
+
+export HOME="$ORIG_HOME"
+
+
+# File collision handling (rename to existing file).
+
+cp -a original test-collision
+
+# Create a file that would conflict with the rename target
+touch test-collision/dumpty-dumpty.txt
+
+# Rename should handle collision (add numeric suffix or similar)
+run --renames --from humpty --to dumpty test-collision
+Using 1 patterns:
+  'humpty' -> 'dumpty'
+Found 13 files in: test-collision
+- rename: test-collision/humpty-dumpty.txt -> test-collision/dumpty-dumpty.txt
+Read 1 files (0 chars), found 0 matches (0 skipped due to overlaps)
+Changed 1 files (0 rewritten and 1 renamed)
+
+ls_portable test-collision | grep dumpty
+-rw-r--r-- dumpty-dumpty.txt
+-rw-r--r-- dumpty-dumpty.txt.1
+
+
 # TODO: More test coverage:
-# - Regex and capturing groups.
 # - CamelCase and whole word support.
 # - Large stress test (rename a variable in a large source package and recompile).
+# - File collision handling when rename target exists.
 
 # Leave files installed in case it's helpful to debug anything.
 
