@@ -4,10 +4,12 @@
 
 * * *
 
-✨ **NEW:** [v2.0.0](https://github.com/jlevy/repren/releases/tag/2.0.0) is out,
-refreshed for Python 3.10-3.14 and agent use!
-It's self-documenting so tell Claude Code to run `uvx repren@latest --help` and
-install as a skill.✨
+> [!TIP]
+> ✨✨ **NEW:** [v2.0.0](https://github.com/jlevy/repren/releases/tag/2.0.0) is out,
+> refreshed for agent use!
+> It’s self-documenting and has a self-installable skill.
+> 
+> Just tell Claude Code: *install repren as a skill, try uvx repren@latest --help*
 
 * * *
 
