@@ -49,8 +49,14 @@ echo "Checking key CLI flag coverage..."
 check_pattern() {
   local label="$1"
   local pattern="$2"
+  local matches
   local count
-  count=$(grep -R -- "$pattern" "$TESTS_DIR" 2>/dev/null | wc -l | tr -d ' ')
+  matches=$(grep -R -- "$pattern" "$TESTS_DIR" 2>/dev/null || true)
+  if [ -z "$matches" ]; then
+    count=0
+  else
+    count=$(printf "%s\n" "$matches" | wc -l | tr -d ' ')
+  fi
   if [ "$count" -eq 0 ]; then
     echo "  MISSING: $label ($pattern)"
     EXIT_CODE=1
