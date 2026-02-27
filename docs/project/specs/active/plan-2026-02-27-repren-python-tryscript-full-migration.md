@@ -28,7 +28,7 @@ Reference sources used while designing migration:
 
 Patterns adopted from blobsy and flowmark:
 
-1. root `tryscript.config.ts` with deterministic env/path/patterns
+1. root `tryscript.config.js` with deterministic env/path/patterns
 2. modular scenario files by behavior domain
 3. quality gate script enforcing anti-pattern and command/flag coverage checks
 4. fixture-first test setup with per-suite isolated sandboxes
@@ -42,7 +42,7 @@ Target outcomes:
 
 1. comprehensive tryscript modules under `tests/tryscript/`
 2. fixture tree under `tests/tryscript/fixtures/`
-3. root `tryscript.config.ts`
+3. root `tryscript.config.js`
 4. `scripts/check-golden-coverage.sh`
 5. Make/CI/pytest integration switched to tryscript
 6. docs updated to remove shell-baseline workflow references
@@ -104,7 +104,7 @@ Out of scope:
 7. `tests/tryscript/json-output.tryscript.md`
 8. `tests/tryscript/regex-wordbreaks.tryscript.md`
 9. `tests/tryscript/fixtures/` (ported from legacy work-dir fixtures)
-10. `tryscript.config.ts`
+10. `tryscript.config.js`
 11. `scripts/check-golden-coverage.sh`
 
 ### Determinism strategy
@@ -145,7 +145,7 @@ Out of scope:
 
 ### Phase G3: Add config and quality gates
 
-- [x] add root `tryscript.config.ts`
+- [x] add root `tryscript.config.js`
 - [x] add `scripts/check-golden-coverage.sh`
 - [x] enforce required-module and flag-coverage checks
 
