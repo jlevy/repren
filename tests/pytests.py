@@ -108,21 +108,19 @@ def test_to_upper_underscore(input_str, expected):
     assert to_upper_underscore(input_str) == expected
 
 
-def test_integration_shell_tests():
+def test_integration_tryscript_golden_suite():
     """
-    Run the shell-based integration tests via run.sh.
+    Run the tryscript golden integration suite.
 
-    These tests exercise the full repren CLI with various argument combinations
-    and compare output against a committed baseline for regression detection.
+    These tests exercise the full repren CLI with behavior-focused, fixture-first
+    tryscript sessions that are committed as golden specifications.
     """
-    tests_dir = Path(__file__).parent
-    run_script = tests_dir / "run.sh"
-
     result = subprocess.run(
-        [str(run_script)],
-        cwd=tests_dir.parent,  # Run from project root
+        ["npx", "tryscript@latest", "run", "tests/tryscript/*.tryscript.md"],
+        cwd=Path(__file__).parent.parent,  # Run from project root
         capture_output=True,
         text=True,
+        shell=False,
     )
 
     if result.returncode != 0:
@@ -718,11 +716,7 @@ class TestParsePatterns:
 
     def test_parse_patterns_ignores_comments_blank_and_invalid_lines(self):
         patterns = parse_patterns(
-            "# comment line\n"
-            "\n"
-            "valid\treplacement\n"
-            "invalid_without_tab\n"
-            "   # indented comment\n"
+            "# comment line\n\nvalid\treplacement\ninvalid_without_tab\n   # indented comment\n"
         )
         assert len(patterns) == 1
         regex, replacement = patterns[0]

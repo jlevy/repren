@@ -1,0 +1,6 @@
+*
+!.gitignore
+!original/
+!original/**
+!patterns-misc
+!patterns-rotate-abc

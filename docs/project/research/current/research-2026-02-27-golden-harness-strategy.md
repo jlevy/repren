@@ -1,5 +1,10 @@
 # Research: Golden Harness Strategy for Rust Port Prep (2026-02-27)
 
+> Superseded (2026-02-27): This document captured a temporary keep-shell decision.
+> The repository has since migrated to tryscript as the authoritative golden harness.
+> See:
+> `docs/project/specs/active/plan-2026-02-27-repren-python-tryscript-full-migration.md`.
+
 ## Purpose
 
 Decide whether to keep the existing shell golden harness (`tests/golden-tests.sh` +

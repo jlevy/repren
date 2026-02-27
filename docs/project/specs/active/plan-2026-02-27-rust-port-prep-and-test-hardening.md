@@ -1,5 +1,9 @@
 # Plan Spec: repren Rust Port Prep and Test Hardening
 
+> Note (2026-02-27): Golden harness strategy decisions in this plan were superseded by
+> the tryscript migration spec:
+> `docs/project/specs/active/plan-2026-02-27-repren-python-tryscript-full-migration.md`.
+
 ## Purpose
 
 Prepare the Python `repren` codebase to act as a high-fidelity specification for the
