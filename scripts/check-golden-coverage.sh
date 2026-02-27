@@ -33,6 +33,8 @@ REQUIRED_FILES=(
   backups-undo-clean.tryscript.md
   json-output.tryscript.md
   regex-wordbreaks.tryscript.md
+  advanced-options.tryscript.md
+  cache-lifecycle-internals.tryscript.md
 )
 
 for file in "${REQUIRED_FILES[@]}"; do
@@ -74,11 +76,15 @@ check_pattern "single replacement target" "--to"
 check_pattern "pattern file" "--patterns"
 check_pattern "full mode" "--full"
 check_pattern "rename mode" "--renames"
+check_pattern "literal mode" "--literal"
 check_pattern "case-insensitive" "--insensitive"
+check_pattern "dotall mode" "--dotall"
 check_pattern "preserve case" "--preserve-case"
 check_pattern "word breaks" "--word-breaks"
+check_pattern "at-once mode" "--at-once"
 check_pattern "walk only" "--walk-only"
 check_pattern "dry run" "--dry-run"
+check_pattern "quiet mode" "--quiet"
 check_pattern "include filter" "--include"
 check_pattern "exclude filter" "--exclude"
 check_pattern "parse only" "--parse-only"
@@ -86,6 +92,8 @@ check_pattern "undo" "--undo"
 check_pattern "clean backups" "--clean-backups"
 check_pattern "backup suffix" "--backup-suffix"
 check_pattern "json mode" "--format json"
+check_pattern "install skill" "--install-skill"
+check_pattern "agent base" "--agent-base"
 
 echo ""
 FILE_COUNT=$(find "$TESTS_DIR" -name "*.tryscript.md" | wc -l | tr -d ' ')
