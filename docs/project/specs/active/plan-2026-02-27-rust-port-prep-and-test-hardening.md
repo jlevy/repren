@@ -107,23 +107,23 @@ Out of scope:
 
 ### Phase P1: Baseline and coverage analysis
 
-- [ ] record current uncovered branches/functions in `repren/repren.py`
-- [ ] prioritize uncovered logic by parity risk
-- [ ] add tracking notes in a new research/plan doc section
+- [x] record current uncovered branches/functions in `repren/repren.py`
+- [x] prioritize uncovered logic by parity risk
+- [x] add tracking notes in a new research/plan doc section
 
 ### Phase P2: Targeted unit/integration expansion
 
-- [ ] add tests for replacement overlap edge cases not currently covered
-- [ ] add tests for rename collision and directory move edge cases
-- [ ] add tests for backup suffix edge cases and invalid inputs
-- [ ] add tests for CLI invalid combinations and argument conflicts
-- [ ] add tests for JSON output fields in success and error workflows
+- [x] add tests for replacement overlap edge cases not currently covered
+- [x] add tests for rename collision and directory move edge cases
+- [x] add tests for backup suffix edge cases and invalid inputs
+- [x] add tests for CLI invalid combinations and argument conflicts
+- [x] add tests for JSON output fields in success and error workflows
 
 ### Phase P3: Filesystem edge-case coverage
 
 - [ ] add read-only/permission error scenario tests where portable
 - [ ] add path edge-case tests (spaces, special chars)
-- [ ] add regression tests for backup skip behavior during traversal
+- [x] add regression tests for backup skip behavior during traversal
 
 ### Phase P4: Golden harness strategy
 
