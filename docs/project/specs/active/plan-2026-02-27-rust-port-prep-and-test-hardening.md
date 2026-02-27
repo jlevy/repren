@@ -122,27 +122,27 @@ Out of scope:
 ### Phase P3: Filesystem edge-case coverage
 
 - [ ] add read-only/permission error scenario tests where portable
-- [ ] add path edge-case tests (spaces, special chars)
+- [x] add path edge-case tests (spaces, special chars)
 - [x] add regression tests for backup skip behavior during traversal
 
 ### Phase P4: Golden harness strategy
 
-- [ ] document keep-vs-migrate decision for shell golden tests
-- [ ] if migrating, produce phased migration plan preserving output normalization parity
-- [ ] if not migrating now, document exact reasons and future trigger conditions
+- [x] document keep-vs-migrate decision for shell golden tests
+- [x] if migrating, produce phased migration plan preserving output normalization parity
+- [x] if not migrating now, document exact reasons and future trigger conditions
 
 ### Phase P5: Behavior documentation for Rust port
 
-- [ ] write behavior notes for replacement engine semantics
-- [ ] write behavior notes for filesystem mutation lifecycle
-- [ ] write behavior notes for output modes and error model
-- [ ] cross-link these notes to `repren-rs` master port plan
+- [x] write behavior notes for replacement engine semantics
+- [x] write behavior notes for filesystem mutation lifecycle
+- [x] write behavior notes for output modes and error model
+- [x] cross-link these notes to `repren-rs` master port plan
 
 ### Phase P6: Validation and handoff
 
-- [ ] run full test suite (`make test` + golden harness)
-- [ ] run coverage report and document delta vs baseline
-- [ ] update active-spec status and summarize handoff checklist for Rust team
+- [x] run full test suite (`make test` + golden harness)
+- [x] run coverage report and document delta vs baseline
+- [x] update active-spec status and summarize handoff checklist for Rust team
 
 ## Validation Plan
 

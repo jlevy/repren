@@ -16,6 +16,7 @@ from repren.repren import (
     move_file,
     multi_replace,
     parse_patterns,
+    rewrite_file,
     to_lower_camel,
     to_lower_underscore,
     to_upper_camel,
@@ -795,6 +796,28 @@ class TestFilesystemEdgeCases:
 
             assert not src.exists()
             assert Path(tmpdir, "target.txt.2").read_text() == "from source"
+
+    def test_walk_files_handles_spaces_and_special_characters(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            special = Path(tmpdir, "my file [v1].txt")
+            special.write_text("content")
+
+            files, skipped = walk_files([tmpdir], include_pat=r".*[.]txt$")
+
+            assert str(special) in files
+            assert skipped == 0
+
+    def test_rewrite_file_renames_unicode_and_space_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = Path(tmpdir, "Old Name_ß.txt")
+            source.write_text("unchanged")
+            patterns = parse_patterns("Old Name_ß\tNew Name_ß")
+
+            rewrite_file(str(source), patterns, do_renames=True, do_contents=False)
+
+            dest = Path(tmpdir, "New Name_ß.txt")
+            assert not source.exists()
+            assert dest.read_text() == "unchanged"
 
 
 class TestCliValidationAndJson:
