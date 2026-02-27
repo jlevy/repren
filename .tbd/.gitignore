@@ -1,0 +1,21 @@
+# Installed documentation (regenerated on setup)
+docs/
+
+# Hidden worktree for tbd-sync branch
+data-sync-worktree/
+
+# Data sync directory (only exists in worktree)
+data-sync/
+
+# Local state
+state.yml
+
+# Migration backups (local only, not synced)
+backups/
+
+# Temporary files
+*.tmp
+*.temp
+
+# workspaces/ stores state (including outbox) committed to the working branch
+!workspaces/
