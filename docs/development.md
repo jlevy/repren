@@ -46,8 +46,11 @@ make upgrade
 uv run pytest   # all tests
 uv run pytest -s tests/pytests.py  # one test, showing outputs
 
-# Run integration tests:
-./tests/run.sh
+# Run golden tests:
+npx tryscript@latest run tests/tryscript/*.tryscript.md
+
+# Check golden coverage gates:
+bash scripts/check-golden-coverage.sh
 
 # Update golden test baseline (when expected test output changes intentionally):
 make update-golden
@@ -88,14 +91,15 @@ and backup management.
 uv run pytest tests/pytests.py
 ```
 
-### Golden Tests (`tests/golden-tests.sh`)
+### Golden Tests (`tests/tryscript/*.tryscript.md`)
 
-Shell-based integration tests that exercise the full CLI. These tests capture CLI output
-and compare it against a committed baseline (`tests/golden-tests-expected.log`).
+Tryscript-based integration tests exercise the full CLI using fixture-first session
+files grouped by behavior (help/errors, replacements, renames/full mode, backup
+lifecycle, JSON, filters, and regex/case flows).
 
 **Running golden tests:**
 ```shell
-./tests/run.sh    # Runs tests and compares output to expected baseline
+npx tryscript@latest run tests/tryscript/*.tryscript.md
 ```
 
 **Updating the baseline when output changes intentionally:**
@@ -103,22 +107,22 @@ and compare it against a committed baseline (`tests/golden-tests-expected.log`).
 make update-golden
 ```
 
+**Running golden quality gates:**
+```shell
+bash scripts/check-golden-coverage.sh
+```
+
 This is useful when:
 - Adding new CLI features that produce different output
-- Fixing bugs that change output format
-- Adding new test cases to `golden-tests.sh`
-
-The `run.sh` script:
-1. Copies `tests/work-dir` to `tests/tmp-dir` for isolation
-2. Runs `golden-tests.sh` in the temp directory
-3. Normalizes output (removes timestamps, line numbers, etc.)
-4. Compares against `golden-tests-expected.log`
+- Fixing bugs that change output format or lifecycle behavior
+- Adding new scenario modules or fixture flows
 
 **Adding new golden tests:**
-1. Edit `tests/golden-tests.sh` to add new test commands
-2. Run `make update-golden` to capture the new expected output
-3. Review the diff in `tests/golden-tests-expected.log`
-4. Commit both the script changes and the updated expected log
+1. Add or extend files under `tests/tryscript/` and `tests/tryscript/fixtures/`
+2. Run `make update-golden` to capture updated expected output
+3. Run `bash scripts/check-golden-coverage.sh` to enforce coverage/anti-pattern gates
+4. Review the markdown diff in the changed `.tryscript.md` files
+5. Commit scenario/fixture updates together
 
 ## IDE setup
 

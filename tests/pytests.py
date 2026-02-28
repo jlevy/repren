@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import json
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -7,12 +9,16 @@ from pathlib import Path
 import pytest
 
 from repren.repren import (
+    CLIError,
     _sort_drop_overlaps,
     _split_name,
     clean_backups,
     find_backup_files,
+    make_parent_dirs,
+    move_file,
     multi_replace,
     parse_patterns,
+    rewrite_file,
     to_lower_camel,
     to_lower_underscore,
     to_upper_camel,
@@ -104,21 +110,19 @@ def test_to_upper_underscore(input_str, expected):
     assert to_upper_underscore(input_str) == expected
 
 
-def test_integration_shell_tests():
+def test_integration_tryscript_golden_suite():
     """
-    Run the shell-based integration tests via run.sh.
+    Run the tryscript golden integration suite.
 
-    These tests exercise the full repren CLI with various argument combinations
-    and compare output against a committed baseline for regression detection.
+    These tests exercise the full repren CLI with behavior-focused, fixture-first
+    tryscript sessions that are committed as golden specifications.
     """
-    tests_dir = Path(__file__).parent
-    run_script = tests_dir / "run.sh"
-
     result = subprocess.run(
-        [str(run_script)],
-        cwd=tests_dir.parent,  # Run from project root
+        ["npx", "tryscript@latest", "run", "tests/tryscript/*.tryscript.md"],
+        cwd=Path(__file__).parent.parent,  # Run from project root
         capture_output=True,
         text=True,
+        shell=False,
     )
 
     if result.returncode != 0:
@@ -707,6 +711,231 @@ class TestMultiReplace:
         assert result == "Un coffee s'il vous plaît".encode()
         assert counts.found == 1
         assert counts.valid == 1
+
+
+class TestParsePatterns:
+    """Direct tests for parse_patterns behavior."""
+
+    def test_parse_patterns_ignores_comments_blank_and_invalid_lines(self):
+        patterns = parse_patterns(
+            "# comment line\n\nvalid\treplacement\ninvalid_without_tab\n   # indented comment\n"
+        )
+        assert len(patterns) == 1
+        regex, replacement = patterns[0]
+        assert regex.pattern == b"valid"
+        assert replacement == b"replacement"
+
+    def test_parse_patterns_literal_escapes_metacharacters(self):
+        patterns = parse_patterns("foo.bar\tX", literal=True)
+        assert len(patterns) == 1
+        regex, _ = patterns[0]
+        assert regex.pattern == b"foo\\.bar"
+
+    def test_parse_patterns_word_breaks_wrap_pattern(self):
+        patterns = parse_patterns("token\tX", word_breaks=True)
+        assert len(patterns) == 1
+        regex, _ = patterns[0]
+        assert regex.pattern == b"\\btoken\\b"
+
+    def test_parse_patterns_preserve_case_generates_variants(self):
+        patterns = parse_patterns("foo\tbar", preserve_case=True)
+        variants = {regex.pattern for regex, _ in patterns}
+        replacements = {replacement for _, replacement in patterns}
+
+        assert b"foo" in variants
+        assert b"Foo" in variants
+        assert b"FOO" in variants
+        assert b"bar" in replacements
+        assert b"Bar" in replacements
+        assert b"BAR" in replacements
+
+    def test_parse_patterns_invalid_regex_raises(self):
+        with pytest.raises(CLIError):
+            parse_patterns("[invalid(regex\tx")
+
+
+class TestFilesystemEdgeCases:
+    """Additional direct tests for filesystem mutation helpers."""
+
+    def test_walk_files_skips_temp_suffix(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            normal = Path(tmpdir, "file.txt")
+            temp = Path(tmpdir, "file.txt.repren.tmp")
+            normal.write_text("content")
+            temp.write_text("temp")
+
+            files, skipped = walk_files([tmpdir])
+
+            assert len(files) == 1
+            assert files[0].endswith("file.txt")
+            assert skipped == 1
+
+    def test_find_backup_files_explicit_file_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_file = Path(tmpdir, "file.txt.orig")
+            backup_file.write_text("backup")
+
+            backups = find_backup_files([str(backup_file)])
+
+            assert backups == [str(backup_file)]
+
+    def test_make_parent_dirs_allows_top_level_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            previous_cwd = Path.cwd()
+            try:
+                # Root-level relative file names have no parent component.
+                os.chdir(tmpdir)
+                assert make_parent_dirs("plain.txt") == "plain.txt"
+            finally:
+                os.chdir(previous_cwd)
+
+    def test_move_file_collision_creates_incrementing_suffixes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            src = Path(tmpdir, "source.txt")
+            src.write_text("from source")
+            first_target = Path(tmpdir, "target.txt")
+            second_target = Path(tmpdir, "target.txt.1")
+            first_target.write_text("existing")
+            second_target.write_text("existing1")
+
+            move_file(str(src), str(first_target), clobber=False)
+
+            assert not src.exists()
+            assert Path(tmpdir, "target.txt.2").read_text() == "from source"
+
+    def test_walk_files_handles_spaces_and_special_characters(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            special = Path(tmpdir, "my file [v1].txt")
+            special.write_text("content")
+
+            files, skipped = walk_files([tmpdir], include_pat=r".*[.]txt$")
+
+            assert str(special) in files
+            assert skipped == 0
+
+    def test_rewrite_file_renames_unicode_and_space_path(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            source = Path(tmpdir, "Old Name_ß.txt")
+            source.write_text("unchanged")
+            patterns = parse_patterns("Old Name_ß\tNew Name_ß")
+
+            rewrite_file(str(source), patterns, do_renames=True, do_contents=False)
+
+            dest = Path(tmpdir, "New Name_ß.txt")
+            assert not source.exists()
+            assert dest.read_text() == "unchanged"
+
+
+class TestCliValidationAndJson:
+    """CLI-level validation and JSON contract tests."""
+
+    def test_patterns_conflict_with_from_to(self):
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as pat_file:
+            pat_file.write("a\tb\n")
+            pat_path = pat_file.name
+        try:
+            result = subprocess.run(
+                [
+                    "uv",
+                    "run",
+                    "repren",
+                    "--patterns",
+                    pat_path,
+                    "--from",
+                    "a",
+                    "--to",
+                    "b",
+                    ".",
+                ],
+                capture_output=True,
+                text=True,
+            )
+            assert result.returncode != 0
+            assert "cannot use both --patterns and --from/--to" in result.stderr
+        finally:
+            Path(pat_path).unlink(missing_ok=True)
+
+    def test_insensitive_conflicts_with_preserve_case(self):
+        result = subprocess.run(
+            [
+                "uv",
+                "run",
+                "repren",
+                "--from",
+                "a",
+                "--to",
+                "b",
+                "--insensitive",
+                "--preserve-case",
+                ".",
+            ],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode != 0
+        assert "cannot use --insensitive and --preserve-case at once" in result.stderr
+
+    def test_undo_requires_paths(self):
+        result = subprocess.run(
+            ["uv", "run", "repren", "--undo", "--from", "a", "--to", "b"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode != 0
+        assert "--undo requires paths to process" in result.stderr
+
+    def test_clean_backups_requires_paths(self):
+        result = subprocess.run(
+            ["uv", "run", "repren", "--clean-backups"],
+            capture_output=True,
+            text=True,
+        )
+        assert result.returncode != 0
+        assert "--clean-backups requires paths to process" in result.stderr
+
+    def test_stdin_rejects_renames_dry_run_and_json(self):
+        renames = subprocess.run(
+            ["uv", "run", "repren", "--from", "a", "--to", "b", "--renames"],
+            input="test\n",
+            capture_output=True,
+            text=True,
+        )
+        dry_run = subprocess.run(
+            ["uv", "run", "repren", "--from", "a", "--to", "b", "--dry-run"],
+            input="test\n",
+            capture_output=True,
+            text=True,
+        )
+        json_mode = subprocess.run(
+            ["uv", "run", "repren", "--from", "a", "--to", "b", "--format", "json"],
+            input="test\n",
+            capture_output=True,
+            text=True,
+        )
+
+        assert renames.returncode != 0
+        assert "can't specify --renames on stdin" in renames.stderr
+        assert dry_run.returncode != 0
+        assert "can't specify --dry-run on stdin" in dry_run.stderr
+        assert json_mode.returncode != 0
+        assert "can't specify --format json on stdin" in json_mode.stderr
+
+    def test_walk_only_json_reports_skipped_backups(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            Path(tmpdir, "visible.txt").write_text("x")
+            Path(tmpdir, "visible.txt.orig").write_text("backup")
+
+            result = subprocess.run(
+                ["uv", "run", "repren", "--walk-only", "--format", "json", tmpdir],
+                capture_output=True,
+                text=True,
+            )
+
+            assert result.returncode == 0
+            payload = json.loads(result.stdout)
+            assert payload["operation"] == "walk"
+            assert payload["files_found"] == 1
+            assert payload["skipped_backups"] == 1
 
 
 # --- _sort_drop_overlaps tests ---

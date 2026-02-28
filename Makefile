@@ -3,7 +3,7 @@
 
 .DEFAULT_GOAL := default
 
-.PHONY: default install lint format gendocs test update-golden upgrade build clean
+.PHONY: default install lint format gendocs test test-golden test-golden-coverage update-golden upgrade build clean
 
 default: install lint gendocs test
 
@@ -21,10 +21,17 @@ gendocs:
 
 test:
 	uv run pytest
-	./tests/run.sh
+	$(MAKE) test-golden-coverage
+	$(MAKE) test-golden
+
+test-golden:
+	npx tryscript@latest run tests/tryscript/*.tryscript.md
+
+test-golden-coverage:
+	bash scripts/check-golden-coverage.sh
 
 update-golden:
-	./tests/run.sh || cp tests/golden-tests-actual.log tests/golden-tests-expected.log
+	npx tryscript@latest run --update tests/tryscript/*.tryscript.md
 
 upgrade:
 	uv sync --upgrade --all-extras --dev

@@ -79,7 +79,8 @@ Follow this checklist for each new release.
    ```shell
    make lint
    make test
-   ./tests/run.sh  # integration tests
+   make test-golden-coverage
+   make test-golden
    ```
 
 3. **Confirm CI is passing:**

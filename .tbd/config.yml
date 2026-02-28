@@ -1,0 +1,93 @@
+tbd_format: f03
+tbd_version: 0.1.22
+display:
+  id_prefix: rpy
+sync:
+  branch: tbd-sync
+  remote: origin
+settings:
+  auto_sync: false
+  doc_auto_sync_hours: 24
+  use_gh_cli: true
+# Documentation cache configuration.
+# files: Maps destination paths (relative to .tbd/docs/) to source locations.
+#   Sources can be:
+#   - internal: prefix for bundled docs (e.g., "internal:shortcuts/standard/code-review-and-commit.md")
+#   - Full URL for external docs (e.g., "https://raw.githubusercontent.com/org/repo/main/file.md")
+# lookup_path: Search paths for doc lookup (like shell $PATH). Earlier paths take precedence.
+#
+# To sync docs: tbd sync --docs
+# To check status: tbd sync --status
+#
+# Auto-sync: Docs are automatically synced when stale (default: every 24 hours).
+# Configure with settings.doc_auto_sync_hours (0 = disabled).
+docs_cache:
+  lookup_path:
+    - .tbd/docs/shortcuts/system
+    - .tbd/docs/shortcuts/standard
+  files:
+    shortcuts/system/shortcut-explanation.md: internal:shortcuts/system/shortcut-explanation.md
+    shortcuts/system/skill-baseline.md: internal:shortcuts/system/skill-baseline.md
+    shortcuts/system/skill-brief.md: internal:shortcuts/system/skill-brief.md
+    shortcuts/system/skill-minimal.md: internal:shortcuts/system/skill-minimal.md
+    shortcuts/standard/agent-handoff.md: internal:shortcuts/standard/agent-handoff.md
+    shortcuts/standard/checkout-third-party-repo.md: internal:shortcuts/standard/checkout-third-party-repo.md
+    shortcuts/standard/code-cleanup-all.md: internal:shortcuts/standard/code-cleanup-all.md
+    shortcuts/standard/code-cleanup-docstrings.md: internal:shortcuts/standard/code-cleanup-docstrings.md
+    shortcuts/standard/code-cleanup-tests.md: internal:shortcuts/standard/code-cleanup-tests.md
+    shortcuts/standard/code-review-and-commit.md: internal:shortcuts/standard/code-review-and-commit.md
+    shortcuts/standard/coding-spike.md: internal:shortcuts/standard/coding-spike.md
+    shortcuts/standard/create-or-update-pr-simple.md: internal:shortcuts/standard/create-or-update-pr-simple.md
+    shortcuts/standard/create-or-update-pr-with-validation-plan.md: internal:shortcuts/standard/create-or-update-pr-with-validation-plan.md
+    shortcuts/standard/implement-beads.md: internal:shortcuts/standard/implement-beads.md
+    shortcuts/standard/merge-upstream.md: internal:shortcuts/standard/merge-upstream.md
+    shortcuts/standard/new-architecture-doc.md: internal:shortcuts/standard/new-architecture-doc.md
+    shortcuts/standard/new-guideline.md: internal:shortcuts/standard/new-guideline.md
+    shortcuts/standard/new-plan-spec.md: internal:shortcuts/standard/new-plan-spec.md
+    shortcuts/standard/new-qa-playbook.md: internal:shortcuts/standard/new-qa-playbook.md
+    shortcuts/standard/new-research-brief.md: internal:shortcuts/standard/new-research-brief.md
+    shortcuts/standard/new-shortcut.md: internal:shortcuts/standard/new-shortcut.md
+    shortcuts/standard/new-validation-plan.md: internal:shortcuts/standard/new-validation-plan.md
+    shortcuts/standard/plan-implementation-with-beads.md: internal:shortcuts/standard/plan-implementation-with-beads.md
+    shortcuts/standard/precommit-process.md: internal:shortcuts/standard/precommit-process.md
+    shortcuts/standard/review-code-python.md: internal:shortcuts/standard/review-code-python.md
+    shortcuts/standard/review-code-typescript.md: internal:shortcuts/standard/review-code-typescript.md
+    shortcuts/standard/review-code.md: internal:shortcuts/standard/review-code.md
+    shortcuts/standard/review-github-pr.md: internal:shortcuts/standard/review-github-pr.md
+    shortcuts/standard/revise-all-architecture-docs.md: internal:shortcuts/standard/revise-all-architecture-docs.md
+    shortcuts/standard/revise-architecture-doc.md: internal:shortcuts/standard/revise-architecture-doc.md
+    shortcuts/standard/setup-github-cli.md: internal:shortcuts/standard/setup-github-cli.md
+    shortcuts/standard/sync-failure-recovery.md: internal:shortcuts/standard/sync-failure-recovery.md
+    shortcuts/standard/update-specs-status.md: internal:shortcuts/standard/update-specs-status.md
+    shortcuts/standard/welcome-user.md: internal:shortcuts/standard/welcome-user.md
+    guidelines/backward-compatibility-rules.md: internal:guidelines/backward-compatibility-rules.md
+    guidelines/bun-monorepo-patterns.md: internal:guidelines/bun-monorepo-patterns.md
+    guidelines/cli-agent-skill-patterns.md: internal:guidelines/cli-agent-skill-patterns.md
+    guidelines/commit-conventions.md: internal:guidelines/commit-conventions.md
+    guidelines/convex-limits-best-practices.md: internal:guidelines/convex-limits-best-practices.md
+    guidelines/convex-rules.md: internal:guidelines/convex-rules.md
+    guidelines/electron-app-development-patterns.md: internal:guidelines/electron-app-development-patterns.md
+    guidelines/error-handling-rules.md: internal:guidelines/error-handling-rules.md
+    guidelines/general-coding-rules.md: internal:guidelines/general-coding-rules.md
+    guidelines/general-comment-rules.md: internal:guidelines/general-comment-rules.md
+    guidelines/general-eng-assistant-rules.md: internal:guidelines/general-eng-assistant-rules.md
+    guidelines/general-style-rules.md: internal:guidelines/general-style-rules.md
+    guidelines/general-tdd-guidelines.md: internal:guidelines/general-tdd-guidelines.md
+    guidelines/general-testing-rules.md: internal:guidelines/general-testing-rules.md
+    guidelines/golden-testing-guidelines.md: internal:guidelines/golden-testing-guidelines.md
+    guidelines/pnpm-monorepo-patterns.md: internal:guidelines/pnpm-monorepo-patterns.md
+    guidelines/python-cli-patterns.md: internal:guidelines/python-cli-patterns.md
+    guidelines/python-modern-guidelines.md: internal:guidelines/python-modern-guidelines.md
+    guidelines/python-rules.md: internal:guidelines/python-rules.md
+    guidelines/release-notes-guidelines.md: internal:guidelines/release-notes-guidelines.md
+    guidelines/tbd-sync-troubleshooting.md: internal:guidelines/tbd-sync-troubleshooting.md
+    guidelines/typescript-cli-tool-rules.md: internal:guidelines/typescript-cli-tool-rules.md
+    guidelines/typescript-code-coverage.md: internal:guidelines/typescript-code-coverage.md
+    guidelines/typescript-rules.md: internal:guidelines/typescript-rules.md
+    guidelines/typescript-sorting-patterns.md: internal:guidelines/typescript-sorting-patterns.md
+    guidelines/typescript-yaml-handling-rules.md: internal:guidelines/typescript-yaml-handling-rules.md
+    guidelines/writing-style-guidelines.md: internal:guidelines/writing-style-guidelines.md
+    templates/architecture-doc.md: internal:templates/architecture-doc.md
+    templates/plan-spec.md: internal:templates/plan-spec.md
+    templates/qa-playbook.md: internal:templates/qa-playbook.md
+    templates/research-brief.md: internal:templates/research-brief.md

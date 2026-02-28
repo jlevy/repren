@@ -1,5 +1,9 @@
 # Validation: Test Coverage Improvements
 
+> Historical note: This validation references the retired shell-based golden harness.
+> Current golden workflow is tryscript-based; see
+> `docs/project/specs/active/plan-2026-02-27-repren-python-tryscript-full-migration.md`.
+
 ## Purpose
 
 This validation spec documents the test coverage analysis and improvements made to the repren codebase, validating that all new tests function correctly and coverage goals have been met.

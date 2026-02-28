@@ -56,5 +56,8 @@ jobs:
       - name: Run unit tests
         run: uv run pytest
 
-      - name: Run integration tests
-        run: ./tests/run.sh
+      - name: Check golden coverage
+        run: bash scripts/check-golden-coverage.sh
+
+      - name: Run golden tests
+        run: npx tryscript@latest run tests/tryscript/*.tryscript.md
