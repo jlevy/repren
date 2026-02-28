@@ -35,6 +35,7 @@ REQUIRED_FILES=(
   regex-wordbreaks.tryscript.md
   advanced-options.tryscript.md
   cache-lifecycle-internals.tryscript.md
+  stdin-collision-overlap-validation.tryscript.md
 )
 
 for file in "${REQUIRED_FILES[@]}"; do

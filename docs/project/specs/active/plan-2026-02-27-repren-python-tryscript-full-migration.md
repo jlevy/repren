@@ -103,9 +103,12 @@ Out of scope:
 6. `tests/tryscript/backups-undo-clean.tryscript.md`
 7. `tests/tryscript/json-output.tryscript.md`
 8. `tests/tryscript/regex-wordbreaks.tryscript.md`
-9. `tests/tryscript/fixtures/` (ported from legacy work-dir fixtures)
-10. `tryscript.config.js`
-11. `scripts/check-golden-coverage.sh`
+9. `tests/tryscript/advanced-options.tryscript.md`
+10. `tests/tryscript/cache-lifecycle-internals.tryscript.md`
+11. `tests/tryscript/stdin-collision-overlap-validation.tryscript.md`
+12. `tests/tryscript/fixtures/` (ported from legacy work-dir fixtures)
+13. `tryscript.config.js`
+14. `scripts/check-golden-coverage.sh`
 
 ### Determinism strategy
 

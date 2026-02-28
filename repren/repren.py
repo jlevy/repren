@@ -758,7 +758,9 @@ def make_parent_dirs(path: str) -> str:
     """
     Ensure parent directories of a file are created as needed.
     """
-    os.makedirs(os.path.dirname(path), exist_ok=True)
+    parent_dir = os.path.dirname(path)
+    if parent_dir:
+        os.makedirs(parent_dir, exist_ok=True)
     return path
 
 

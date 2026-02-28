@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import subprocess
 import tempfile
 from pathlib import Path
@@ -13,6 +14,7 @@ from repren.repren import (
     _split_name,
     clean_backups,
     find_backup_files,
+    make_parent_dirs,
     move_file,
     multi_replace,
     parse_patterns,
@@ -776,6 +778,16 @@ class TestFilesystemEdgeCases:
             backups = find_backup_files([str(backup_file)])
 
             assert backups == [str(backup_file)]
+
+    def test_make_parent_dirs_allows_top_level_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            previous_cwd = Path.cwd()
+            try:
+                # Root-level relative file names have no parent component.
+                os.chdir(tmpdir)
+                assert make_parent_dirs("plain.txt") == "plain.txt"
+            finally:
+                os.chdir(previous_cwd)
 
     def test_move_file_collision_creates_incrementing_suffixes(self):
         with tempfile.TemporaryDirectory() as tmpdir:
