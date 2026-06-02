@@ -9,7 +9,7 @@ file refactoring tool.
 
 **Coding agents:** point your agent at repren and it installs itself as a skill:
 
-> Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.
+> **Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.**
 
 repren’s `--help` ends with the exact install commands. Once installed, the agent uses
 repren automatically for bulk refactors and renames. (See [Agent Use](#agent-use).)
@@ -207,7 +207,7 @@ uvx repren@3.1.0 --help
 
 Point your agent at repren’s self-documenting help to install the skill:
 
-> Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.
+> **Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.**
 
 repren’s `--help` ends with the exact install commands. (`uvx` runs repren with no prior
 install; see the note on `@latest` and safety under [Installation](#installation).)
