@@ -86,7 +86,8 @@ usage: repren [-h] [--version] [--docs] [--from FROM_PAT] [--to TO_PAT] [-p PAT_
               [--include INCLUDE_PAT] [--exclude EXCLUDE_PAT] [--at-once] [-t]
               [--walk-only] [-n] [-q] [--format {text,json}]
               [--backup-suffix BACKUP_SUFFIX] [--undo] [--clean-backups]
-              [--install-skill] [--agent-base DIR] [--skill]
+              [--install-skill] [--project] [--global] [--dir DIR] [--no-repo-check]
+              [--skill]
               [root_paths ...]
 repren: error: must specify --patterns or both --from and --to
 
@@ -104,7 +105,8 @@ usage: repren [-h] [--version] [--docs] [--from FROM_PAT] [--to TO_PAT] [-p PAT_
               [--include INCLUDE_PAT] [--exclude EXCLUDE_PAT] [--at-once] [-t]
               [--walk-only] [-n] [-q] [--format {text,json}]
               [--backup-suffix BACKUP_SUFFIX] [--undo] [--clean-backups]
-              [--install-skill] [--agent-base DIR] [--skill]
+              [--install-skill] [--project] [--global] [--dir DIR] [--no-repo-check]
+              [--skill]
               [root_paths ...]
 repren: error: --backup-suffix must start with '.'
 

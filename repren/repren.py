@@ -181,15 +181,23 @@ utility with no per-project config, so the skill invokes it via a pinned zero-in
 runner (`uvx repren@<version>`) and there is no need to add repren as a project
 dependency.
 
+repren is a dual-scope skill: install it into a single project or globally for your
+user. Scope is resolved like `git config` — implicit when unambiguous, an error when
+not — so a stray `--install-skill` never silently rewrites your global agent surfaces.
+
 **Install:**
 
 ```bash
-# Install globally (available in all projects):
-uvx repren --install-skill
+# Install into the current project (run from the repo; shareable via git):
+uvx repren --install-skill --project
 
-# Or install for the current project only (shareable via git):
-uvx repren --install-skill --agent-base=.
+# Install globally (available in all projects):
+uvx repren --install-skill --global
 ```
+
+Inside a git repo, `--project` is implied, so `uvx repren --install-skill` installs into
+the project. Outside a repo (or in your home directory) the scope is ambiguous and you
+must pass `--project` (optionally with `--dir DIR` or `--no-repo-check`) or `--global`.
 
 Re-run to update an existing installation. The skill pins the repren version it was
 installed from.
@@ -1336,15 +1344,33 @@ def _run_cli() -> None:
     )
     parser.add_argument(
         "--install-skill",
-        help="install repren agent skill to .agents/ and .claude/ skills dirs (global by default)",
+        help="install repren agent skill (.agents/ and .claude/ skill dirs); see --project/--global",
         dest="install_claude_skill",
         action="store_true",
     )
     parser.add_argument(
-        "--agent-base",
-        help="project root for a project-local skill install (e.g. '.'; defaults to a global install under ~)",
-        dest="agent_base",
+        "--project",
+        help="with --install-skill: install into the current project",
+        dest="skill_project",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--global",
+        help="with --install-skill: install globally under ~",
+        dest="skill_global",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--dir",
+        help="with --install-skill: explicit project root (implies --project)",
+        dest="skill_dir",
         metavar="DIR",
+    )
+    parser.add_argument(
+        "--no-repo-check",
+        help="with --install-skill --project: allow installing outside a git repo",
+        dest="skill_no_repo_check",
+        action="store_true",
     )
     parser.add_argument(
         "--skill",
@@ -1371,14 +1397,20 @@ def _run_cli() -> None:
 
     options = parser.parse_args()
 
-    # Handle Claude skill installation (early exit)
+    # The skill scope flags only apply to --install-skill.
+    skill_scope_requested = (
+        options.skill_project
+        or options.skill_global
+        or options.skill_dir is not None
+        or options.skill_no_repo_check
+    )
+    if skill_scope_requested and not options.install_claude_skill:
+        parser.error("--project/--global/--dir/--no-repo-check require --install-skill")
+
+    # Handle skill installation (early exit)
     if options.install_claude_skill:
         try:
-            from .claude_skill import install_skill
-
-            # Install globally (under ~) or, with --agent-base, to a project root.
-            install_skill(agent_base=options.agent_base)
-            sys.exit(0)
+            from .claude_skill import SkillScopeError, install_skill
         except ImportError:
             # Fallback if running as standalone script
             print(
@@ -1397,6 +1429,17 @@ def _run_cli() -> None:
                 file=sys.stderr,
             )
             sys.exit(1)
+
+        try:
+            install_skill(
+                project=options.skill_project,
+                global_install=options.skill_global,
+                dir=options.skill_dir,
+                no_repo_check=options.skill_no_repo_check,
+            )
+            sys.exit(0)
+        except SkillScopeError as e:
+            parser.error(str(e))
 
     # Handle skill instructions output (early exit)
     if options.skill_instructions:

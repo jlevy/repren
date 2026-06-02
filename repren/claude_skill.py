@@ -3,8 +3,12 @@ Agent skill installation for repren.
 
 This module installs the repren skill for coding agents. The skill is written to
 both the portable cross-agent location (`.agents/skills/repren/`) and the Claude Code
-mirror (`.claude/skills/repren/`), either globally (under ``$HOME``) or within a
-specific project.
+mirror (`.claude/skills/repren/`).
+
+repren is a general-purpose utility with no per-project configuration, so it is a
+dual-scope skill: it can be installed into a single project or globally for the user.
+Scope is resolved `git config`-style — implicit when unambiguous, a hard error when not
+(see `resolve_install_target`).
 
 The skill text in ``skills/SKILL.md`` is a template: the ``{{REPREN_VERSION}}``
 placeholder is replaced with the installed repren version so the skill's pinned
@@ -12,10 +16,21 @@ zero-install fallback (``uvx repren@<version>``) always matches what produced it
 """
 
 import sys
+from dataclasses import dataclass
 from pathlib import Path
 
 # Placeholder in skills/SKILL.md replaced with the installed repren version at render time.
 VERSION_PLACEHOLDER = "{{REPREN_VERSION}}"
+
+# Surfaces the skill is written to, beneath the resolved install root.
+SKILL_SURFACES: list[tuple[str, str]] = [
+    ("portable", ".agents"),  # cross-agent: Codex, Gemini CLI, pi, others
+    ("claude", ".claude"),  # Claude Code mirror
+]
+
+
+class SkillScopeError(Exception):
+    """Raised when the skill install scope cannot be resolved unambiguously."""
 
 
 def _pinned_version() -> str:
@@ -74,49 +89,132 @@ def get_skill_content() -> str:
     return _render_skill(template)
 
 
-def _resolve_root(agent_base: str | None) -> tuple[Path, str]:
-    """Resolve the root directory the skill surfaces are installed under.
+@dataclass
+class InstallTarget:
+    """A resolved skill install location.
 
-    The skill is always written to two surfaces beneath the returned root:
-    ``<root>/.agents/skills/repren/`` (portable, cross-agent) and
-    ``<root>/.claude/skills/repren/`` (Claude Code mirror).
+    Attributes:
+        root: The directory the skill surfaces are written beneath.
+        mode: Either ``"project"`` or ``"global"``.
+    """
+
+    root: Path
+    mode: str
+
+
+def _in_git_repo(path: Path) -> bool:
+    """Return True if ``path`` is inside a git repository (a ``.git`` exists at or above)."""
+    for candidate in (path, *path.parents):
+        if (candidate / ".git").exists():
+            return True
+    return False
+
+
+def resolve_install_target(
+    *,
+    project: bool = False,
+    global_install: bool = False,
+    dir: str | None = None,
+    no_repo_check: bool = False,
+    cwd: Path | None = None,
+    home: Path | None = None,
+) -> InstallTarget:
+    """Resolve where to install the skill, copying the ``git config`` scope model.
+
+    Scope is implicit when unambiguous and a hard error when not, so that
+    ``cd ~ && repren --install-skill`` never silently rewrites the user's global agent
+    surfaces.
 
     Args:
-        agent_base: None for a global install (under ``$HOME``). Otherwise the project
-            root, or — for backward compatibility — a ``.claude``/``.agents`` directory
-            whose parent is taken as the project root.
+        project: Force a project-local install.
+        global_install: Force a user-global install under ``$HOME``.
+        dir: Explicit project root (implies project mode); mutually exclusive with
+            ``global_install``.
+        no_repo_check: Allow a project install when ``cwd`` is not inside a git repo.
+        cwd: Override the current directory (for testing).
+        home: Override the home directory (for testing).
 
     Returns:
-        A ``(root, scope_description)`` tuple.
+        The resolved :class:`InstallTarget`.
+
+    Raises:
+        SkillScopeError: If the scope is ambiguous or the request is contradictory.
     """
-    if agent_base is None:
-        return Path.home(), "globally (under ~)"
+    cwd = (cwd or Path.cwd()).resolve()
+    home = (home or Path.home()).resolve()
 
-    resolved = Path(agent_base).resolve()
-    # Backward compatibility: callers historically passed the `.claude` dir itself
-    # (e.g. `--agent-base ./.claude`). Treat such a path as "the project is its parent".
-    if resolved.name in (".agents", ".claude"):
-        resolved = resolved.parent
-    return resolved, f"to project {resolved}"
+    if project and global_install:
+        raise SkillScopeError("--project and --global are mutually exclusive.")
+    if global_install and dir is not None:
+        raise SkillScopeError("--global and --dir are mutually exclusive.")
+
+    # Resolve the scope mode.
+    if global_install:
+        mode = "global"
+    elif project or dir is not None:
+        mode = "project"
+    else:
+        # Implicit scope (the git config rule): resolve before writing anything.
+        if cwd == home or cwd == Path(cwd.anchor):
+            raise SkillScopeError(f"ambiguous install scope in {cwd}: pass --project or --global.")
+        if _in_git_repo(cwd):
+            mode = "project"
+        else:
+            raise SkillScopeError(
+                f"{cwd} is not inside a git repository: pass "
+                "--project --no-repo-check to install here anyway, or --global."
+            )
+
+    if mode == "global":
+        return InstallTarget(root=home, mode="global")
+
+    # Project mode.
+    root = Path(dir).resolve() if dir is not None else cwd
+    if root == home:
+        # --project --dir ~ is always refused; that is exactly what --global is for.
+        raise SkillScopeError(
+            f"--project: refusing to install into {root} (home directory). "
+            "That would write to your global agent surfaces. Use --global instead."
+        )
+    if dir is None and not no_repo_check and not _in_git_repo(root):
+        raise SkillScopeError(
+            f"--project: {root} is not inside a git repository. "
+            "Pass --no-repo-check to install here anyway, or --global."
+        )
+    return InstallTarget(root=root, mode="project")
 
 
-def install_skill(agent_base: str | None = None) -> None:
-    """Install the repren skill for coding agents.
+def install_skill(
+    *,
+    project: bool = False,
+    global_install: bool = False,
+    dir: str | None = None,
+    no_repo_check: bool = False,
+) -> None:
+    """Resolve the install scope and write the repren skill to both surfaces.
 
-    Writes the skill to both the portable cross-agent surface and the Claude Code
-    mirror, under the resolved root:
+    Writes the skill under the resolved root:
 
-    - ``<root>/.agents/skills/repren/SKILL.md`` (portable: Codex, pi, and others)
+    - ``<root>/.agents/skills/repren/SKILL.md`` (portable: Codex, Gemini, pi, others)
     - ``<root>/.claude/skills/repren/SKILL.md`` (Claude Code)
 
     Args:
-        agent_base: None (default) installs globally under ``$HOME``. Pass a project
-            root (or a ``.claude``/``.agents`` directory inside it) for a project-local
-            install that can be committed and shared with your team.
-    """
-    root, scope_desc = _resolve_root(agent_base)
+        project: Force a project-local install.
+        global_install: Force a user-global install under ``$HOME``.
+        dir: Explicit project root (implies project mode).
+        no_repo_check: Allow a project install outside a git repository.
 
-    # Load and render skill content from package data
+    Raises:
+        SkillScopeError: If the scope cannot be resolved unambiguously.
+    """
+    target = resolve_install_target(
+        project=project,
+        global_install=global_install,
+        dir=dir,
+        no_repo_check=no_repo_check,
+    )
+
+    # Load and render skill content from package data.
     try:
         skill_content = get_skill_content()
     except (ImportError, FileNotFoundError) as e:
@@ -125,21 +223,25 @@ def install_skill(agent_base: str | None = None) -> None:
         print("Install with: uv tool install repren", file=sys.stderr)
         sys.exit(1)
 
-    # Two surfaces: portable canonical + Claude Code mirror.
+    surface_names = ", ".join(name for name, _ in SKILL_SURFACES)
     targets = [
-        ("portable", root / ".agents" / "skills" / "repren" / "SKILL.md"),
-        ("Claude Code", root / ".claude" / "skills" / "repren" / "SKILL.md"),
+        (name, target.root / parent / "skills" / "repren" / "SKILL.md")
+        for name, parent in SKILL_SURFACES
     ]
+
+    # Print the resolved target before writing, so the user can ctrl-c if it is wrong.
+    print(f"\nInstalling repren skill ({target.mode} mode) into: {target.root}")
+    print(f"  surfaces: {surface_names}")
 
     try:
         written: list[Path] = []
-        for _label, skill_file in targets:
+        for _name, skill_file in targets:
             skill_file.parent.mkdir(parents=True, exist_ok=True)
             skill_file.write_text(skill_content, encoding="utf-8")
             written.append(skill_file)
 
         print("\n" + "=" * 70)
-        print(f"✓ Repren skill installed {scope_desc}")
+        print(f"✓ Repren skill installed ({target.mode} mode)")
         print("=" * 70)
         print("\nLocations:")
         for skill_file in written:
@@ -147,8 +249,7 @@ def install_skill(agent_base: str | None = None) -> None:
         print("\nCoding agents will now use repren for refactoring tasks.")
         print("To uninstall, remove the repren/ directories above.")
 
-        # Show tip for project installs (when not using default global location)
-        if agent_base is not None:
+        if target.mode == "project":
             print("\n" + "-" * 70)
             print("Tip: Commit .agents/skills/ and .claude/skills/ to share this with your team.")
             print("-" * 70)
@@ -157,7 +258,7 @@ def install_skill(agent_base: str | None = None) -> None:
 
     except PermissionError as e:
         print(f"\n✗ Permission denied: {e}", file=sys.stderr)
-        print(f"\nCould not write under {root}", file=sys.stderr)
+        print(f"\nCould not write under {target.root}", file=sys.stderr)
         print("Check directory permissions and try again.", file=sys.stderr)
         sys.exit(1)
     except OSError as e:
@@ -169,8 +270,9 @@ def main() -> None:
     """Command-line interface for skill installation.
 
     Can be run directly for testing:
-        python -m repren.claude_skill
-        python -m repren.claude_skill --agent-base ./.claude
+        python -m repren.claude_skill --project
+        python -m repren.claude_skill --global
+        python -m repren.claude_skill --project --dir /path/to/repo
     """
     import argparse
 
@@ -178,23 +280,41 @@ def main() -> None:
         description="Install repren agent skill",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
+Scope is resolved like `git config`: implicit when unambiguous, an error when not.
+
 Examples:
-  %(prog)s                        # Install globally (under ~)
-  %(prog)s --agent-base .         # Install in current project
-  %(prog)s --agent-base ./.claude # Install in current project (legacy form)
+  %(prog)s --project              # Install into the current project
+  %(prog)s --global               # Install globally (under ~)
+  %(prog)s --project --dir REPO   # Install into a specific project root
         """,
     )
 
+    parser.add_argument("--project", action="store_true", help="install into the current project")
     parser.add_argument(
-        "--agent-base",
-        dest="agent_base",
-        metavar="DIR",
-        help="project root for a project-local install (defaults to a global install under ~)",
+        "--global",
+        dest="global_install",
+        action="store_true",
+        help="install globally under ~",
+    )
+    parser.add_argument("--dir", metavar="DIR", help="explicit project root (implies --project)")
+    parser.add_argument(
+        "--no-repo-check",
+        dest="no_repo_check",
+        action="store_true",
+        help="allow --project outside a git repository",
     )
 
     args = parser.parse_args()
 
-    install_skill(agent_base=args.agent_base)
+    try:
+        install_skill(
+            project=args.project,
+            global_install=args.global_install,
+            dir=args.dir,
+            no_repo_check=args.no_repo_check,
+        )
+    except SkillScopeError as e:
+        parser.error(str(e))
 
 
 if __name__ == "__main__":

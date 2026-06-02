@@ -94,7 +94,8 @@ check_pattern "clean backups" "--clean-backups"
 check_pattern "backup suffix" "--backup-suffix"
 check_pattern "json mode" "--format json"
 check_pattern "install skill" "--install-skill"
-check_pattern "agent base" "--agent-base"
+check_pattern "skill project scope" "--project"
+check_pattern "skill dir" "--dir"
 
 echo ""
 FILE_COUNT=$(find "$TESTS_DIR" -name "*.tryscript.md" | wc -l | tr -d ' ')

@@ -537,24 +537,89 @@ class TestClaudeSkillContent:
         assert f"uvx repren@{pinned_version}" in content
 
 
+class TestClaudeSkillScopeResolution:
+    """Tests for the git-config-style install scope resolution."""
+
+    def test_explicit_global(self):
+        from repren.claude_skill import resolve_install_target
+
+        home = Path("/home/someone")
+        target = resolve_install_target(global_install=True, home=home, cwd=Path("/tmp/x"))
+        assert target.mode == "global"
+        assert target.root == home
+
+    def test_explicit_project_with_dir(self):
+        from repren.claude_skill import resolve_install_target
+
+        target = resolve_install_target(dir="/tmp/repo", home=Path("/home/someone"))
+        assert target.mode == "project"
+        assert target.root == Path("/tmp/repo").resolve()
+
+    def test_implicit_project_inside_repo(self, tmp_path):
+        """Inside a git repo, scope is implicitly project."""
+        from repren.claude_skill import resolve_install_target
+
+        (tmp_path / ".git").mkdir()
+        target = resolve_install_target(cwd=tmp_path, home=Path("/home/someone"))
+        assert target.mode == "project"
+        assert target.root == tmp_path
+
+    def test_ambiguous_outside_repo_errors(self, tmp_path):
+        from repren.claude_skill import SkillScopeError, resolve_install_target
+
+        with pytest.raises(SkillScopeError, match="not inside a git repository"):
+            resolve_install_target(cwd=tmp_path, home=Path("/home/someone"))
+
+    def test_project_no_repo_check_allows_non_repo(self, tmp_path):
+        from repren.claude_skill import resolve_install_target
+
+        target = resolve_install_target(
+            project=True, no_repo_check=True, cwd=tmp_path, home=Path("/home/someone")
+        )
+        assert target.mode == "project"
+        assert target.root == tmp_path
+
+    def test_home_is_refused_in_project_mode(self, tmp_path):
+        from repren.claude_skill import SkillScopeError, resolve_install_target
+
+        with pytest.raises(SkillScopeError, match="home directory"):
+            resolve_install_target(dir=str(tmp_path), home=tmp_path)
+
+    def test_cwd_home_is_ambiguous(self, tmp_path):
+        from repren.claude_skill import SkillScopeError, resolve_install_target
+
+        with pytest.raises(SkillScopeError, match="ambiguous"):
+            resolve_install_target(cwd=tmp_path, home=tmp_path)
+
+    def test_project_and_global_mutually_exclusive(self):
+        from repren.claude_skill import SkillScopeError, resolve_install_target
+
+        with pytest.raises(SkillScopeError, match="mutually exclusive"):
+            resolve_install_target(project=True, global_install=True)
+
+    def test_global_and_dir_mutually_exclusive(self):
+        from repren.claude_skill import SkillScopeError, resolve_install_target
+
+        with pytest.raises(SkillScopeError, match="mutually exclusive"):
+            resolve_install_target(global_install=True, dir="/tmp/x")
+
+
 class TestClaudeSkillInstallation:
     """Tests for Claude skill installation."""
 
-    def test_install_skill_global_creates_file(self):
-        """install_skill with global scope should create file in ~/.claude/skills."""
+    def test_install_skill_global_creates_both_surfaces(self):
+        """A global install writes both surfaces under $HOME."""
         from repren.claude_skill import install_skill
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Mock HOME to use temp directory
             import os
 
             old_home = os.environ.get("HOME")
             os.environ["HOME"] = tmpdir
 
             try:
-                install_skill()  # Default is global (uses HOME)
+                install_skill(global_install=True)
 
-                # Both surfaces are written: portable and the Claude Code mirror.
                 claude_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
                 agents_file = Path(tmpdir) / ".agents" / "skills" / "repren" / "SKILL.md"
                 assert claude_file.exists()
@@ -566,29 +631,12 @@ class TestClaudeSkillInstallation:
                 if old_home:
                     os.environ["HOME"] = old_home
 
-    def test_install_skill_project_creates_file(self):
-        """install_skill with agent_base should create both surfaces under the project root."""
+    def test_install_skill_project_dir_creates_both_surfaces(self):
+        """A project install with --dir writes both surfaces under that root."""
         from repren.claude_skill import install_skill
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            # Legacy form: agent_base is the .claude directory itself; its parent
-            # (the project root) anchors both surfaces.
-            agent_base = Path(tmpdir) / ".claude"
-            install_skill(agent_base=str(agent_base))
-
-            claude_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
-            agents_file = Path(tmpdir) / ".agents" / "skills" / "repren" / "SKILL.md"
-            assert claude_file.exists()
-            assert agents_file.exists()
-            content = claude_file.read_text()
-            assert "repren" in content.lower()
-
-    def test_install_skill_project_root_creates_file(self):
-        """install_skill with a plain project root should create both surfaces under it."""
-        from repren.claude_skill import install_skill
-
-        with tempfile.TemporaryDirectory() as tmpdir:
-            install_skill(agent_base=tmpdir)
+            install_skill(dir=tmpdir)
 
             assert (Path(tmpdir) / ".agents" / "skills" / "repren" / "SKILL.md").exists()
             assert (Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md").exists()
@@ -598,22 +646,13 @@ class TestClaudeSkillInstallation:
         from repren.claude_skill import get_skill_content, install_skill
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            import os
+            install_skill(dir=tmpdir)
 
-            old_home = os.environ.get("HOME")
-            os.environ["HOME"] = tmpdir
+            skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
+            installed_content = skill_file.read_text()
+            package_content = get_skill_content()
 
-            try:
-                install_skill()  # Default is global (uses HOME)
-
-                skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
-                installed_content = skill_file.read_text()
-                package_content = get_skill_content()
-
-                assert installed_content == package_content
-            finally:
-                if old_home:
-                    os.environ["HOME"] = old_home
+            assert installed_content == package_content
 
 
 class TestClaudeSkillCLI:
@@ -632,26 +671,55 @@ class TestClaudeSkillCLI:
         # Should have markdown content
         assert "#" in result.stdout
 
-    def test_install_skill_with_agent_base(self):
-        """--install-skill with --agent-base should work."""
+    def test_install_skill_project_dir(self):
+        """--install-skill --project --dir DIR should write both surfaces under DIR."""
         with tempfile.TemporaryDirectory() as tmpdir:
-            # agent_base IS the .claude directory itself
-            agent_base = Path(tmpdir) / ".claude"
             result = subprocess.run(
                 [
                     "uv",
                     "run",
                     "repren",
                     "--install-skill",
-                    f"--agent-base={agent_base}",
+                    "--project",
+                    f"--dir={tmpdir}",
                 ],
                 capture_output=True,
                 text=True,
             )
 
-            assert result.returncode == 0
-            skill_file = agent_base / "skills" / "repren" / "SKILL.md"
-            assert skill_file.exists()
+            assert result.returncode == 0, result.stderr
+            assert (Path(tmpdir) / ".agents" / "skills" / "repren" / "SKILL.md").exists()
+            assert (Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md").exists()
+
+    def test_install_skill_global(self):
+        """--install-skill --global should write both surfaces under $HOME."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            import os
+
+            env = dict(os.environ, HOME=tmpdir)
+            result = subprocess.run(
+                ["uv", "run", "repren", "--install-skill", "--global"],
+                capture_output=True,
+                text=True,
+                env=env,
+            )
+
+            assert result.returncode == 0, result.stderr
+            assert (Path(tmpdir) / ".agents" / "skills" / "repren" / "SKILL.md").exists()
+            assert (Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md").exists()
+
+    def test_install_skill_ambiguous_scope_errors(self):
+        """--install-skill outside a git repo with no scope flag is a hard error."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            result = subprocess.run(
+                ["uv", "run", "repren", "--install-skill"],
+                capture_output=True,
+                text=True,
+                cwd=tmpdir,
+            )
+
+            assert result.returncode != 0
+            assert "git repository" in result.stderr or "ambiguous" in result.stderr
 
 
 # --- multi_replace tests ---

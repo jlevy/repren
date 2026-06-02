@@ -83,10 +83,10 @@ usage: repren [-h] [--version] [--docs] [--from FROM_PAT] [--to TO_PAT] [-p PAT_
 ? 0
 ```
 
-## A6: `--install-skill` with `--agent-base` writes both skill surfaces project-locally
+## A6: `--install-skill --project --dir` writes both skill surfaces project-locally
 
 ```console
-$ mkdir -p agentrepo && repren --install-skill --agent-base ./agentrepo/.claude >/dev/null
+$ mkdir -p agentrepo && repren --install-skill --project --dir ./agentrepo >/dev/null
 ```
 
 The skill is written to both the portable cross-agent location and the Claude mirror:
@@ -119,5 +119,24 @@ none
 ```console
 $ grep -Eq 'uvx repren@[0-9]' agentrepo/.claude/skills/repren/SKILL.md && echo pinned
 pinned
+? 0
+```
+
+## A7: `--install-skill --global` installs under `$HOME`; ambiguous scope is refused
+
+A global install writes both surfaces under the user's home directory:
+
+```console
+$ mkdir -p fakehome && HOME="$(pwd)/fakehome" repren --install-skill --global >/dev/null && find fakehome -type f -name SKILL.md | sort
+fakehome/.agents/skills/repren/SKILL.md
+fakehome/.claude/skills/repren/SKILL.md
+? 0
+```
+
+In an ambiguous location (the home directory itself), repren refuses rather than guessing:
+
+```console
+$ HOME="$(pwd)/fakehome" repren --install-skill --dir ./fakehome 2>&1 | grep -o 'home directory'
+home directory
 ? 0
 ```

@@ -194,15 +194,23 @@ utility with no per-project config, so the skill invokes it via a pinned zero-in
 runner (`uvx repren@<version>`) and there is no need to add repren as a project
 dependency.
 
+repren is a dual-scope skill: install it into a single project or globally for your
+user. Scope is resolved like `git config` — implicit when unambiguous, an error when
+not — so a stray `--install-skill` never silently rewrites your global agent surfaces.
+
 **Install:**
 
 ```bash
-# Install globally (available in all projects):
-uvx repren --install-skill
+# Install into the current project (run from the repo; shareable via git):
+uvx repren --install-skill --project
 
-# Or install for the current project only (shareable via git):
-uvx repren --install-skill --agent-base=.
+# Install globally (available in all projects):
+uvx repren --install-skill --global
 ```
+
+Inside a git repo, `--project` is implied, so `uvx repren --install-skill` installs into
+the project. Outside a repo (or in your home directory) the scope is ambiguous and you
+must pass `--project` (optionally with `--dir DIR` or `--no-repo-check`) or `--global`.
 
 Re-run to update an existing installation. The skill pins the repren version it was
 installed from.
