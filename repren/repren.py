@@ -170,8 +170,9 @@ script somewhere convenient and make it executable.
 
 repren is ideal for use by AI coding agents (Claude Code, Codex, etc.)
 since it is powerful, simple to use, and self-documenting.
-Just tell agents to run `repren --help` (or, with no install, `uvx repren@latest --help`)
-and they have everything they need, including the ability to install it as a skill.
+Just tell agents to run `repren --help` (or, with no install, `uvx repren@<version> --help`,
+pinning a version you trust) and they have everything they need, including the ability to
+install it as a skill.
 Agents can use `--format=json` for machine-parseable output.
 
 repren includes a built-in skill for coding agents. Installing it writes the skill to
@@ -490,6 +491,14 @@ DOCS_HINT: str = """\
 Run `repren --help` for usage.
 Run `repren --docs` for full docs."""
 
+# Prominent callout shown in `--help` so agents and humans immediately discover that
+# repren can install itself as an agent skill. Keep this short and actionable (§6.5).
+SKILL_HINT: str = """\
+IMPORTANT — Use repren as an agent skill (Claude Code, Codex, Gemini, and others):
+  Install into your project:  repren --install-skill            (run inside the repo)
+  Install for all projects:   repren --install-skill --global
+Once installed, your coding agent uses repren automatically for refactoring tasks."""
+
 # Terminal width handling.
 DEFAULT_WIDTH: int = 88
 MIN_WIDTH: int = 40
@@ -577,6 +586,13 @@ def _format_hint(color: bool = True) -> str:
     if color and _markdown_available:
         return f"{_ansi_yellow}{DOCS_HINT}{_ansi_reset}"
     return DOCS_HINT
+
+
+def _format_skill_hint(color: bool = True) -> str:
+    """Format the SKILL_HINT with optional ANSI colors."""
+    if color and _markdown_available:
+        return f"{_ansi_yellow}{SKILL_HINT}{_ansi_reset}"
+    return SKILL_HINT
 
 
 @dataclass
@@ -1382,8 +1398,10 @@ def _run_cli() -> None:
 
     # Handle --help early (show basic usage)
     if "-h" in sys.argv or "--help" in sys.argv:
+        use_color = sys.stdout.isatty()
         parser.print_help()
-        print(f"\n{_format_hint(color=sys.stdout.isatty())}\n")
+        print(f"\n{_format_skill_hint(color=use_color)}\n")
+        print(f"{_format_hint(color=use_color)}\n")
         sys.exit(0)
 
     # Handle --docs early (show full documentation)
@@ -1391,7 +1409,11 @@ def _run_cli() -> None:
         doc_text = __doc__ or ""
         use_color = sys.stdout.isatty()
         full_docs = _render_markdown(doc_text, color=use_color) if _markdown_available else doc_text
-        parser.epilog = full_docs + f"\n{_format_hint(color=use_color)}\n"
+        parser.epilog = (
+            full_docs
+            + f"\n{_format_skill_hint(color=use_color)}\n"
+            + f"\n{_format_hint(color=use_color)}\n"
+        )
         parser.print_help()
         sys.exit(0)
 

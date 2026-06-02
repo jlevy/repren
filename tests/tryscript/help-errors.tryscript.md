@@ -77,6 +77,20 @@ description: Performs simultaneous multi-pattern search-and-replace, file/direct
 ? 0
 ```
 
+## H5: `--help` surfaces the skill-install instructions
+
+```console
+$ repren --help | grep -F "Use repren as an agent skill"
+IMPORTANT — Use repren as an agent skill (Claude Code, Codex, Gemini, and others):
+? 0
+```
+
+```console
+$ repren --help | grep -F -- "repren --install-skill --global"
+  Install for all projects:   repren --install-skill --global
+? 0
+```
+
 ## E1: Missing patterns is an error
 
 ```console
