@@ -183,11 +183,16 @@ script somewhere convenient and make it executable.
 
 repren is ideal for use by AI coding agents (Claude Code, Codex, etc.)
 since it is powerful, simple to use, and self-documenting.
-Just tell agents to run `uvx repren@latest --help` and they have everything they need,
-including the ability to install it as a skill.
+Just tell agents to run `repren --help` (or, with no install, `uvx repren@latest --help`)
+and they have everything they need, including the ability to install it as a skill.
 Agents can use `--format=json` for machine-parseable output.
 
-repren includes a built-in skill for Claude Code or other agents.
+repren includes a built-in skill for coding agents. Installing it writes the skill to
+both the portable cross-agent location (`.agents/skills/repren/`, used by Codex, pi, and
+others) and the Claude Code mirror (`.claude/skills/repren/`). repren is a general-purpose
+utility with no per-project config, so the skill invokes it via a pinned zero-install
+runner (`uvx repren@<version>`) and there is no need to add repren as a project
+dependency.
 
 **Install:**
 
@@ -195,15 +200,16 @@ repren includes a built-in skill for Claude Code or other agents.
 # Install globally (available in all projects):
 uvx repren --install-skill
 
-# Or install for current project only (shareable via git):
-uvx repren --install-skill --agent-base=./.claude
+# Or install for the current project only (shareable via git):
+uvx repren --install-skill --agent-base=.
 ```
 
-Re-run to update an existing installation.
+Re-run to update an existing installation. The skill pins the repren version it was
+installed from.
 
-**Manual install:** Run `uvx repren --skill` and save to
-`~/.claude/skills/repren/SKILL.md` (global) or `.claude/skills/repren/SKILL.md`
-(project).
+**Manual install:** Run `uvx repren --skill` and save the output to
+`.agents/skills/repren/SKILL.md` (and/or `.claude/skills/repren/SKILL.md`), under `~`
+for a global install or the project root for a project install.
 
 **Learn more:** [Claude Code docs](https://claude.ai/code) and
 [Skills repository](https://github.com/anthropics/skills).

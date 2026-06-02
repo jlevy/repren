@@ -170,11 +170,16 @@ script somewhere convenient and make it executable.
 
 repren is ideal for use by AI coding agents (Claude Code, Codex, etc.)
 since it is powerful, simple to use, and self-documenting.
-Just tell agents to run `uvx repren@latest --help` and they have everything they need,
-including the ability to install it as a skill.
+Just tell agents to run `repren --help` (or, with no install, `uvx repren@latest --help`)
+and they have everything they need, including the ability to install it as a skill.
 Agents can use `--format=json` for machine-parseable output.
 
-repren includes a built-in skill for Claude Code or other agents.
+repren includes a built-in skill for coding agents. Installing it writes the skill to
+both the portable cross-agent location (`.agents/skills/repren/`, used by Codex, pi, and
+others) and the Claude Code mirror (`.claude/skills/repren/`). repren is a general-purpose
+utility with no per-project config, so the skill invokes it via a pinned zero-install
+runner (`uvx repren@<version>`) and there is no need to add repren as a project
+dependency.
 
 **Install:**
 
@@ -182,15 +187,16 @@ repren includes a built-in skill for Claude Code or other agents.
 # Install globally (available in all projects):
 uvx repren --install-skill
 
-# Or install for current project only (shareable via git):
-uvx repren --install-skill --agent-base=./.claude
+# Or install for the current project only (shareable via git):
+uvx repren --install-skill --agent-base=.
 ```
 
-Re-run to update an existing installation.
+Re-run to update an existing installation. The skill pins the repren version it was
+installed from.
 
-**Manual install:** Run `uvx repren --skill` and save to
-`~/.claude/skills/repren/SKILL.md` (global) or `.claude/skills/repren/SKILL.md`
-(project).
+**Manual install:** Run `uvx repren --skill` and save the output to
+`.agents/skills/repren/SKILL.md` (and/or `.claude/skills/repren/SKILL.md`), under `~`
+for a global install or the project root for a project install.
 
 **Learn more:** [Claude Code docs](https://claude.ai/code) and
 [Skills repository](https://github.com/anthropics/skills).
@@ -1330,13 +1336,13 @@ def _run_cli() -> None:
     )
     parser.add_argument(
         "--install-skill",
-        help="install Claude Code skill for repren (by default globally to ~/.claude/skills/repren)",
+        help="install repren agent skill to .agents/ and .claude/ skills dirs (global by default)",
         dest="install_claude_skill",
         action="store_true",
     )
     parser.add_argument(
         "--agent-base",
-        help="agent config directory for skills (e.g., './.claude' for project, defaults to ~/.claude)",
+        help="project root for a project-local skill install (e.g. '.'; defaults to a global install under ~)",
         dest="agent_base",
         metavar="DIR",
     )
@@ -1370,24 +1376,24 @@ def _run_cli() -> None:
         try:
             from .claude_skill import install_skill
 
-            # Install to specified agent base or ~/.claude by default
+            # Install globally (under ~) or, with --agent-base, to a project root.
             install_skill(agent_base=options.agent_base)
             sys.exit(0)
         except ImportError:
             # Fallback if running as standalone script
             print(
-                "Error: Claude skill installation requires full package installation.",
+                "Error: skill installation requires full package installation.",
                 file=sys.stderr,
             )
             print("Install with: uv tool install repren", file=sys.stderr)
             print("", file=sys.stderr)
             print(
-                "Alternative: Download SKILL.md from the repository and install manually:",
+                "Alternative: print the skill and save it manually:",
                 file=sys.stderr,
             )
-            print("  mkdir -p ~/.claude/skills/repren", file=sys.stderr)
+            print("  mkdir -p .agents/skills/repren", file=sys.stderr)
             print(
-                "  curl -o ~/.claude/skills/repren/SKILL.md https://raw.githubusercontent.com/jlevy/repren/master/repren/skills/SKILL.md",
+                "  uvx repren --skill > .agents/skills/repren/SKILL.md",
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -1406,11 +1412,11 @@ def _run_cli() -> None:
             print("Install with: uv tool install repren", file=sys.stderr)
             print("", file=sys.stderr)
             print(
-                "Alternative: Download SKILL.md directly from the repository:",
+                "Alternative: run the skill printer from a packaged install:",
                 file=sys.stderr,
             )
             print(
-                "  curl https://raw.githubusercontent.com/jlevy/repren/master/repren/skills/SKILL.md",
+                "  uvx repren --skill",
                 file=sys.stderr,
             )
             sys.exit(1)

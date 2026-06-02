@@ -520,6 +520,22 @@ class TestClaudeSkillContent:
         # Should mention key features
         assert "pattern" in content.lower() or "replace" in content.lower()
 
+    def test_skill_content_pins_version_no_latest(self):
+        """Rendered skill should pin the installed version, not use an unpinned @latest."""
+        from repren.claude_skill import VERSION_PLACEHOLDER, get_skill_content
+        from repren.repren import VERSION
+
+        content = get_skill_content()
+
+        # Placeholder must be rendered away.
+        assert VERSION_PLACEHOLDER not in content
+        # Unpinned runner must not appear (supply-chain hygiene).
+        assert "repren@latest" not in content
+        # The pinned zero-install fallback must reference the installed public version
+        # (any PEP 440 local "+..." segment is dropped, since it is not installable).
+        pinned_version = VERSION.split("+", 1)[0]
+        assert f"uvx repren@{pinned_version}" in content
+
 
 class TestClaudeSkillInstallation:
     """Tests for Claude skill installation."""
@@ -538,27 +554,44 @@ class TestClaudeSkillInstallation:
             try:
                 install_skill()  # Default is global (uses HOME)
 
-                skill_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
-                assert skill_file.exists()
-                content = skill_file.read_text()
+                # Both surfaces are written: portable and the Claude Code mirror.
+                claude_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
+                agents_file = Path(tmpdir) / ".agents" / "skills" / "repren" / "SKILL.md"
+                assert claude_file.exists()
+                assert agents_file.exists()
+                content = claude_file.read_text()
                 assert "repren" in content.lower()
+                assert content == agents_file.read_text()
             finally:
                 if old_home:
                     os.environ["HOME"] = old_home
 
     def test_install_skill_project_creates_file(self):
-        """install_skill with agent_base should create file in specified location."""
+        """install_skill with agent_base should create both surfaces under the project root."""
         from repren.claude_skill import install_skill
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            # agent_base IS the .claude directory itself
+            # Legacy form: agent_base is the .claude directory itself; its parent
+            # (the project root) anchors both surfaces.
             agent_base = Path(tmpdir) / ".claude"
             install_skill(agent_base=str(agent_base))
 
-            skill_file = agent_base / "skills" / "repren" / "SKILL.md"
-            assert skill_file.exists()
-            content = skill_file.read_text()
+            claude_file = Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md"
+            agents_file = Path(tmpdir) / ".agents" / "skills" / "repren" / "SKILL.md"
+            assert claude_file.exists()
+            assert agents_file.exists()
+            content = claude_file.read_text()
             assert "repren" in content.lower()
+
+    def test_install_skill_project_root_creates_file(self):
+        """install_skill with a plain project root should create both surfaces under it."""
+        from repren.claude_skill import install_skill
+
+        with tempfile.TemporaryDirectory() as tmpdir:
+            install_skill(agent_base=tmpdir)
+
+            assert (Path(tmpdir) / ".agents" / "skills" / "repren" / "SKILL.md").exists()
+            assert (Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md").exists()
 
     def test_install_skill_content_matches_package(self):
         """Installed skill content should match package content."""

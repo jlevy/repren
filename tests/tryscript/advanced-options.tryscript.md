@@ -83,27 +83,41 @@ usage: repren [-h] [--version] [--docs] [--from FROM_PAT] [--to TO_PAT] [-p PAT_
 ? 0
 ```
 
-## A6: `--install-skill` with `--agent-base` writes expected project-local artifacts
+## A6: `--install-skill` with `--agent-base` writes both skill surfaces project-locally
 
 ```console
 $ mkdir -p agentrepo && repren --install-skill --agent-base ./agentrepo/.claude >/dev/null
 ```
 
+The skill is written to both the portable cross-agent location and the Claude mirror:
+
 ```console
-$ find agentrepo/.claude -maxdepth 3 -type f | sort
+$ find agentrepo -type f -name SKILL.md | sort
+agentrepo/.agents/skills/repren/SKILL.md
 agentrepo/.claude/skills/repren/SKILL.md
 ? 0
 ```
 
+Frontmatter (stable top lines, version-independent):
+
 ```console
-$ sed -n '1,8p' agentrepo/.claude/skills/repren/SKILL.md
+$ sed -n '1,3p' agentrepo/.claude/skills/repren/SKILL.md
 ---
 name: repren
 description: Performs simultaneous multi-pattern search-and-replace, file/directory renaming, and case-preserving refactoring across codebases. Use for bulk refactoring, global find-and-replace, or when user mentions repren, multi-file rename, or pattern-based transformations.
-allowed-tools: Bash(repren:*), Bash(uvx repren@latest:*), Read, Write
----
-# Repren - Multi-Pattern Search and Replace
+? 0
+```
 
-> **Full documentation: Run `uvx repren@latest --docs` for all options, flags, and
+The skill uses a pinned zero-install runner, never an unpinned `@latest`:
+
+```console
+$ grep -q 'repren@latest' agentrepo/.claude/skills/repren/SKILL.md && echo found || echo none
+none
+? 0
+```
+
+```console
+$ grep -Eq 'uvx repren@[0-9]' agentrepo/.claude/skills/repren/SKILL.md && echo pinned
+pinned
 ? 0
 ```
