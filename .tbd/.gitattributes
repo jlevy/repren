@@ -1,0 +1,2 @@
+# Protect ID mappings from merge deletion (always keep all rows)
+**/mappings/ids.yml merge=union
