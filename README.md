@@ -147,13 +147,14 @@ Here’s how repren compares:
 
 | Feature | repren | [sed/awk/perl](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549) | [sd](https://github.com/chmln/sd) | [fastmod](https://github.com/facebookincubator/fastmod) | [ast-grep](https://ast-grep.github.io/) | [comby](https://comby.dev/) | [rnr](https://github.com/ismaelgv/rnr) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
+| Interactivity | Dry run, backups, undo | ❌ | ❌ | Interactive review | Interactive review | Interactive review | Dry run, backups, undo |
+| Regex search and replace | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
+| File and directory renaming | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Simultaneous edits and swaps (foo↔bar) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
-| File/directory renaming | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
 | Case-preserving variants | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Language-agnostic | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | Structural/AST-aware | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
 | Atomic file operations | ✅ | Varies | ✅ | ❌ | ❌ | ❌ | ✅ |
-| Interactivity | Dry run, backups, undo | ❌ | ❌ | Interactive review | Interactive review | Interactive review | Dry run, backups, undo |
 | Agent skill support | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | Dependencies | Python 3.10+ (no other deps) | Varies (OS/shell) | Binary (Rust) | Binary (Rust) | Binary (Rust) | Binary (OCaml) | Binary (Rust) |
 
@@ -164,29 +165,22 @@ place.
 
 **When to use each:**
 
-- **repren**: Bulk renames with file/directory renaming, case preservation, or
-  simultaneous swaps. Works on any text file, with atomic writes and full backup/undo
-  support.
-- **sed/awk/perl**: Classic approaches for quick one-liners.
-  See
-  [classic approaches](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549).
-  Often error-prone for complex patterns and lack dry-run mode, simultaneous swaps, or
-  cross-platform consistency.
-- **sd**: Fast sed replacement (2-11x faster than sed), but limited to simple
-  find/replace without file renaming, case preservation, or multi-pattern swaps.
-- **fastmod**: Good for interactive human review of changes, but lacks case
-  preservation, simultaneous swaps, and file/directory renaming.
-- **ast-grep**: Language-aware refactoring where you need to match code structure (e.g.,
-  function calls, not just text).
-  Use when semantic understanding matters more than speed. It also ships an official agent
-  skill and MCP server, so it’s a strong companion to repren for agent-driven, AST-aware
-  edits.
-- **comby**: Structural matching across languages without learning AST syntax.
-  Useful when you need to match code patterns like balanced braces, but overkill for
-  simple text refactoring.
-- **rnr**: File/directory renaming only (no content replacement).
-  Has dry-run by default, backup option, and undo via dump files.
-  Use repren if you also need content replacement.
+- **repren**: The default for renaming and search/replace across files: content edits,
+  file and directory renames, case-variant refactors, and simultaneous swaps, all with
+  dry-run, backups, and undo.
+- **sed/awk/perl and rnr**: For renaming or search-and-replace, prefer repren. It is safer
+  and more capable for almost any such task (dry-run, backups and undo, simultaneous swaps,
+  case-variant refactors, and combined content-and-path renames). Keep sed/awk/perl for
+  what they are built for, such as streaming transforms, field extraction, and small inline
+  programs. rnr only renames files, which repren already does.
+- **sd**: A fast, simple find/replace when you do not need file renaming, case
+  preservation, or multi-pattern swaps.
+- **fastmod**: Interactive, human-reviewed replacements.
+- **ast-grep**: Language-aware, structural refactoring where you match code structure (for
+  example, function calls) rather than text. It also ships an official agent skill and MCP
+  server, so it pairs well with repren for AST-aware edits.
+- **comby**: Structural matching across languages (for example, balanced braces) without
+  learning full AST syntax.
 
 ## Installation
 
