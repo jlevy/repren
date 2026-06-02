@@ -541,7 +541,9 @@ class TestClaudeSkillScopeResolution:
         home = Path("/home/someone")
         target = resolve_install_target(global_install=True, home=home, cwd=Path("/tmp/x"))
         assert target.mode == "global"
-        assert target.root == home
+        # The implementation resolves the home path; compare against the resolved form so
+        # the test is portable to platforms where these paths canonicalize (e.g. macOS).
+        assert target.root == home.resolve()
 
     def test_explicit_project_with_dir(self):
         from repren.claude_skill import resolve_install_target
@@ -557,7 +559,21 @@ class TestClaudeSkillScopeResolution:
         (tmp_path / ".git").mkdir()
         target = resolve_install_target(cwd=tmp_path, home=Path("/home/someone"))
         assert target.mode == "project"
-        assert target.root == tmp_path
+        assert target.root == tmp_path.resolve()
+
+    def test_implicit_project_uses_repo_root_from_subdir(self, tmp_path):
+        """Run from a nested dir, project install still lands at the repo root, not cwd."""
+        from repren.claude_skill import resolve_install_target
+
+        (tmp_path / ".git").mkdir()
+        subdir = tmp_path / "src" / "deep"
+        subdir.mkdir(parents=True)
+        # Both implicit scope and an explicit --project should resolve to the repo root.
+        implicit = resolve_install_target(cwd=subdir, home=tmp_path.parent)
+        explicit = resolve_install_target(cwd=subdir, home=tmp_path.parent, project=True)
+        for target in (implicit, explicit):
+            assert target.mode == "project"
+            assert target.root == tmp_path.resolve()
 
     def test_ambiguous_outside_repo_errors(self, tmp_path):
         from repren.claude_skill import SkillScopeError, resolve_install_target
@@ -572,7 +588,7 @@ class TestClaudeSkillScopeResolution:
             project=True, no_repo_check=True, cwd=tmp_path, home=Path("/home/someone")
         )
         assert target.mode == "project"
-        assert target.root == tmp_path
+        assert target.root == tmp_path.resolve()
 
     def test_home_is_refused_in_project_mode(self, tmp_path):
         from repren.claude_skill import SkillScopeError, resolve_install_target
@@ -685,6 +701,28 @@ class TestClaudeSkillCLI:
             assert result.returncode == 0, result.stderr
             assert (Path(tmpdir) / ".agents" / "skills" / "repren" / "SKILL.md").exists()
             assert (Path(tmpdir) / ".claude" / "skills" / "repren" / "SKILL.md").exists()
+
+    def test_install_skill_from_subdir_lands_at_repo_root(self):
+        """Implicit --install-skill run from a nested dir writes to the repo root."""
+        with tempfile.TemporaryDirectory() as tmpdir:
+            repo = Path(tmpdir).resolve()
+            (repo / ".git").mkdir()
+            subdir = repo / "src" / "deep"
+            subdir.mkdir(parents=True)
+
+            result = subprocess.run(
+                ["uv", "run", "repren", "--install-skill"],
+                capture_output=True,
+                text=True,
+                cwd=subdir,
+            )
+
+            assert result.returncode == 0, result.stderr
+            # Lands at the repo root, not the nested cwd.
+            assert (repo / ".agents" / "skills" / "repren" / "SKILL.md").exists()
+            assert (repo / ".claude" / "skills" / "repren" / "SKILL.md").exists()
+            assert not (subdir / ".agents").exists()
+            assert not (subdir / ".claude").exists()
 
     def test_install_skill_global(self):
         """--install-skill --global should write both surfaces under $HOME."""

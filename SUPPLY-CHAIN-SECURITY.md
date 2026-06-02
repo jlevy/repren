@@ -1,10 +1,14 @@
 # Supply-Chain Security
 
-This repo follows the **Supply-Chain Hardening** policy (the 14-day cool-off, disabled
+This repo **adopts** the **Supply-Chain Hardening** policy (the 14-day cool-off, disabled
 install scripts, lockfile discipline). This file is the portable flag that tells any
 agent or contributor the rules *before* they add or upgrade a dependency. The full
 cross-ecosystem policy lives in `tbd guidelines supply-chain-hardening`; the complete
 playbooks are at <https://github.com/jlevy/supply-chain-hardening>.
+
+The runtime story is already clean (zero dependencies, below); the dev/CI toolchain is
+mostly there, with a few unpinned zero-install runners tracked as known exceptions under
+[Known exceptions](#known-exceptions).
 
 ## What's special about repren: zero runtime dependencies
 
@@ -63,12 +67,30 @@ apply in full here:
   reason and a `Reviewed-by:` sign-off in the PR, and confirm afterward it wasn't yanked.
   Agents never self-approve an exception.
 
+## Known exceptions
+
+Being honest about where the repo does not yet meet the policy, so agents don't read a
+standard the workflow silently breaks:
+
+- **`repren`'s own runner uses `@latest`, unpinned** (docs, README, and the installed
+  `SKILL.md`). This is deliberate: repren has zero runtime dependencies, so `@latest`
+  fetches only repren itself, and the recommended `UV_EXCLUDE_NEWER` cool-off covers the
+  compromised-release case. See "What's special about repren," above.
+- **Unpinned zero-install dev/CI runners.** A few development and CI commands still invoke
+  zero-install runners without a version pin — `uvx flowmark@latest` (formatting, in the
+  `Makefile`) and `npx tryscript@latest` (the golden test harness, in `.github/workflows/`
+  and the dev docs). These run only at development/CI time, never for users of repren, but
+  they do bypass the cool-off. They are tracked here to be pinned (or run under a CI-level
+  `UV_EXCLUDE_NEWER`/`npm` release-age gate) in a follow-up; until then they are recorded
+  exceptions, not an oversight.
+
 ## Quick reference
 
 | Context | Rule |
 | --- | --- |
 | Running repren | Zero deps; `uvx repren@latest` is fine. Optional: `UV_EXCLUDE_NEWER="14 days"`. |
 | Adding/upgrading a **dev** dependency | 14-day cool-off, lockfile-pinned, audited, reason on the record. |
+| Dev/CI zero-install runners (flowmark, tryscript) | Tracked exception — to be pinned; see [Known exceptions](#known-exceptions). |
 | Publishing repren | Build from a clean tag; prefer trusted publishing / provenance (see the guidebook). |
 
 <!-- This document follows the Supply-Chain Hardening guideline

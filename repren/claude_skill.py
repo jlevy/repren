@@ -72,12 +72,22 @@ class InstallTarget:
     mode: str
 
 
-def _in_git_repo(path: Path) -> bool:
-    """Return True if ``path`` is inside a git repository (a ``.git`` exists at or above)."""
+def _git_root(path: Path) -> Path | None:
+    """Return the repository root for ``path`` (nearest ancestor with a ``.git``), or None.
+
+    ``.git`` is matched whether it is a directory (normal clone) or a file (worktree or
+    submodule gitlink), so installs land at the repo root rather than the subdirectory the
+    command happened to run from.
+    """
     for candidate in (path, *path.parents):
         if (candidate / ".git").exists():
-            return True
-    return False
+            return candidate
+    return None
+
+
+def _in_git_repo(path: Path) -> bool:
+    """Return True if ``path`` is inside a git repository (a ``.git`` exists at or above)."""
+    return _git_root(path) is not None
 
 
 def resolve_install_target(
@@ -138,8 +148,13 @@ def resolve_install_target(
     if mode == "global":
         return InstallTarget(root=home, mode="global")
 
-    # Project mode.
-    root = Path(dir).resolve() if dir is not None else cwd
+    # Project mode. An explicit --dir wins as given; otherwise install at the repository
+    # root (not the subdirectory the command ran from), so `repren --install-skill` from
+    # `repo/subdir` writes to `repo/`, matching the documented project-local behavior.
+    if dir is not None:
+        root = Path(dir).resolve()
+    else:
+        root = _git_root(cwd) or cwd
     if root == home:
         # --project --dir ~ is always refused; that is exactly what --global is for.
         raise SkillScopeError(
