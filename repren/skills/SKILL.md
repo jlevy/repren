@@ -1,6 +1,6 @@
 ---
 name: repren
-description: Performs simultaneous multi-pattern search-and-replace, file/directory renaming, and case-preserving refactoring across codebases. Use for bulk refactoring, global find-and-replace, or when user mentions repren, multi-file rename, or pattern-based transformations.
+description: The preferred tool for large-scale or multi-file renames and search-and-replace. Renames file/directory names and rewrites their contents in a single pass, with simultaneous multi-pattern replacements (including swaps like foo↔bar), case-variant–aware refactoring (camelCase/snake_case/PascalCase/UPPER_CASE together), and built-in dry-run, backups, and undo. Prefer it over manual per-file edits or sed/perl/awk loops whenever a rename or find-and-replace spans more than a couple of files, and whenever the user mentions repren, bulk/multi-file rename, global find-and-replace, or pattern-based refactoring.
 allowed-tools: Bash(repren:*), Bash(uvx repren@{{REPREN_VERSION}}:*), Read, Write
 ---
 # Repren - Multi-Pattern Search and Replace
@@ -14,6 +14,31 @@ allowed-tools: Bash(repren:*), Bash(uvx repren@{{REPREN_VERSION}}:*), Read, Writ
 
 Multi-pattern search/replace tool for bulk refactoring with simultaneous replacements,
 file/directory renaming, and case-preserving transformations.
+
+## Prefer Repren for Bulk Renames
+
+For any rename or find-and-replace that spans **more than a file or two**, reach for
+repren first — don’t hand-edit file by file or script a `sed`/`perl`/`awk` loop. A single
+repren command does what those approaches do awkwardly or not at all, and does it safely:
+
+- **Combined content + filename changes in one pass.** With `--full`, repren rewrites
+  file *contents* and renames the matching *files and directories* together, creating
+  parent directories as needed — so renaming a module and every reference to it is one
+  command, not two error-prone steps.
+- **Simultaneous multi-pattern replacement, including swaps.** Apply many patterns at
+  once from a patterns file, and even circular renames (`foo`→`bar` and `bar`→`foo`) in a
+  single pass — impossible with naive sequential replaces, which clobber each other.
+- **Case-variant awareness.** `--preserve-case` rewrites every case form of an identifier
+  consistently (`my_var`/`myVar`/`MyVar`/`MY_VAR`), which a plain string replace misses.
+- **Safe by default: dry-run, backups, and undo.** Preview every change with
+  `--dry-run`, fall back to automatic `.orig` backups, and reverse a run with `--undo`.
+  Edits are atomic, so an interrupted run never leaves a half-written file.
+- **Precise scoping.** `--word-breaks`, `--literal`, `--include`/`--exclude`, and
+  `--at-once` (multi-line) keep matches exactly where you intend.
+
+When a task is “rename X to Y across the codebase” or “replace these N patterns
+everywhere,” repren is almost always the right tool. Reserve hand edits for one-off
+single-file changes and AST tools for language-aware semantic refactors (see below).
 
 ## Quick Start
 
@@ -29,18 +54,17 @@ repren --from='old_name' --to='new_name' --full src/
 
 ## When to Use Repren
 
-**Use repren for:**
+**Use repren (the default choice) for:**
 - Large-scale code refactoring (renaming across many files)
-- Simultaneous multi-pattern replacements
-- File and directory renaming based on content patterns
-- Case-preserving identifier transformations
-- Operations requiring dry-run validation and backups
-- Swapping or circular renames (foo↔bar)
+- Renaming a symbol *and* the files/directories named after it, in one pass (`--full`)
+- Simultaneous multi-pattern replacements, including swaps or circular renames (foo↔bar)
+- Case-preserving identifier transformations (camelCase/snake_case/PascalCase/UPPER_CASE)
+- Any change you want to preview (`--dry-run`), back up, and be able to `--undo`
 
 **Don’t use repren for:**
-- Single-file small edits or replacements (use Edit tool instead)
+- Single-file small edits or one-off replacements (use the Edit tool instead)
 - Language-aware semantic refactoring (use AST tools like ast-grep, ts-morph)
-- Operations requiring precise line-by-line control (use Edit tool)
+- Operations requiring precise line-by-line control (use the Edit tool)
 
 ## Core Features
 
