@@ -7,7 +7,7 @@ mirror (`.claude/skills/repren/`).
 
 repren is a general-purpose utility with no per-project configuration, so it is a
 dual-scope skill: it can be installed into a single project or globally for the user.
-Scope is resolved `git config`-style — implicit when unambiguous, a hard error when not
+Scope is resolved `git config`-style: implicit when unambiguous, a hard error when not
 (see `resolve_install_target`).
 
 The skill invokes repren through ``uvx repren@latest``. repren has zero runtime
@@ -255,9 +255,9 @@ def main() -> None:
     """Command-line interface for skill installation.
 
     Can be run directly for testing:
-        python -m repren.claude_skill --project
-        python -m repren.claude_skill --global
-        python -m repren.claude_skill --project --dir /path/to/repo
+        python -m repren.agent_skill --project
+        python -m repren.agent_skill --global
+        python -m repren.agent_skill --project --dir /path/to/repo
     """
     import argparse
 

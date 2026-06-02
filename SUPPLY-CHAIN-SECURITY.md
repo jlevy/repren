@@ -16,7 +16,7 @@ repren has **zero runtime dependencies** (`dependencies = []` in `pyproject.toml
 a single-file tool that imports only the Python standard library. So:
 
 - **For people who *run* repren, supply-chain risk is minimal.** `uvx repren@latest` (or
-  `uv tool install repren`) fetches and executes only repren itself — there is no
+  `uv tool install repren`) fetches and executes only repren itself, so there is no
   transitive dependency tree to be compromised. This is exactly why the docs and the
   installed agent skill use `uvx repren@latest` rather than a pinned version: with no
   dependency tree, the usual reason to pin a zero-install runner mostly falls away.
@@ -36,14 +36,14 @@ a single-file tool that imports only the Python standard library. So:
 > pin zero-install runners (`uvx pkg@version`, not `@latest`). repren takes the documented
 > exception: because it has no dependency tree, `@latest` + the cool-off above gives the
 > protection that pinning is meant to provide, with less version-management complexity.
-> This exception is scoped to repren's *own* runner — it does **not** relax the cool-off
+> This exception is scoped to repren's *own* runner. It does **not** relax the cool-off
 > for the development dependencies below.
 
 ## Development dependencies: the cool-off applies here
 
 The zero-deps story is about *runtime*. The **dev toolchain** (in `[dependency-groups]`:
 pytest, ruff, basedpyright, jinja2, rich, etc.) runs with full privileges during local
-development, tests, and CI — historically the *more* dangerous surface, since build and
+development, tests, and CI, historically the *more* dangerous surface, since build and
 test tooling execute arbitrary code. The 14-day cool-off and the other install rules
 apply in full here:
 
@@ -77,7 +77,7 @@ standard the workflow silently breaks:
   fetches only repren itself, and the recommended `UV_EXCLUDE_NEWER` cool-off covers the
   compromised-release case. See "What's special about repren," above.
 - **Unpinned zero-install dev/CI runners.** A few development and CI commands still invoke
-  zero-install runners without a version pin — `uvx flowmark@latest` (formatting, in the
+  zero-install runners without a version pin: `uvx flowmark@latest` (formatting, in the
   `Makefile`) and `npx tryscript@latest` (the golden test harness, in `.github/workflows/`
   and the dev docs). These run only at development/CI time, never for users of repren, but
   they do bypass the cool-off. They are tracked here to be pinned (or run under a CI-level
@@ -90,7 +90,7 @@ standard the workflow silently breaks:
 | --- | --- |
 | Running repren | Zero deps; `uvx repren@latest` is fine. Optional: `UV_EXCLUDE_NEWER="14 days"`. |
 | Adding/upgrading a **dev** dependency | 14-day cool-off, lockfile-pinned, audited, reason on the record. |
-| Dev/CI zero-install runners (flowmark, tryscript) | Tracked exception — to be pinned; see [Known exceptions](#known-exceptions). |
+| Dev/CI zero-install runners (flowmark, tryscript) | Tracked exception, to be pinned; see [Known exceptions](#known-exceptions). |
 | Publishing repren | Build from a clean tag; prefer trusted publishing / provenance (see the guidebook). |
 
 <!-- This document follows the Supply-Chain Hardening guideline

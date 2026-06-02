@@ -7,7 +7,7 @@ It is small, self-contained, self-documenting, and works on Python 3.10-3.14 wit
 **zero runtime dependencies**. Essentially, it is a general-purpose, brute-force text
 file refactoring tool.
 
-**Using a coding agent?** This is the whole setup — tell Claude Code, Codex, Gemini, or
+**Using a coding agent?** This is the whole setup. Tell Claude Code, Codex, Gemini, or
 any agent:
 
 > Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.
@@ -17,7 +17,7 @@ it from there. After that it reaches for repren automatically on bulk refactors 
 renames. (See [Agent Use](#agent-use).)
 
 **Zero dependencies, by design.** Given the rise of supply-chain attacks on package
-ecosystems, it’s worth noting that repren has **zero runtime dependencies** — installing
+ecosystems, it’s worth noting that repren has **zero runtime dependencies**. Installing
 it (or running `uvx repren@latest`) pulls in nothing but repren itself and the Python
 standard library. There is no transitive dependency tree to audit or to be compromised,
 so it is simpler and safer to adopt than most tools. It’s also a single file you can read
@@ -148,9 +148,10 @@ Notes on the last two rows:
 - **Atomic file operations** means edits are written to a temp file and atomically
   renamed into place, so an interruption never leaves a truncated or half-written file.
   repren and `sd` do this for content edits; `rnr` only renames (and `rename()` is itself
-  atomic). For the classics it *varies*: GNU `sed -i` and `gawk -i inplace` use
-  temp+rename, but `perl -i` is only atomic on Perl ≥ 5.28, and a plain `cmd > file`
-  redirect is never atomic. `fastmod`, `ast-grep`, and `comby` overwrite files in place.
+  atomic). For the classics it *varies*: GNU `sed -i` and `gawk -i inplace` write to a
+  temp file and rename, but `perl -i` is only atomic on Perl ≥ 5.28, and a plain
+  `cmd > file` redirect is never atomic. `fastmod`, `ast-grep`, and `comby` overwrite
+  files in place.
 - **Agent skill support** means the project ships an official coding-agent integration
   (a skill or MCP server) so an agent can discover and drive it. repren installs a skill
   via `repren --install-skill`; `ast-grep` ships an official agent skill and MCP server.
@@ -201,8 +202,8 @@ Or, since it’s just one file, you can copy the
 script somewhere convenient and make it executable.
 
 **A note on freshness and safety.** These examples use `@latest` for simplicity. Because
-repren has **zero runtime dependencies**, the only code fetched and run is repren itself —
-there is no transitive dependency tree to audit or be compromised — so `@latest` carries
+repren has **zero runtime dependencies**, the only code fetched and run is repren itself.
+There is no transitive dependency tree to audit or be compromised, so `@latest` carries
 far less supply-chain risk here than for a typical package. If you want an extra safety
 margin, you can opt into uv’s release “cool-off” (which excludes very recent uploads), or
 pin an exact version:
@@ -218,7 +219,7 @@ uvx repren@2.0.0 --help
 ## Agent Use
 
 **The one thing to know:** point your agent at repren’s self-documenting help and let it
-install itself —
+install itself.
 
 > Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.
 
@@ -247,18 +248,18 @@ skill is just a thin pointer to those commands, so it never drifts out of date.
 Installing the skill writes one `SKILL.md` to **both** discovery locations, so every
 agent finds it:
 
-- `.agents/skills/repren/` — the portable, cross-agent location (Codex, Gemini, pi, …)
-- `.claude/skills/repren/` — the Claude Code mirror
+- `.agents/skills/repren/`: the portable, cross-agent location (Codex, Gemini, pi, …)
+- `.claude/skills/repren/`: the Claude Code mirror
 
 repren is a general-purpose utility with no per-project config, so the skill invokes it
-through the zero-install runner `uvx repren@latest` — there’s no need to add repren as a
+through the zero-install runner `uvx repren@latest`. There’s no need to add repren as a
 project dependency. Because repren has **zero runtime dependencies**, the only code a
 runner ever fetches and runs is repren itself; for an extra safety margin you can opt into
 uv’s release cool-off (`UV_EXCLUDE_NEWER`, see [Installation](#installation)) in your
 environment, which applies to the skill’s invocations too.
 
-**Scope is resolved like `git config`** — implicit when unambiguous, a clear error when
-not — so a stray `--install-skill` never silently rewrites your global agent surfaces:
+**Scope is resolved like `git config`:** implicit when unambiguous, a clear error when
+not, so a stray `--install-skill` never silently rewrites your global agent surfaces:
 
 - Inside a git repo, `--project` is implied (so `uvx repren --install-skill` just works).
 - In an ambiguous spot (your home directory, or outside any repo) repren refuses and
@@ -454,7 +455,7 @@ repren --clean-backups mydir/
 - By default, recursive searching omits paths starting with “.” (including `.git/`). This
   may be adjusted with `--exclude`. Files ending in the backup suffix (`.orig` by default)
   are always ignored. repren does **not** read `.gitignore`: any other paths you want to
-  skip — `node_modules/`, `build/`, `dist/`, vendored code — must be named explicitly with
+  skip (`node_modules/`, `build/`, `dist/`, vendored code) must be named explicitly with
   `--exclude`, and richer scoping is done with `--include`/`--exclude` (preview with
   `--dry-run`).
 

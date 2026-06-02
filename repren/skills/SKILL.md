@@ -7,7 +7,7 @@ allowed-tools: Bash(repren:*), Bash(uvx repren@latest:*), Read, Write
 
 > **Invocation:** The examples below call `repren` directly, which assumes it is on your
 > `PATH` (e.g. installed via `uv tool install repren`). If `repren` is not installed,
-> replace `repren` with the zero-install runner `uvx repren@latest` in every command — it
+> replace `repren` with the zero-install runner `uvx repren@latest` in every command. It
 > needs no prior install. repren has zero runtime dependencies, so the only code fetched
 > and run is repren itself.
 >
@@ -19,16 +19,17 @@ file/directory renaming, and case-preserving transformations.
 ## Prefer Repren for Bulk Renames
 
 For any rename or find-and-replace that spans **more than a file or two**, reach for
-repren first — don’t hand-edit file by file or script a `sed`/`perl`/`awk` loop. A single
-repren command does what those approaches do awkwardly or not at all, and does it safely:
+repren first rather than hand-editing file by file or scripting a `sed`/`perl`/`awk` loop.
+A single repren command does what those approaches do awkwardly or not at all, and does it
+safely:
 
-- **Combined content + filename changes in one pass.** With `--full`, repren rewrites
+- **Combined content and filename changes in one pass.** With `--full`, repren rewrites
   file *contents* and renames the matching *files and directories* together, creating
-  parent directories as needed — so renaming a module and every reference to it is one
+  parent directories as needed, so renaming a module and every reference to it is one
   command, not two error-prone steps.
 - **Simultaneous multi-pattern replacement, including swaps.** Apply many patterns at
   once from a patterns file, and even circular renames (`foo`→`bar` and `bar`→`foo`) in a
-  single pass — impossible with naive sequential replaces, which clobber each other.
+  single pass, which is impossible with naive sequential replaces that clobber each other.
 - **Case-variant awareness.** `--preserve-case` rewrites every case form of an identifier
   consistently (`my_var`/`myVar`/`MyVar`/`MY_VAR`), which a plain string replace misses.
 - **Safe by default: dry-run, backups, and undo.** Preview every change with
@@ -184,8 +185,8 @@ repren --patterns=patterns.txt --exclude='tests|node_modules|__pycache__' --full
 
 **Note on `.gitignore`:** repren does *not* read `.gitignore`. By default it skips only
 dotfiles and dot-directories (anything starting with `.`, including `.git/`), so VCS
-internals are left alone. Anything else you want skipped — `node_modules/`, `build/`,
-`dist/`, `target/`, vendored code — must be named explicitly via `--exclude` (or scoped
+internals are left alone. Anything else you want skipped (`node_modules/`, `build/`,
+`dist/`, `target/`, vendored code) must be named explicitly via `--exclude` (or scoped
 in with `--include`). Always confirm scope with `--dry-run` before a real run.
 
 ### Word Boundaries

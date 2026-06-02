@@ -499,7 +499,7 @@ class TestClaudeSkillContent:
 
     def test_get_skill_content_returns_markdown(self):
         """get_skill_content should return valid markdown content."""
-        from repren.claude_skill import get_skill_content
+        from repren.agent_skill import get_skill_content
 
         content = get_skill_content()
 
@@ -511,7 +511,7 @@ class TestClaudeSkillContent:
 
     def test_skill_content_has_required_sections(self):
         """Skill content should have essential sections for Claude."""
-        from repren.claude_skill import get_skill_content
+        from repren.agent_skill import get_skill_content
 
         content = get_skill_content()
 
@@ -522,7 +522,7 @@ class TestClaudeSkillContent:
 
     def test_skill_content_uses_latest_runner(self):
         """Skill uses the @latest zero-install runner; protection comes from uv cool-off."""
-        from repren.claude_skill import get_skill_content
+        from repren.agent_skill import get_skill_content
 
         content = get_skill_content()
 
@@ -536,7 +536,7 @@ class TestClaudeSkillScopeResolution:
     """Tests for the git-config-style install scope resolution."""
 
     def test_explicit_global(self):
-        from repren.claude_skill import resolve_install_target
+        from repren.agent_skill import resolve_install_target
 
         home = Path("/home/someone")
         target = resolve_install_target(global_install=True, home=home, cwd=Path("/tmp/x"))
@@ -546,7 +546,7 @@ class TestClaudeSkillScopeResolution:
         assert target.root == home.resolve()
 
     def test_explicit_project_with_dir(self):
-        from repren.claude_skill import resolve_install_target
+        from repren.agent_skill import resolve_install_target
 
         target = resolve_install_target(dir="/tmp/repo", home=Path("/home/someone"))
         assert target.mode == "project"
@@ -554,7 +554,7 @@ class TestClaudeSkillScopeResolution:
 
     def test_implicit_project_inside_repo(self, tmp_path):
         """Inside a git repo, scope is implicitly project."""
-        from repren.claude_skill import resolve_install_target
+        from repren.agent_skill import resolve_install_target
 
         (tmp_path / ".git").mkdir()
         target = resolve_install_target(cwd=tmp_path, home=Path("/home/someone"))
@@ -563,7 +563,7 @@ class TestClaudeSkillScopeResolution:
 
     def test_implicit_project_uses_repo_root_from_subdir(self, tmp_path):
         """Run from a nested dir, project install still lands at the repo root, not cwd."""
-        from repren.claude_skill import resolve_install_target
+        from repren.agent_skill import resolve_install_target
 
         (tmp_path / ".git").mkdir()
         subdir = tmp_path / "src" / "deep"
@@ -576,13 +576,13 @@ class TestClaudeSkillScopeResolution:
             assert target.root == tmp_path.resolve()
 
     def test_ambiguous_outside_repo_errors(self, tmp_path):
-        from repren.claude_skill import SkillScopeError, resolve_install_target
+        from repren.agent_skill import SkillScopeError, resolve_install_target
 
         with pytest.raises(SkillScopeError, match="not inside a git repository"):
             resolve_install_target(cwd=tmp_path, home=Path("/home/someone"))
 
     def test_project_no_repo_check_allows_non_repo(self, tmp_path):
-        from repren.claude_skill import resolve_install_target
+        from repren.agent_skill import resolve_install_target
 
         target = resolve_install_target(
             project=True, no_repo_check=True, cwd=tmp_path, home=Path("/home/someone")
@@ -591,25 +591,25 @@ class TestClaudeSkillScopeResolution:
         assert target.root == tmp_path.resolve()
 
     def test_home_is_refused_in_project_mode(self, tmp_path):
-        from repren.claude_skill import SkillScopeError, resolve_install_target
+        from repren.agent_skill import SkillScopeError, resolve_install_target
 
         with pytest.raises(SkillScopeError, match="home directory"):
             resolve_install_target(dir=str(tmp_path), home=tmp_path)
 
     def test_cwd_home_is_ambiguous(self, tmp_path):
-        from repren.claude_skill import SkillScopeError, resolve_install_target
+        from repren.agent_skill import SkillScopeError, resolve_install_target
 
         with pytest.raises(SkillScopeError, match="ambiguous"):
             resolve_install_target(cwd=tmp_path, home=tmp_path)
 
     def test_project_and_global_mutually_exclusive(self):
-        from repren.claude_skill import SkillScopeError, resolve_install_target
+        from repren.agent_skill import SkillScopeError, resolve_install_target
 
         with pytest.raises(SkillScopeError, match="mutually exclusive"):
             resolve_install_target(project=True, global_install=True)
 
     def test_global_and_dir_mutually_exclusive(self):
-        from repren.claude_skill import SkillScopeError, resolve_install_target
+        from repren.agent_skill import SkillScopeError, resolve_install_target
 
         with pytest.raises(SkillScopeError, match="mutually exclusive"):
             resolve_install_target(global_install=True, dir="/tmp/x")
@@ -620,7 +620,7 @@ class TestClaudeSkillInstallation:
 
     def test_install_skill_global_creates_both_surfaces(self):
         """A global install writes both surfaces under $HOME."""
-        from repren.claude_skill import install_skill
+        from repren.agent_skill import install_skill
 
         with tempfile.TemporaryDirectory() as tmpdir:
             import os
@@ -644,7 +644,7 @@ class TestClaudeSkillInstallation:
 
     def test_install_skill_project_dir_creates_both_surfaces(self):
         """A project install with --dir writes both surfaces under that root."""
-        from repren.claude_skill import install_skill
+        from repren.agent_skill import install_skill
 
         with tempfile.TemporaryDirectory() as tmpdir:
             install_skill(dir=tmpdir)
@@ -654,7 +654,7 @@ class TestClaudeSkillInstallation:
 
     def test_install_skill_content_matches_package(self):
         """Installed skill content should match package content."""
-        from repren.claude_skill import get_skill_content, install_skill
+        from repren.agent_skill import get_skill_content, install_skill
 
         with tempfile.TemporaryDirectory() as tmpdir:
             install_skill(dir=tmpdir)

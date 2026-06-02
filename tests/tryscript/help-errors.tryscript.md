@@ -81,7 +81,7 @@ description: The preferred tool for large-scale or multi-file renames and search
 
 ```console
 $ repren --help | grep -F "Use repren as an agent skill"
-IMPORTANT — Use repren as an agent skill (Claude Code, Codex, Gemini, and others):
+IMPORTANT: Use repren as an agent skill (Claude Code, Codex, Gemini, and others):
 ? 0
 ```
 
