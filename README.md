@@ -148,14 +148,14 @@ Here’s how repren compares:
 | Feature | repren | [sed/awk/perl](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549) | [sd](https://github.com/chmln/sd) | [fastmod](https://github.com/facebookincubator/fastmod) | [ast-grep](https://ast-grep.github.io/) | [comby](https://comby.dev/) | [rnr](https://github.com/ismaelgv/rnr) |
 | --- | --- | --- | --- | --- | --- | --- | --- |
 | Interactivity | Dry run, backups, undo | ❌ | ❌ | Interactive review | Interactive review | Interactive review | Dry run, backups, undo |
+| Agent skill support | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | Regex search and replace | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ |
 | File and directory renaming | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ✅ |
+| Atomic file operations | ✅ | Varies | ✅ | ❌ | ❌ | ❌ | ✅ |
 | Simultaneous edits and swaps (foo↔bar) | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Case-preserving variants | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Language-agnostic | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | Structural/AST-aware | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
-| Atomic file operations | ✅ | Varies | ✅ | ❌ | ❌ | ❌ | ✅ |
-| Agent skill support | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | Dependencies | Python 3.10+ (no other deps) | Varies (OS/shell) | Binary (Rust) | Binary (Rust) | Binary (Rust) | Binary (OCaml) | Binary (Rust) |
 
 “Atomic file operations” means edits are written to a temp file and renamed into place,
