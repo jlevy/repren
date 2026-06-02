@@ -513,6 +513,7 @@ EXIT_SUCCESS = 0
 EXIT_ERROR = 1
 EXIT_USAGE = 2
 EXIT_INTERRUPTED = 130  # 128 + SIGINT(2)
+EXIT_BROKEN_PIPE = 141  # 128 + SIGPIPE(13)
 
 
 # --- Custom exceptions ---
@@ -1758,6 +1759,16 @@ def _run_cli() -> None:
 
 def main() -> None:
     """CLI entrypoint with centralized error handling."""
+    # Behave like a standard Unix filter: if a downstream reader closes the pipe early
+    # (e.g. `repren --skill | head`), die quietly on SIGPIPE instead of printing a
+    # BrokenPipeError traceback. SIGPIPE is POSIX-only, so guard for Windows.
+    try:
+        import signal
+
+        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+    except (AttributeError, ValueError):
+        pass
+
     try:
         _run_cli()
     except CLIError as e:
@@ -1766,6 +1777,15 @@ def main() -> None:
     except KeyboardInterrupt:
         print("\nInterrupted", file=sys.stderr)
         sys.exit(EXIT_INTERRUPTED)
+    except BrokenPipeError:
+        # Fallback for platforms without SIGPIPE (e.g. Windows): suppress the second
+        # BrokenPipeError raised when Python flushes stdout at shutdown.
+        try:
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+        except OSError:
+            pass
+        sys.exit(EXIT_BROKEN_PIPE)
 
 
 if __name__ == "__main__":
