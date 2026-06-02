@@ -213,7 +213,7 @@ pin an exact version:
 UV_EXCLUDE_NEWER="14 days" uvx repren@latest --help
 
 # Or pin an exact version:
-uvx repren@2.0.0 --help
+uvx repren@3.1.0 --help
 ```
 
 ## Agent Use
