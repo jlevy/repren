@@ -5,9 +5,22 @@ r"""
 `repren` is a powerful CLI string replacement and file renaming tool for use by agents
 or humans for almost any search-and-replace or renaming task.
 
-It is small, self-contained, self-documenting, and works on Python 3.10-3.14 with zero
-dependencies. Essentially, it is a general-purpose, brute-force text file refactoring
-tool.
+It is small, self-contained, self-documenting, and works on Python 3.10-3.14 with
+**zero runtime dependencies**. Essentially, it is a general-purpose, brute-force text
+file refactoring tool.
+
+**Coding agents:** point your agent at repren and it installs itself as a skill:
+
+> **Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.**
+
+repren’s `--help` ends with the exact install commands. Once installed, the agent uses
+repren automatically for bulk refactors and renames. (See [Agent Use](#agent-use).)
+
+**Zero runtime dependencies.** Installing repren (or running `uvx repren@latest`) pulls in
+nothing but repren itself and the Python standard library, so there is no transitive
+dependency tree to audit or be compromised. It is a single file you can read end to end
+before trusting it. The dev-only tooling used to build and test repren (pytest, ruff, and
+so on) is never installed when you use it.
 
 For example, repren could rename occurrences of certain names in a set of source files,
 while simultaneously renaming the files and directories according to the same pattern
@@ -123,13 +136,21 @@ Here’s how repren compares:
 | Case-preserving variants | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Language-agnostic | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | Structural/AST-aware | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Atomic file operations | ✅ | Varies | ✅ | ❌ | ❌ | ❌ | ✅ |
 | Interactivity | Dry run, backups, undo | ❌ | ❌ | Interactive review | Interactive review | Interactive review | Dry run, backups, undo |
+| Agent skill support | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | Dependencies | Python 3.10+ (no other deps) | Varies (OS/shell) | Binary (Rust) | Binary (Rust) | Binary (Rust) | Binary (OCaml) | Binary (Rust) |
+
+“Atomic file operations” means edits are written to a temp file and renamed into place,
+so an interrupted run never leaves a half-written file. repren and `sd` do this; `rnr`
+only renames; the classic tools vary; and `fastmod`, `ast-grep`, and `comby` overwrite in
+place.
 
 **When to use each:**
 
 - **repren**: Bulk renames with file/directory renaming, case preservation, or
-  simultaneous swaps. Works on any text file with full backup/undo support.
+  simultaneous swaps. Works on any text file, with atomic writes and full backup/undo
+  support.
 - **sed/awk/perl**: Classic approaches for quick one-liners.
   See
   [classic approaches](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549).
@@ -141,7 +162,9 @@ Here’s how repren compares:
   preservation, simultaneous swaps, and file/directory renaming.
 - **ast-grep**: Language-aware refactoring where you need to match code structure (e.g.,
   function calls, not just text).
-  Use when semantic understanding matters more than speed.
+  Use when semantic understanding matters more than speed. It also ships an official agent
+  skill and MCP server, so it’s a strong companion to repren for agent-driven, AST-aware
+  edits.
 - **comby**: Structural matching across languages without learning AST syntax.
   Useful when you need to match code patterns like balanced braces, but overkill for
   simple text refactoring.
@@ -151,7 +174,8 @@ Here’s how repren compares:
 
 ## Installation
 
-No dependencies except Python 3.10+. It’s easiest to install with
+repren has **zero runtime dependencies** (just Python 3.10+), so installing it never adds
+a transitive dependency tree to your environment. It’s easiest to install with
 [uv](https://docs.astral.sh/uv/):
 
 ```bash
@@ -159,38 +183,79 @@ No dependencies except Python 3.10+. It’s easiest to install with
 uv tool install repren
 
 # Or run directly without installing:
-uvx repren --help
+uvx repren@latest --help
 ```
 
 Or, since it’s just one file, you can copy the
 [repren.py](https://raw.githubusercontent.com/jlevy/repren/master/repren/repren.py)
 script somewhere convenient and make it executable.
 
-## Agent Use
-
-repren is ideal for use by AI coding agents (Claude Code, Codex, etc.)
-since it is powerful, simple to use, and self-documenting.
-Just tell agents to run `uvx repren@latest --help` and they have everything they need,
-including the ability to install it as a skill.
-Agents can use `--format=json` for machine-parseable output.
-
-repren includes a built-in skill for Claude Code or other agents.
-
-**Install:**
+**A note on freshness and safety.** These examples use `@latest` for simplicity. Because
+repren has **zero runtime dependencies**, the only code fetched and run is repren itself.
+There is no transitive dependency tree to audit or be compromised, so `@latest` carries
+far less supply-chain risk here than for a typical package. If you want an extra safety
+margin, you can opt into uv’s release “cool-off” (which excludes very recent uploads), or
+pin an exact version:
 
 ```bash
-# Install globally (available in all projects):
-uvx repren --install-skill
+# Skip uploads newer than 14 days, then run the latest within that window:
+UV_EXCLUDE_NEWER="14 days" uvx repren@latest --help
 
-# Or install for current project only (shareable via git):
-uvx repren --install-skill --agent-base=./.claude
+# Or pin an exact version:
+uvx repren@3.1.0 --help
 ```
 
-Re-run to update an existing installation.
+## Agent Use
 
-**Manual install:** Run `uvx repren --skill` and save to
-`~/.claude/skills/repren/SKILL.md` (global) or `.claude/skills/repren/SKILL.md`
-(project).
+Point your agent at repren’s self-documenting help to install the skill:
+
+> **Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.**
+
+repren’s `--help` ends with the exact install commands. (`uvx` runs repren with no prior
+install; see the note on `@latest` and safety under [Installation](#installation).)
+
+**Install the skill yourself** (the same thing the agent does):
+
+```bash
+# Install into the current project (run from the repo; shareable via git):
+uvx repren@latest --install-skill --project
+
+# Or install globally, for every project:
+uvx repren@latest --install-skill --global
+```
+
+Re-run any time to update an existing install.
+
+### How it works
+
+repren is **self-documenting**: `repren --help` and `repren --docs` are the source of
+truth for every flag, and `--format=json` gives agents machine-parseable output. The
+skill is just a thin pointer to those commands, so it never drifts out of date.
+
+Installing the skill writes one `SKILL.md` to **both** discovery locations, so every
+agent finds it:
+
+- `.agents/skills/repren/`: the portable, cross-agent location (Codex, Gemini, pi, …)
+- `.claude/skills/repren/`: the Claude Code mirror
+
+repren is a general-purpose utility with no per-project config, so the skill invokes it
+through the zero-install runner `uvx repren@latest`. There’s no need to add repren as a
+project dependency. Because repren has **zero runtime dependencies**, the only code a
+runner ever fetches and runs is repren itself; for an extra safety margin you can opt into
+uv’s release cool-off (`UV_EXCLUDE_NEWER`, see [Installation](#installation)) in your
+environment, which applies to the skill’s invocations too.
+
+**Scope is resolved like `git config`:** implicit when unambiguous, a clear error when
+not, so a stray `--install-skill` never silently rewrites your global agent surfaces:
+
+- Inside a git repo, `--project` is implied (so `uvx repren --install-skill` just works).
+- In an ambiguous spot (your home directory, or outside any repo) repren refuses and
+  tells you to pass `--project` (optionally with `--dir DIR` or `--no-repo-check`) or
+  `--global`.
+
+**Manual install:** run `uvx repren --skill` and save the output to
+`.agents/skills/repren/SKILL.md` (and/or `.claude/skills/repren/SKILL.md`), under `~` for
+a global install or the project root for a project install.
 
 **Learn more:** [Claude Code docs](https://claude.ai/code) and
 [Skills repository](https://github.com/anthropics/skills).
@@ -374,9 +439,12 @@ repren --clean-backups mydir/
 - Backups are created of all modified files, with the suffix “.orig”.
   The suffix can be customized with `--backup-suffix`.
 
-- By default, recursive searching omits paths starting with “.”. This may be adjusted
-  with `--exclude`. Files ending in the backup suffix (`.orig` by default) are always
-  ignored.
+- By default, recursive searching omits paths starting with “.” (including `.git/`). This
+  may be adjusted with `--exclude`. Files ending in the backup suffix (`.orig` by default)
+  are always ignored. repren does **not** read `.gitignore`: any other paths you want to
+  skip (`node_modules/`, `build/`, `dist/`, vendored code) must be named explicitly with
+  `--exclude`, and richer scoping is done with `--include`/`--exclude` (preview with
+  `--dry-run`).
 
 - Data is handled as bytes internally, allowing it to work with any encoding or binary
   files. File contents are not decoded unless necessary (e.g., for logging).
@@ -393,6 +461,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -430,6 +499,7 @@ EXIT_SUCCESS = 0
 EXIT_ERROR = 1
 EXIT_USAGE = 2
 EXIT_INTERRUPTED = 130  # 128 + SIGINT(2)
+EXIT_BROKEN_PIPE = 141  # 128 + SIGPIPE(13)
 
 
 # --- Custom exceptions ---
@@ -475,6 +545,15 @@ DEFAULT_EXCLUDE_PAT: str = r"^\."
 DOCS_HINT: str = """\
 Run `repren --help` for usage.
 Run `repren --docs` for full docs."""
+
+# Prominent callout shown in `--help` so agents and humans immediately discover that
+# repren can install itself as an agent skill. Keep this short and actionable (§6.5).
+SKILL_HINT: str = """\
+IMPORTANT: Use repren as an agent skill (Claude Code, Codex, Gemini, and others):
+  Install into your project:  repren --install-skill            (run inside the repo)
+  Install for all projects:   repren --install-skill --global
+  Not installed? Use uvx:     uvx repren@latest --install-skill  (add --project or --global)
+Once installed, your coding agent uses repren automatically for refactoring tasks."""
 
 # Terminal width handling.
 DEFAULT_WIDTH: int = 88
@@ -563,6 +642,13 @@ def _format_hint(color: bool = True) -> str:
     if color and _markdown_available:
         return f"{_ansi_yellow}{DOCS_HINT}{_ansi_reset}"
     return DOCS_HINT
+
+
+def _format_skill_hint(color: bool = True) -> str:
+    """Format the SKILL_HINT with optional ANSI colors."""
+    if color and _markdown_available:
+        return f"{_ansi_yellow}{SKILL_HINT}{_ansi_reset}"
+    return SKILL_HINT
 
 
 @dataclass
@@ -1330,15 +1416,33 @@ def _run_cli() -> None:
     )
     parser.add_argument(
         "--install-skill",
-        help="install Claude Code skill for repren (by default globally to ~/.claude/skills/repren)",
-        dest="install_claude_skill",
+        help="install repren agent skill (.agents/ and .claude/ skill dirs); see --project/--global",
+        dest="install_skill",
         action="store_true",
     )
     parser.add_argument(
-        "--agent-base",
-        help="agent config directory for skills (e.g., './.claude' for project, defaults to ~/.claude)",
-        dest="agent_base",
+        "--project",
+        help="with --install-skill: install into the current project",
+        dest="skill_project",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--global",
+        help="with --install-skill: install globally under ~",
+        dest="skill_global",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--dir",
+        help="with --install-skill: explicit project root (implies --project)",
+        dest="skill_dir",
         metavar="DIR",
+    )
+    parser.add_argument(
+        "--no-repo-check",
+        help="with --install-skill --project: allow installing outside a git repo",
+        dest="skill_no_repo_check",
+        action="store_true",
     )
     parser.add_argument(
         "--skill",
@@ -1350,8 +1454,10 @@ def _run_cli() -> None:
 
     # Handle --help early (show basic usage)
     if "-h" in sys.argv or "--help" in sys.argv:
+        use_color = sys.stdout.isatty()
         parser.print_help()
-        print(f"\n{_format_hint(color=sys.stdout.isatty())}\n")
+        print(f"\n{_format_skill_hint(color=use_color)}\n")
+        print(f"{_format_hint(color=use_color)}\n")
         sys.exit(0)
 
     # Handle --docs early (show full documentation)
@@ -1359,43 +1465,64 @@ def _run_cli() -> None:
         doc_text = __doc__ or ""
         use_color = sys.stdout.isatty()
         full_docs = _render_markdown(doc_text, color=use_color) if _markdown_available else doc_text
-        parser.epilog = full_docs + f"\n{_format_hint(color=use_color)}\n"
+        parser.epilog = (
+            full_docs
+            + f"\n{_format_skill_hint(color=use_color)}\n"
+            + f"\n{_format_hint(color=use_color)}\n"
+        )
         parser.print_help()
         sys.exit(0)
 
     options = parser.parse_args()
 
-    # Handle Claude skill installation (early exit)
-    if options.install_claude_skill:
-        try:
-            from .claude_skill import install_skill
+    # The skill scope flags only apply to --install-skill.
+    skill_scope_requested = (
+        options.skill_project
+        or options.skill_global
+        or options.skill_dir is not None
+        or options.skill_no_repo_check
+    )
+    if skill_scope_requested and not options.install_skill:
+        parser.error("--project/--global/--dir/--no-repo-check require --install-skill")
 
-            # Install to specified agent base or ~/.claude by default
-            install_skill(agent_base=options.agent_base)
-            sys.exit(0)
+    # Handle skill installation (early exit)
+    if options.install_skill:
+        try:
+            from .agent_skill import SkillScopeError, install_skill
         except ImportError:
             # Fallback if running as standalone script
             print(
-                "Error: Claude skill installation requires full package installation.",
+                "Error: skill installation requires full package installation.",
                 file=sys.stderr,
             )
             print("Install with: uv tool install repren", file=sys.stderr)
             print("", file=sys.stderr)
             print(
-                "Alternative: Download SKILL.md from the repository and install manually:",
+                "Alternative: print the skill and save it manually:",
                 file=sys.stderr,
             )
-            print("  mkdir -p ~/.claude/skills/repren", file=sys.stderr)
+            print("  mkdir -p .agents/skills/repren", file=sys.stderr)
             print(
-                "  curl -o ~/.claude/skills/repren/SKILL.md https://raw.githubusercontent.com/jlevy/repren/master/repren/skills/SKILL.md",
+                "  uvx repren --skill > .agents/skills/repren/SKILL.md",
                 file=sys.stderr,
             )
             sys.exit(1)
 
+        try:
+            install_skill(
+                project=options.skill_project,
+                global_install=options.skill_global,
+                dir=options.skill_dir,
+                no_repo_check=options.skill_no_repo_check,
+            )
+            sys.exit(0)
+        except SkillScopeError as e:
+            parser.error(str(e))
+
     # Handle skill instructions output (early exit)
     if options.skill_instructions:
         try:
-            from .claude_skill import get_skill_content
+            from .agent_skill import get_skill_content
 
             print(get_skill_content())
             print(f"\n{_format_hint(color=sys.stdout.isatty())}\n")
@@ -1406,11 +1533,11 @@ def _run_cli() -> None:
             print("Install with: uv tool install repren", file=sys.stderr)
             print("", file=sys.stderr)
             print(
-                "Alternative: Download SKILL.md directly from the repository:",
+                "Alternative: run the skill printer from a packaged install:",
                 file=sys.stderr,
             )
             print(
-                "  curl https://raw.githubusercontent.com/jlevy/repren/master/repren/skills/SKILL.md",
+                "  uvx repren --skill",
                 file=sys.stderr,
             )
             sys.exit(1)
@@ -1618,6 +1745,16 @@ def _run_cli() -> None:
 
 def main() -> None:
     """CLI entrypoint with centralized error handling."""
+    # Behave like a standard Unix filter: if a downstream reader closes the pipe early
+    # (e.g. `repren --skill | head`), die quietly on SIGPIPE instead of printing a
+    # BrokenPipeError traceback. SIGPIPE only exists on POSIX (guard for Windows), and
+    # signal.signal() only works on the main thread (guard for embedded/off-thread use).
+    if hasattr(signal, "SIGPIPE"):
+        try:
+            signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+        except ValueError:
+            pass
+
     try:
         _run_cli()
     except CLIError as e:
@@ -1626,6 +1763,15 @@ def main() -> None:
     except KeyboardInterrupt:
         print("\nInterrupted", file=sys.stderr)
         sys.exit(EXIT_INTERRUPTED)
+    except BrokenPipeError:
+        # Fallback for platforms without SIGPIPE (e.g. Windows): suppress the second
+        # BrokenPipeError raised when Python flushes stdout at shutdown.
+        try:
+            devnull = os.open(os.devnull, os.O_WRONLY)
+            os.dup2(devnull, sys.stdout.fileno())
+        except OSError:
+            pass
+        sys.exit(EXIT_BROKEN_PIPE)
 
 
 if __name__ == "__main__":

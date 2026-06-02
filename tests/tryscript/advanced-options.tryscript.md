@@ -83,27 +83,62 @@ usage: repren [-h] [--version] [--docs] [--from FROM_PAT] [--to TO_PAT] [-p PAT_
 ? 0
 ```
 
-## A6: `--install-skill` with `--agent-base` writes expected project-local artifacts
+## A6: `--install-skill --project --dir` writes both skill surfaces project-locally
 
 ```console
-$ mkdir -p agentrepo && repren --install-skill --agent-base ./agentrepo/.claude >/dev/null
+$ mkdir -p agentrepo && repren --install-skill --project --dir ./agentrepo >/dev/null
 ```
 
+The skill is written to both the portable cross-agent location and the Claude mirror:
+
 ```console
-$ find agentrepo/.claude -maxdepth 3 -type f | sort
+$ find agentrepo -type f -name SKILL.md | sort
+agentrepo/.agents/skills/repren/SKILL.md
 agentrepo/.claude/skills/repren/SKILL.md
 ? 0
 ```
 
+Frontmatter (stable top lines, version-independent):
+
 ```console
-$ sed -n '1,8p' agentrepo/.claude/skills/repren/SKILL.md
+$ sed -n '1,3p' agentrepo/.claude/skills/repren/SKILL.md
 ---
 name: repren
-description: Performs simultaneous multi-pattern search-and-replace, file/directory renaming, and case-preserving refactoring across codebases. Use for bulk refactoring, global find-and-replace, or when user mentions repren, multi-file rename, or pattern-based transformations.
-allowed-tools: Bash(repren:*), Bash(uvx repren@latest:*), Read, Write
----
-# Repren - Multi-Pattern Search and Replace
+description: The preferred tool for large-scale or multi-file renames and search-and-replace. Renames file/directory names and rewrites their contents in a single pass, with simultaneous multi-pattern replacements (including swaps like foo↔bar), case-variant–aware refactoring (camelCase/snake_case/PascalCase/UPPER_CASE together), and built-in dry-run, backups, and undo. Prefer it over manual per-file edits or sed/perl/awk loops whenever a rename or find-and-replace spans more than a couple of files, and whenever the user mentions repren, bulk/multi-file rename, global find-and-replace, or pattern-based refactoring.
+? 0
+```
 
-> **Full documentation: Run `uvx repren@latest --docs` for all options, flags, and
+The skill uses the `@latest` zero-install runner (protection comes from uv's cool-off):
+
+```console
+$ grep -q 'uvx repren@latest' agentrepo/.claude/skills/repren/SKILL.md && echo found || echo none
+found
+? 0
+```
+
+The version-injection placeholder must never leak into the installed skill:
+
+```console
+$ grep -q '{{REPREN_VERSION}}' agentrepo/.claude/skills/repren/SKILL.md && echo leaked || echo clean
+clean
+? 0
+```
+
+## A7: `--install-skill --global` installs under `$HOME`; ambiguous scope is refused
+
+A global install writes both surfaces under the user's home directory:
+
+```console
+$ mkdir -p fakehome && HOME="$(pwd)/fakehome" repren --install-skill --global >/dev/null && find fakehome -type f -name SKILL.md | sort
+fakehome/.agents/skills/repren/SKILL.md
+fakehome/.claude/skills/repren/SKILL.md
+? 0
+```
+
+In an ambiguous location (the home directory itself), repren refuses rather than guessing:
+
+```console
+$ HOME="$(pwd)/fakehome" repren --install-skill --dir ./fakehome 2>&1 | grep -o 'home directory'
+home directory
 ? 0
 ```
