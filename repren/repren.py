@@ -546,6 +546,7 @@ SKILL_HINT: str = """\
 IMPORTANT — Use repren as an agent skill (Claude Code, Codex, Gemini, and others):
   Install into your project:  repren --install-skill            (run inside the repo)
   Install for all projects:   repren --install-skill --global
+  Not installed? Use uvx:     uvx repren@latest --install-skill  (add --project or --global)
 Once installed, your coding agent uses repren automatically for refactoring tasks."""
 
 # Terminal width handling.
