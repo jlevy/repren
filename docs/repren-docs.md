@@ -7,22 +7,18 @@ It is small, self-contained, self-documenting, and works on Python 3.10-3.14 wit
 **zero runtime dependencies**. Essentially, it is a general-purpose, brute-force text
 file refactoring tool.
 
-**Using a coding agent?** This is the whole setup. Tell Claude Code, Codex, Gemini, or
-any agent:
+**Coding agents:** point your agent at repren and it installs itself as a skill:
 
 > Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.
 
-repren’s `--help` ends with the exact install commands, so the agent reads them and takes
-it from there. After that it reaches for repren automatically on bulk refactors and
-renames. (See [Agent Use](#agent-use).)
+repren’s `--help` ends with the exact install commands. Once installed, the agent uses
+repren automatically for bulk refactors and renames. (See [Agent Use](#agent-use).)
 
-**Zero dependencies, by design.** Given the rise of supply-chain attacks on package
-ecosystems, it’s worth noting that repren has **zero runtime dependencies**. Installing
-it (or running `uvx repren@latest`) pulls in nothing but repren itself and the Python
-standard library. There is no transitive dependency tree to audit or to be compromised,
-so it is simpler and safer to adopt than most tools. It’s also a single file you can read
-end to end (or have your agent review) before you trust it. The dev-only tooling used to
-build and test repren (pytest, ruff, etc.) is never installed when you use it.
+**Zero runtime dependencies.** Installing repren (or running `uvx repren@latest`) pulls in
+nothing but repren itself and the Python standard library, so there is no transitive
+dependency tree to audit or be compromised. It is a single file you can read end to end
+before trusting it. The dev-only tooling used to build and test repren (pytest, ruff, and
+so on) is never installed when you use it.
 
 For example, repren could rename occurrences of certain names in a set of source files,
 while simultaneously renaming the files and directories according to the same pattern
@@ -143,19 +139,10 @@ Here’s how repren compares:
 | Agent skill support | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | Dependencies | Python 3.10+ (no other deps) | Varies (OS/shell) | Binary (Rust) | Binary (Rust) | Binary (Rust) | Binary (OCaml) | Binary (Rust) |
 
-Notes on the last two rows:
-
-- **Atomic file operations** means edits are written to a temp file and atomically
-  renamed into place, so an interruption never leaves a truncated or half-written file.
-  repren and `sd` do this for content edits; `rnr` only renames (and `rename()` is itself
-  atomic). For the classics it *varies*: GNU `sed -i` and `gawk -i inplace` write to a
-  temp file and rename, but `perl -i` is only atomic on Perl ≥ 5.28, and a plain
-  `cmd > file` redirect is never atomic. `fastmod`, `ast-grep`, and `comby` overwrite
-  files in place.
-- **Agent skill support** means the project ships an official coding-agent integration
-  (a skill or MCP server) so an agent can discover and drive it. repren installs a skill
-  via `repren --install-skill`; `ast-grep` ships an official agent skill and MCP server.
-  The others have no first-party agent integration.
+“Atomic file operations” means edits are written to a temp file and renamed into place,
+so an interrupted run never leaves a half-written file. repren and `sd` do this; `rnr`
+only renames; the classic tools vary; and `fastmod`, `ast-grep`, and `comby` overwrite in
+place.
 
 **When to use each:**
 
@@ -218,14 +205,12 @@ uvx repren@3.1.0 --help
 
 ## Agent Use
 
-**The one thing to know:** point your agent at repren’s self-documenting help and let it
-install itself.
+Point your agent at repren’s self-documenting help to install the skill:
 
 > Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.
 
-repren’s `--help` ends with the exact install commands, so the agent can take it from
-there. (`uvx` runs repren with no prior install; see the note on `@latest` and safety
-under [Installation](#installation).)
+repren’s `--help` ends with the exact install commands. (`uvx` runs repren with no prior
+install; see the note on `@latest` and safety under [Installation](#installation).)
 
 **Install the skill yourself** (the same thing the agent does):
 
