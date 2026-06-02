@@ -140,13 +140,29 @@ Here’s how repren compares:
 | Case-preserving variants | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Language-agnostic | ✅ | ✅ | ✅ | ✅ | ❌ | ✅ | ✅ |
 | Structural/AST-aware | ❌ | ❌ | ❌ | ❌ | ✅ | ✅ | ❌ |
+| Atomic file operations | ✅ | Varies | ✅ | ❌ | ❌ | ❌ | ✅ |
 | Interactivity | Dry run, backups, undo | ❌ | ❌ | Interactive review | Interactive review | Interactive review | Dry run, backups, undo |
+| Agent skill support | ✅ | ❌ | ❌ | ❌ | ✅ | ❌ | ❌ |
 | Dependencies | Python 3.10+ (no other deps) | Varies (OS/shell) | Binary (Rust) | Binary (Rust) | Binary (Rust) | Binary (OCaml) | Binary (Rust) |
+
+Notes on the last two rows:
+
+- **Atomic file operations** means edits are written to a temp file and atomically
+  renamed into place, so an interruption never leaves a truncated or half-written file.
+  repren and `sd` do this for content edits; `rnr` only renames (and `rename()` is itself
+  atomic). For the classics it *varies*: GNU `sed -i` and `gawk -i inplace` use
+  temp+rename, but `perl -i` is only atomic on Perl ≥ 5.28, and a plain `cmd > file`
+  redirect is never atomic. `fastmod`, `ast-grep`, and `comby` overwrite files in place.
+- **Agent skill support** means the project ships an official coding-agent integration
+  (a skill or MCP server) so an agent can discover and drive it. repren installs a skill
+  via `repren --install-skill`; `ast-grep` ships an official agent skill and MCP server.
+  The others have no first-party agent integration.
 
 **When to use each:**
 
 - **repren**: Bulk renames with file/directory renaming, case preservation, or
-  simultaneous swaps. Works on any text file with full backup/undo support.
+  simultaneous swaps. Works on any text file, with atomic writes and full backup/undo
+  support.
 - **sed/awk/perl**: Classic approaches for quick one-liners.
   See
   [classic approaches](http://stackoverflow.com/questions/11392478/how-to-replace-a-string-in-multiple-files-in-linux-command-line/29191549).
@@ -158,7 +174,9 @@ Here’s how repren compares:
   preservation, simultaneous swaps, and file/directory renaming.
 - **ast-grep**: Language-aware refactoring where you need to match code structure (e.g.,
   function calls, not just text).
-  Use when semantic understanding matters more than speed.
+  Use when semantic understanding matters more than speed. It also ships an official agent
+  skill and MCP server, so it’s a strong companion to repren for agent-driven, AST-aware
+  edits.
 - **comby**: Structural matching across languages without learning AST syntax.
   Useful when you need to match code patterns like balanced braces, but overkill for
   simple text refactoring.
