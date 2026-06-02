@@ -5,9 +5,27 @@ r"""
 `repren` is a powerful CLI string replacement and file renaming tool for use by agents
 or humans for almost any search-and-replace or renaming task.
 
-It is small, self-contained, self-documenting, and works on Python 3.10-3.14 with zero
-dependencies. Essentially, it is a general-purpose, brute-force text file refactoring
-tool.
+It is small, self-contained, self-documenting, and works on Python 3.10-3.14 with
+**zero runtime dependencies**. Essentially, it is a general-purpose, brute-force text
+file refactoring tool.
+
+**Using a coding agent?** This is the whole setup — tell Claude Code, Codex, Gemini, or
+any agent:
+
+> Run `uvx repren@2.1.0 --help` and follow the instructions to install repren
+> as a skill.
+
+repren’s `--help` ends with the exact install commands, so the agent reads them and takes
+it from there. After that it reaches for repren automatically on bulk refactors and
+renames. (See [Agent Use](#agent-use).)
+
+**Zero dependencies, by design.** Given the rise of supply-chain attacks on package
+ecosystems, it’s worth noting that repren has **zero runtime dependencies** — installing
+it (or running `uvx repren@<version>`) pulls in nothing but repren itself and the Python
+standard library. There is no transitive dependency tree to audit or to be compromised,
+so it is simpler and safer to adopt than most tools. It’s also a single file you can read
+end to end (or have your agent review) before you trust it. The dev-only tooling used to
+build and test repren (pytest, ruff, etc.) is never installed when you use it.
 
 For example, repren could rename occurrences of certain names in a set of source files,
 while simultaneously renaming the files and directories according to the same pattern
@@ -151,61 +169,90 @@ Here’s how repren compares:
 
 ## Installation
 
-No dependencies except Python 3.10+. It’s easiest to install with
+repren has **zero runtime dependencies** (just Python 3.10+), so installing it never adds
+a transitive dependency tree to your environment. It’s easiest to install with
 [uv](https://docs.astral.sh/uv/):
 
 ```bash
-# Install as a tool:
+# Install as a tool (pin a version you trust):
 uv tool install repren
 
-# Or run directly without installing:
-uvx repren --help
+# Or run directly without installing, pinned to a known version:
+uvx repren@2.1.0 --help
 ```
 
 Or, since it’s just one file, you can copy the
 [repren.py](https://raw.githubusercontent.com/jlevy/repren/master/repren/repren.py)
 script somewhere convenient and make it executable.
 
+**A note on pinning (supply-chain hygiene).** The examples here pin an explicit version
+(`repren@2.1.0`) rather than `@latest`. An unpinned `uvx repren@latest` re-resolves
+to the newest release every run and executes it immediately — the pattern supply-chain
+guidance warns against, since uv applies no release “cool-off” by default. If you prefer
+to always track the latest release but still want a safety delay, opt into uv’s cool-off,
+which excludes very recent uploads:
+
+```bash
+# Only resolve versions at least 14 days old, then run latest-within-that-window:
+UV_EXCLUDE_NEWER="14 days" uvx repren@latest --help
+```
+
+repren’s zero-dependency design keeps this risk small either way: the only code fetched
+and run is repren itself.
+
 ## Agent Use
 
-repren is ideal for use by AI coding agents (Claude Code, Codex, etc.)
-since it is powerful, simple to use, and self-documenting.
-Just tell agents to run `repren --help` (or, with no install, `uvx repren@<version> --help`,
-pinning a version you trust) and they have everything they need, including the ability to
-install it as a skill.
-Agents can use `--format=json` for machine-parseable output.
+**The one thing to know:** point your agent at repren’s self-documenting help and let it
+install itself —
 
-repren includes a built-in skill for coding agents. Installing it writes the skill to
-both the portable cross-agent location (`.agents/skills/repren/`, used by Codex, pi, and
-others) and the Claude Code mirror (`.claude/skills/repren/`). repren is a general-purpose
-utility with no per-project config, so the skill invokes it via a pinned zero-install
-runner (`uvx repren@<version>`) and there is no need to add repren as a project
-dependency.
+> Run `uvx repren@2.1.0 --help` and follow the instructions to install repren
+> as a skill.
 
-repren is a dual-scope skill: install it into a single project or globally for your
-user. Scope is resolved like `git config` — implicit when unambiguous, an error when
-not — so a stray `--install-skill` never silently rewrites your global agent surfaces.
+repren’s `--help` ends with the exact install commands, so the agent can take it from
+there. (`uvx` runs repren with no prior install; the example pins a version, which is
+safer than `@latest` — see the note under [Installation](#installation).)
 
-**Install:**
+**Install the skill yourself** (the same thing the agent does):
 
 ```bash
 # Install into the current project (run from the repo; shareable via git):
-uvx repren --install-skill --project
+uvx repren@2.1.0 --install-skill --project
 
-# Install globally (available in all projects):
-uvx repren --install-skill --global
+# Or install globally, for every project:
+uvx repren@2.1.0 --install-skill --global
 ```
 
-Inside a git repo, `--project` is implied, so `uvx repren --install-skill` installs into
-the project. Outside a repo (or in your home directory) the scope is ambiguous and you
-must pass `--project` (optionally with `--dir DIR` or `--no-repo-check`) or `--global`.
+Re-run any time to update an existing install.
 
-Re-run to update an existing installation. The skill pins the repren version it was
-installed from.
+### How it works
 
-**Manual install:** Run `uvx repren --skill` and save the output to
-`.agents/skills/repren/SKILL.md` (and/or `.claude/skills/repren/SKILL.md`), under `~`
-for a global install or the project root for a project install.
+repren is **self-documenting**: `repren --help` and `repren --docs` are the source of
+truth for every flag, and `--format=json` gives agents machine-parseable output. The
+skill is just a thin pointer to those commands, so it never drifts out of date.
+
+Installing the skill writes one `SKILL.md` to **both** discovery locations, so every
+agent finds it:
+
+- `.agents/skills/repren/` — the portable, cross-agent location (Codex, Gemini, pi, …)
+- `.claude/skills/repren/` — the Claude Code mirror
+
+repren is a general-purpose utility with no per-project config, so the skill invokes it
+through a **pinned zero-install runner** (`uvx repren@<version>`) — there’s no need to add
+repren as a project dependency, and each installed skill pins the version it came from.
+Combined with repren’s zero runtime dependencies, the code an agent ever fetches and runs
+is just repren itself.
+
+**Scope is resolved like `git config`** — implicit when unambiguous, a clear error when
+not — so a stray `--install-skill` never silently rewrites your global agent surfaces:
+
+- Inside a git repo, `--project` is implied (so `uvx repren --install-skill` just works).
+- In an ambiguous spot (your home directory, or outside any repo) repren refuses and
+  tells you to pass `--project` (optionally with `--dir DIR` or `--no-repo-check`) or
+  `--global`.
+
+**Manual install:** run `uvx repren --skill` and save the output to
+`.agents/skills/repren/SKILL.md` (and/or `.claude/skills/repren/SKILL.md`), under `~` for
+a global install or the project root for a project install.
 
 **Learn more:** [Claude Code docs](https://claude.ai/code) and
 [Skills repository](https://github.com/anthropics/skills).
