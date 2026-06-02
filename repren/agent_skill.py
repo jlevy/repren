@@ -15,6 +15,7 @@ dependencies, so the only code a runner ever fetches is repren itself; for an ex
 safety margin, opt into uv's release cool-off (``UV_EXCLUDE_NEWER``) in your environment.
 """
 
+import argparse
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -259,8 +260,6 @@ def main() -> None:
         python -m repren.agent_skill --global
         python -m repren.agent_skill --project --dir /path/to/repo
     """
-    import argparse
-
     parser = argparse.ArgumentParser(
         description="Install repren agent skill",
         formatter_class=argparse.RawDescriptionHelpFormatter,

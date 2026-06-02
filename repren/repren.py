@@ -476,6 +476,7 @@ import json
 import os
 import re
 import shutil
+import signal
 import sys
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -1761,13 +1762,13 @@ def main() -> None:
     """CLI entrypoint with centralized error handling."""
     # Behave like a standard Unix filter: if a downstream reader closes the pipe early
     # (e.g. `repren --skill | head`), die quietly on SIGPIPE instead of printing a
-    # BrokenPipeError traceback. SIGPIPE is POSIX-only, so guard for Windows.
-    try:
-        import signal
-
-        signal.signal(signal.SIGPIPE, signal.SIG_DFL)
-    except (AttributeError, ValueError):
-        pass
+    # BrokenPipeError traceback. SIGPIPE only exists on POSIX (guard for Windows), and
+    # signal.signal() only works on the main thread (guard for embedded/off-thread use).
+    if hasattr(signal, "SIGPIPE"):
+        try:
+            signal.signal(signal.SIGPIPE, signal.SIG_DFL)
+        except ValueError:
+            pass
 
     try:
         _run_cli()
