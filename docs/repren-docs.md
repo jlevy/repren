@@ -10,8 +10,7 @@ file refactoring tool.
 **Using a coding agent?** This is the whole setup — tell Claude Code, Codex, Gemini, or
 any agent:
 
-> Run `uvx repren@{{REPREN_VERSION}} --help` and follow the instructions to install repren
-> as a skill.
+> Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.
 
 repren’s `--help` ends with the exact install commands, so the agent reads them and takes
 it from there. After that it reaches for repren automatically on bulk refactors and
@@ -19,7 +18,7 @@ renames. (See [Agent Use](#agent-use).)
 
 **Zero dependencies, by design.** Given the rise of supply-chain attacks on package
 ecosystems, it’s worth noting that repren has **zero runtime dependencies** — installing
-it (or running `uvx repren@<version>`) pulls in nothing but repren itself and the Python
+it (or running `uvx repren@latest`) pulls in nothing but repren itself and the Python
 standard library. There is no transitive dependency tree to audit or to be compromised,
 so it is simpler and safer to adopt than most tools. It’s also a single file you can read
 end to end (or have your agent review) before you trust it. The dev-only tooling used to
@@ -172,52 +171,51 @@ a transitive dependency tree to your environment. It’s easiest to install with
 [uv](https://docs.astral.sh/uv/):
 
 ```bash
-# Install as a tool (pin a version you trust):
+# Install as a tool:
 uv tool install repren
 
-# Or run directly without installing, pinned to a known version:
-uvx repren@{{REPREN_VERSION}} --help
+# Or run directly without installing:
+uvx repren@latest --help
 ```
 
 Or, since it’s just one file, you can copy the
 [repren.py](https://raw.githubusercontent.com/jlevy/repren/master/repren/repren.py)
 script somewhere convenient and make it executable.
 
-**A note on pinning (supply-chain hygiene).** The examples here pin an explicit version
-(`repren@{{REPREN_VERSION}}`) rather than `@latest`. An unpinned `uvx repren@latest` re-resolves
-to the newest release every run and executes it immediately — the pattern supply-chain
-guidance warns against, since uv applies no release “cool-off” by default. If you prefer
-to always track the latest release but still want a safety delay, opt into uv’s cool-off,
-which excludes very recent uploads:
+**A note on freshness and safety.** These examples use `@latest` for simplicity. Because
+repren has **zero runtime dependencies**, the only code fetched and run is repren itself —
+there is no transitive dependency tree to audit or be compromised — so `@latest` carries
+far less supply-chain risk here than for a typical package. If you want an extra safety
+margin, you can opt into uv’s release “cool-off” (which excludes very recent uploads), or
+pin an exact version:
 
 ```bash
-# Only resolve versions at least 14 days old, then run latest-within-that-window:
+# Skip uploads newer than 14 days, then run the latest within that window:
 UV_EXCLUDE_NEWER="14 days" uvx repren@latest --help
-```
 
-repren’s zero-dependency design keeps this risk small either way: the only code fetched
-and run is repren itself.
+# Or pin an exact version:
+uvx repren@2.0.0 --help
+```
 
 ## Agent Use
 
 **The one thing to know:** point your agent at repren’s self-documenting help and let it
 install itself —
 
-> Run `uvx repren@{{REPREN_VERSION}} --help` and follow the instructions to install repren
-> as a skill.
+> Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.
 
 repren’s `--help` ends with the exact install commands, so the agent can take it from
-there. (`uvx` runs repren with no prior install; the example pins a version, which is
-safer than `@latest` — see the note under [Installation](#installation).)
+there. (`uvx` runs repren with no prior install; see the note on `@latest` and safety
+under [Installation](#installation).)
 
 **Install the skill yourself** (the same thing the agent does):
 
 ```bash
 # Install into the current project (run from the repo; shareable via git):
-uvx repren@{{REPREN_VERSION}} --install-skill --project
+uvx repren@latest --install-skill --project
 
 # Or install globally, for every project:
-uvx repren@{{REPREN_VERSION}} --install-skill --global
+uvx repren@latest --install-skill --global
 ```
 
 Re-run any time to update an existing install.
@@ -235,10 +233,11 @@ agent finds it:
 - `.claude/skills/repren/` — the Claude Code mirror
 
 repren is a general-purpose utility with no per-project config, so the skill invokes it
-through a **pinned zero-install runner** (`uvx repren@<version>`) — there’s no need to add
-repren as a project dependency, and each installed skill pins the version it came from.
-Combined with repren’s zero runtime dependencies, the code an agent ever fetches and runs
-is just repren itself.
+through a zero-install runner (`uvx`) — there’s no need to add repren as a project
+dependency. The installed `SKILL.md` **pins the exact version it was generated from**
+(`uvx repren@<version>`), so the agent’s repeated invocations are reproducible, even
+though the human quick-start above uses `@latest` for convenience. Combined with repren’s
+zero runtime dependencies, the code an agent ever fetches and runs is just repren itself.
 
 **Scope is resolved like `git config`** — implicit when unambiguous, a clear error when
 not — so a stray `--install-skill` never silently rewrites your global agent surfaces:

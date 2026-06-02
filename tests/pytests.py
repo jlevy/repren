@@ -494,63 +494,6 @@ class TestCleanBackupsCLI:
 # --- Claude Skill tests ---
 
 
-def _load_gendocs():
-    """Load the devtools/gendocs.py module by path (it is not an installed package)."""
-    import importlib.util
-
-    gendocs_path = Path(__file__).parent.parent / "devtools" / "gendocs.py"
-    spec = importlib.util.spec_from_file_location("gendocs", gendocs_path)
-    assert spec and spec.loader
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
-
-
-class TestGendocsVersionPinning:
-    """Tests for the docs version-pinning mechanism in devtools/gendocs.py."""
-
-    def test_env_override_wins(self, monkeypatch):
-        gendocs = _load_gendocs()
-        monkeypatch.setenv("REPREN_DOCS_VERSION", "v9.9.9")
-        # Leading "v" is stripped.
-        assert gendocs.get_doc_version() == "9.9.9"
-
-    def test_dev_version_falls_back_to_default(self, monkeypatch):
-        gendocs = _load_gendocs()
-        monkeypatch.delenv("REPREN_DOCS_VERSION", raising=False)
-        # The editable checkout reports a dev version, so the default is used.
-        assert gendocs.get_doc_version() == gendocs.DEFAULT_DOC_VERSION
-
-    def test_is_clean_release(self):
-        gendocs = _load_gendocs()
-        assert gendocs._is_clean_release("2.1.0")
-        assert gendocs._is_clean_release("2.1")
-        assert not gendocs._is_clean_release("2.1.0.dev3")
-        assert not gendocs._is_clean_release("2.1.0+gabc")
-        assert not gendocs._is_clean_release("latest")
-
-    def test_render_version_substitutes_placeholder(self):
-        gendocs = _load_gendocs()
-        rendered = gendocs.render_version("run uvx repren@{{REPREN_VERSION}} --help", "2.1.0")
-        assert rendered == "run uvx repren@2.1.0 --help"
-        assert "{{REPREN_VERSION}}" not in rendered
-
-    def test_header_pin_regex_is_idempotent(self):
-        gendocs = _load_gendocs()
-        once = gendocs._HEADER_PIN_RE.sub("uvx repren@2.1.0", "see uvx repren@1.0.0 --help")
-        twice = gendocs._HEADER_PIN_RE.sub("uvx repren@2.1.0", once)
-        assert once == "see uvx repren@2.1.0 --help"
-        assert once == twice
-
-    def test_generated_docs_have_no_placeholder(self):
-        """The committed generated docs must not contain the raw version placeholder."""
-        repo_root = Path(__file__).parent.parent
-        readme = (repo_root / "README.md").read_text()
-        repren_py = (repo_root / "repren" / "repren.py").read_text()
-        assert "{{REPREN_VERSION}}" not in readme
-        assert "{{REPREN_VERSION}}" not in repren_py
-
-
 class TestClaudeSkillContent:
     """Tests for Claude skill content loading."""
 
