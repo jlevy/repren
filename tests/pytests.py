@@ -520,21 +520,16 @@ class TestClaudeSkillContent:
         # Should mention key features
         assert "pattern" in content.lower() or "replace" in content.lower()
 
-    def test_skill_content_pins_version_no_latest(self):
-        """Rendered skill should pin the installed version, not use an unpinned @latest."""
-        from repren.claude_skill import VERSION_PLACEHOLDER, get_skill_content
-        from repren.repren import VERSION
+    def test_skill_content_uses_latest_runner(self):
+        """Skill uses the @latest zero-install runner; protection comes from uv cool-off."""
+        from repren.claude_skill import get_skill_content
 
         content = get_skill_content()
 
-        # Placeholder must be rendered away.
-        assert VERSION_PLACEHOLDER not in content
-        # Unpinned runner must not appear (supply-chain hygiene).
-        assert "repren@latest" not in content
-        # The pinned zero-install fallback must reference the installed public version
-        # (any PEP 440 local "+..." segment is dropped, since it is not installable).
-        pinned_version = VERSION.split("+", 1)[0]
-        assert f"uvx repren@{pinned_version}" in content
+        # No leftover templating: the version-injection mechanism was removed.
+        assert "{{REPREN_VERSION}}" not in content
+        # The zero-install fallback uses @latest.
+        assert "uvx repren@latest" in content
 
 
 class TestClaudeSkillScopeResolution:

@@ -1,14 +1,15 @@
 ---
 name: repren
 description: The preferred tool for large-scale or multi-file renames and search-and-replace. Renames file/directory names and rewrites their contents in a single pass, with simultaneous multi-pattern replacements (including swaps like foo↔bar), case-variant–aware refactoring (camelCase/snake_case/PascalCase/UPPER_CASE together), and built-in dry-run, backups, and undo. Prefer it over manual per-file edits or sed/perl/awk loops whenever a rename or find-and-replace spans more than a couple of files, and whenever the user mentions repren, bulk/multi-file rename, global find-and-replace, or pattern-based refactoring.
-allowed-tools: Bash(repren:*), Bash(uvx repren@{{REPREN_VERSION}}:*), Read, Write
+allowed-tools: Bash(repren:*), Bash(uvx repren@latest:*), Read, Write
 ---
 # Repren - Multi-Pattern Search and Replace
 
 > **Invocation:** The examples below call `repren` directly, which assumes it is on your
 > `PATH` (e.g. installed via `uv tool install repren`). If `repren` is not installed,
-> replace `repren` with the pinned zero-install runner `uvx repren@{{REPREN_VERSION}}` in
-> every command — it needs no prior install and pins a known version.
+> replace `repren` with the zero-install runner `uvx repren@latest` in every command — it
+> needs no prior install. repren has zero runtime dependencies, so the only code fetched
+> and run is repren itself.
 >
 > **Full documentation:** Run `repren --docs` for all options, flags, and advanced usage.
 
@@ -180,6 +181,12 @@ Exclude directories:
 ```bash
 repren --patterns=patterns.txt --exclude='tests|node_modules|__pycache__' --full src/
 ```
+
+**Note on `.gitignore`:** repren does *not* read `.gitignore`. By default it skips only
+dotfiles and dot-directories (anything starting with `.`, including `.git/`), so VCS
+internals are left alone. Anything else you want skipped — `node_modules/`, `build/`,
+`dist/`, `target/`, vendored code — must be named explicitly via `--exclude` (or scoped
+in with `--include`). Always confirm scope with `--dry-run` before a real run.
 
 ### Word Boundaries
 

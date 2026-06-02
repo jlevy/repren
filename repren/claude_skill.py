@@ -10,17 +10,14 @@ dual-scope skill: it can be installed into a single project or globally for the 
 Scope is resolved `git config`-style — implicit when unambiguous, a hard error when not
 (see `resolve_install_target`).
 
-The skill text in ``skills/SKILL.md`` is a template: the ``{{REPREN_VERSION}}``
-placeholder is replaced with the installed repren version so the skill's pinned
-zero-install fallback (``uvx repren@<version>``) always matches what produced it.
+The skill invokes repren through ``uvx repren@latest``. repren has zero runtime
+dependencies, so the only code a runner ever fetches is repren itself; for an extra
+safety margin, opt into uv's release cool-off (``UV_EXCLUDE_NEWER``) in your environment.
 """
 
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-
-# Placeholder in skills/SKILL.md replaced with the installed repren version at render time.
-VERSION_PLACEHOLDER = "{{REPREN_VERSION}}"
 
 # Surfaces the skill is written to, beneath the resolved install root.
 SKILL_SURFACES: list[tuple[str, str]] = [
@@ -33,36 +30,11 @@ class SkillScopeError(Exception):
     """Raised when the skill install scope cannot be resolved unambiguously."""
 
 
-def _pinned_version() -> str:
-    """Return the installed repren version suitable for a ``uvx repren@<version>`` pin.
-
-    Any PEP 440 local-version segment (after ``+``) is dropped, since local versions are
-    never available from a package index and so could not be installed by ``uvx``.
-    """
-    import importlib.metadata
-
-    try:
-        version = importlib.metadata.version("repren")
-    except importlib.metadata.PackageNotFoundError:
-        version = "0.0.0.dev"
-    return version.split("+", 1)[0]
-
-
-def _render_skill(template: str) -> str:
-    """Substitute the version placeholder in the skill template.
-
-    The installed repren version is injected so the skill's pinned
-    ``uvx repren@<version>`` fallback matches the package that produced it.
-    """
-    return template.replace(VERSION_PLACEHOLDER, _pinned_version())
-
-
 def get_skill_content() -> str:
-    """Read SKILL.md from package data and render it for the installed version.
+    """Read SKILL.md from package data.
 
     Returns:
-        The rendered SKILL.md content, with ``{{REPREN_VERSION}}`` replaced by the
-        installed repren version.
+        The SKILL.md content.
 
     Raises:
         ImportError: If package resources cannot be accessed.
@@ -73,20 +45,18 @@ def get_skill_content() -> str:
         from importlib.resources import files
 
         skill_file = files("repren").joinpath("skills/SKILL.md")
-        template = skill_file.read_text(encoding="utf-8")
+        return skill_file.read_text(encoding="utf-8")
     except (ImportError, AttributeError):
         # Fallback for older Python versions
         try:
             import pkg_resources  # type: ignore[import-not-found]  # pyright: ignore[reportMissingImports]
 
-            template = pkg_resources.resource_string("repren", "skills/SKILL.md").decode("utf-8")
+            return pkg_resources.resource_string("repren", "skills/SKILL.md").decode("utf-8")
         except Exception as e:
             raise ImportError(
                 f"Could not load skill from package data: {e}\n"
                 "Ensure repren is installed as a package, not run as a standalone script."
             ) from e
-
-    return _render_skill(template)
 
 
 @dataclass

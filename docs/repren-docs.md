@@ -233,11 +233,11 @@ agent finds it:
 - `.claude/skills/repren/` — the Claude Code mirror
 
 repren is a general-purpose utility with no per-project config, so the skill invokes it
-through a zero-install runner (`uvx`) — there’s no need to add repren as a project
-dependency. The installed `SKILL.md` **pins the exact version it was generated from**
-(`uvx repren@<version>`), so the agent’s repeated invocations are reproducible, even
-though the human quick-start above uses `@latest` for convenience. Combined with repren’s
-zero runtime dependencies, the code an agent ever fetches and runs is just repren itself.
+through the zero-install runner `uvx repren@latest` — there’s no need to add repren as a
+project dependency. Because repren has **zero runtime dependencies**, the only code a
+runner ever fetches and runs is repren itself; for an extra safety margin you can opt into
+uv’s release cool-off (`UV_EXCLUDE_NEWER`, see [Installation](#installation)) in your
+environment, which applies to the skill’s invocations too.
 
 **Scope is resolved like `git config`** — implicit when unambiguous, a clear error when
 not — so a stray `--install-skill` never silently rewrites your global agent surfaces:
@@ -433,9 +433,12 @@ repren --clean-backups mydir/
 - Backups are created of all modified files, with the suffix “.orig”.
   The suffix can be customized with `--backup-suffix`.
 
-- By default, recursive searching omits paths starting with “.”. This may be adjusted
-  with `--exclude`. Files ending in the backup suffix (`.orig` by default) are always
-  ignored.
+- By default, recursive searching omits paths starting with “.” (including `.git/`). This
+  may be adjusted with `--exclude`. Files ending in the backup suffix (`.orig` by default)
+  are always ignored. repren does **not** read `.gitignore`: any other paths you want to
+  skip — `node_modules/`, `build/`, `dist/`, vendored code — must be named explicitly with
+  `--exclude`, and richer scoping is done with `--include`/`--exclude` (preview with
+  `--dry-run`).
 
 - Data is handled as bytes internally, allowing it to work with any encoding or binary
   files. File contents are not decoded unless necessary (e.g., for logging).

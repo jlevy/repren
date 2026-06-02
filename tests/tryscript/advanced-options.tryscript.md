@@ -108,17 +108,19 @@ description: The preferred tool for large-scale or multi-file renames and search
 ? 0
 ```
 
-The skill uses a pinned zero-install runner, never an unpinned `@latest`:
+The skill uses the `@latest` zero-install runner (protection comes from uv's cool-off):
 
 ```console
-$ grep -q 'repren@latest' agentrepo/.claude/skills/repren/SKILL.md && echo found || echo none
-none
+$ grep -q 'uvx repren@latest' agentrepo/.claude/skills/repren/SKILL.md && echo found || echo none
+found
 ? 0
 ```
 
+The version-injection placeholder must never leak into the installed skill:
+
 ```console
-$ grep -Eq 'uvx repren@[0-9]' agentrepo/.claude/skills/repren/SKILL.md && echo pinned
-pinned
+$ grep -q '{{REPREN_VERSION}}' agentrepo/.claude/skills/repren/SKILL.md && echo leaked || echo clean
+clean
 ? 0
 ```
 
