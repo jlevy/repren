@@ -100,6 +100,10 @@ Proceed to broad Rust implementation only after:
 
 ## Notes
 
-This analysis deliberately prioritizes behavioral confidence over raw coverage percentage.
-The target is not only a higher number, but coverage of parity-critical semantics.
+This analysis deliberately prioritizes behavioral confidence over raw coverage
+percentage. The target is not only a higher number, but coverage of parity-critical
+semantics.
 
+<!-- This document follows common-doc-guidelines.md.
+See github.com/jlevy/practical-prose and review guidelines before editing.
+-->

@@ -52,15 +52,16 @@ Focus areas:
 3. During directory walk:
 - directories matching exclude are pruned from descent
 - files are filtered by include + exclude
-4. Files ending with backup suffix (default `.orig`) or temp suffix
-   (`.repren.tmp`) are always skipped for processing.
+4. Files ending with backup suffix (default `.orig`) or temp suffix (`.repren.tmp`) are
+   always skipped for processing.
 5. Return values:
 - sorted file path list (deterministic order)
 - count of skipped backup/temp files
 
 ### backup discovery
 
-1. `find_backup_files` traverses similarly, but returns only files ending with backup suffix.
+1. `find_backup_files` traverses similarly, but returns only files ending with backup
+   suffix.
 2. It also applies include/exclude filters to backup filenames.
 3. Returned paths are sorted deterministically.
 
@@ -134,7 +135,8 @@ Current operation payloads:
 - `operation`, `paths`, `files_found`, `skipped_backups`
 2. `replace`:
 - `operation`, `dry_run`, `patterns_count`, `files_found`, `chars_read`,
-  `matches_found`, `matches_applied`, `files_changed`, `files_rewritten`, `files_renamed`
+  `matches_found`, `matches_applied`, `files_changed`, `files_rewritten`,
+  `files_renamed`
 3. `undo`:
 - `operation`, `dry_run`, `restored`, `skipped`
 4. `clean_backups`:
@@ -153,3 +155,7 @@ Current operation payloads:
 - `docs/project/specs/active/plan-2026-02-27-rust-port-prep-and-test-hardening.md`
 - `docs/project/research/current/research-2026-02-27-golden-harness-strategy.md`
 - `../repren-rs/docs/project/specs/active/plan-2026-02-27-repren-port-master-plan.md`
+
+<!-- This document follows common-doc-guidelines.md.
+See github.com/jlevy/practical-prose and review guidelines before editing.
+-->

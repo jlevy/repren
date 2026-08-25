@@ -56,11 +56,13 @@ Expanded `tests/pytests.py` with parity-critical checks for:
 3. Match rename collision suffix semantics (`.1`, `.2`, ...).
 4. Match traversal include/exclude and backup/temp skip behavior.
 5. Match undo skip rules (missing target, backup newer than target).
-6. Preserve shell golden baseline as regression contract while Rust parity harness grows.
+6. Preserve shell golden baseline as regression contract while Rust parity harness
+   grows.
 
 ## Open prep limitations
 
-1. Permission-error branch testing remains limited due cross-platform portability concerns.
+1. Permission-error branch testing remains limited due cross-platform portability
+   concerns.
 2. `claude_skill.py` and `markdown_renderer.py` remain lower-coverage areas and are not
    core blockers for `repren.py` parity work.
 
@@ -69,3 +71,7 @@ Expanded `tests/pytests.py` with parity-critical checks for:
 1. `docs/project/specs/active/plan-2026-02-27-rust-port-prep-and-test-hardening.md`
 2. `docs/project/research/current/research-2026-02-27-rust-port-prep-coverage-gap-map.md`
 3. `../repren-rs/docs/project/specs/active/plan-2026-02-27-repren-port-master-plan.md`
+
+<!-- This document follows common-doc-guidelines.md.
+See github.com/jlevy/practical-prose and review guidelines before editing.
+-->

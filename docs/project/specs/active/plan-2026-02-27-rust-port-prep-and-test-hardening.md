@@ -25,7 +25,7 @@ Baseline measured on 2026-02-27:
   - `repren/repren.py`: `46%`
 - Golden harness: `./tests/run.sh` passes
 
-Given repren's heavy filesystem mutation behavior, we need stronger coverage in error
+Given repren’s heavy filesystem mutation behavior, we need stronger coverage in error
 paths, edge cases, and operation lifecycle semantics before Rust implementation expands.
 
 ## Summary of Task
@@ -168,8 +168,8 @@ Manual spot checks:
 
 ## Tracking
 
-All implementation tasks from this spec are tracked as `tbd` issues in this repo
-(prefix `rpy-*`), with dependency ordering from P1 to P6.
+All implementation tasks from this spec are tracked as `tbd` issues in this repo (prefix
+`rpy-*`), with dependency ordering from P1 to P6.
 
 Initialized issue tree:
 
@@ -182,3 +182,7 @@ Initialized issue tree:
   - `rpy-ieaq` P5 golden harness strategy
   - `rpy-0nid` P6 behavior notes for Rust team
   - `rpy-v1fc` P7 final validation + handoff
+
+<!-- This document follows common-doc-guidelines.md.
+See github.com/jlevy/practical-prose and review guidelines before editing.
+-->
