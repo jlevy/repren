@@ -14,6 +14,16 @@ on:
 permissions:
   contents: read
 
+env:
+  # Use only the checked-in resolution policy so ambient runner configuration cannot
+  # make uv.lock appear stale or alter dependency selection.
+  UV_CONFIG_FILE: ${{ github.workspace }}/uv.toml
+  # Supply-chain cool-off: only consider releases older than this, so CI never
+  # resolves packages too new to have been vetted. The uv 0.12 line required by
+  # uv.toml and pinned below accepts a relative duration directly. See the Supply
+  # Chain Hardening section in docs/development.md.
+  UV_EXCLUDE_NEWER: "14 days"
+
 jobs:
   build:
     strategy:
@@ -31,27 +41,57 @@ jobs:
       # https://docs.astral.sh/uv/guides/integration/github/
 
       - name: Checkout (official GitHub action)
-        uses: actions/checkout@v6
+        # Pinned to a full commit SHA (see supply-chain notes in
+        # docs/development.md); bump deliberately when updating.
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Important for versioning plugins:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install uv (official Astral action)
-        uses: astral-sh/setup-uv@v7
+        # Pinned to a full commit SHA. Bump the action, uv version, and Linux
+        # checksum together when updating.
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
           # Update this as needed:
-          version: "0.9.25"
+          version: "0.12.3"
+          # uv-x86_64-unknown-linux-gnu; update for another matrix OS/arch.
+          checksum: "600cf9a742aca00d292673b16b5acffaa7b8c269a364ad0c2e79498dcb1fe101"
           enable-cache: true
+          # Retain downloaded wheels in the shared cache to reduce PyPI load.
+          # This is setup-uv v9's default, made explicit for future upgrades.
+          prune-cache: false
           python-version: ${{ matrix.python-version }}
 
       - name: Set up Python (using uv)
         run: uv python install
 
+      # Alternately can use the official Python action:
+      # Pin a reviewed full commit SHA before enabling it.
+      # - name: Set up Python (using actions/setup-python)
+      #   uses: actions/setup-python@FULL_COMMIT_SHA # reviewed version
+      #   with:
+      #     python-version: ${{ matrix.python-version }}
+
       - name: Install all dependencies
-        run: uv sync --all-extras
+        # --locked: install from uv.lock and fail if pyproject.toml made it stale.
+        # (UV_EXCLUDE_NEWER, set above, governs any resolution that does happen.)
+        run: |
+          uv sync --locked --all-extras --all-groups
+          npm ci --ignore-scripts
 
       - name: Run linting
-        run: uv run python devtools/lint.py
+        # Check-only mode so CI fails on unformatted code instead of fixing it.
+        run: uv run python devtools/lint.py --check
+
+      - name: Check Markdown formatting
+        run: uvx flowmark-rs@0.3.2 --auto --check docs/repren-docs.md repren/skills/SKILL.md
+
+      - name: Check generated documentation
+        run: |
+          uv run python devtools/gendocs.py
+          git diff --exit-code -- README.md repren/repren.py
 
       - name: Run unit tests
         run: uv run pytest
@@ -60,4 +100,4 @@ jobs:
         run: bash scripts/check-golden-coverage.sh
 
       - name: Run golden tests
-        run: npx tryscript@latest run tests/tryscript/*.tryscript.md
+        run: npx --no-install tryscript run tests/tryscript/*.tryscript.md

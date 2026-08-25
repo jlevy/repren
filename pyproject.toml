@@ -2,6 +2,8 @@
 
 [project.urls]
 Repository = "https://github.com/jlevy/repren"
+# Homepage = "https://..."
+# Documentation = "https://..."
 
 [project]
 name = "repren"
@@ -11,7 +13,7 @@ authors = [
 ]
 readme = "README.md"
 license = "MIT"
-requires-python = ">=3.10"
+requires-python = ">=3.10,<4.0"
 dynamic = ["version"]
 
 # https://pypi.org/classifiers/
@@ -33,6 +35,9 @@ classifiers = [
     "Topic :: Utilities",
     "Topic :: Text Processing",
     "Topic :: Software Development",
+    "Typing :: Typed",
+    # Include this to avoid accidentally publishing to PyPI:
+    # "Private :: Do Not Upload",
 ]
 
 
@@ -44,13 +49,17 @@ dependencies = []
 # ---- Dev dependencies ----
 
 [dependency-groups]
+build = [
+    "hatchling==1.31.0",
+    "uv-dynamic-versioning==0.14.0",
+]
 dev = [
-    "pytest>=9.0.2",
+    "pytest>=9.1.1",
     "pytest-sugar>=1.1.1",
-    "ruff>=0.14.11",
-    "codespell>=2.4.1",
-    "rich>=14.2.0",
-    "basedpyright>=1.37.1",
+    "ruff>=0.16.1",
+    "codespell>=2.4.3",
+    "rich>=15.0.0",
+    "basedpyright>=1.39.9",
     "funlog>=0.2.1",
     "jinja2>=3.1.4",
     "pytest-cov>=7.0.0",
@@ -66,11 +75,14 @@ repren = "repren:main"
 # https://github.com/ninoseki/uv-dynamic-versioning/
 
 [build-system]
-requires = ["hatchling", "uv-dynamic-versioning"]
+requires = ["hatchling==1.31.0", "uv-dynamic-versioning==0.14.0"]
 build-backend = "hatchling.build"
 
 [tool.hatch.version]
 source = "uv-dynamic-versioning"
+# Note JSON schemas don't seem to be right for tool.hatch.version.source so
+# this may cause false warnings in IDEs.
+# https://github.com/ninoseki/uv-dynamic-versioning/issues/21
 
 [tool.uv-dynamic-versioning]
 vcs = "git"
@@ -83,41 +95,60 @@ pattern = "default-unprefixed"
 packages = ["repren"]
 
 
-# ---- Settings ----
+# ---- Tool Settings ----
 
 [tool.ruff]
+# Set as desired, typically 88 (black standard) or 100 (wide).
 line-length = 100
+# Flowmark owns Markdown formatting; Ruff owns Python source formatting.
+extend-exclude = ["*.md"]
 
 [tool.ruff.lint]
 select = [
-    "E",  # https://docs.astral.sh/ruff/rules/#error-e
-    "F",  # https://docs.astral.sh/ruff/rules/#pyflakes-f
+    # See: https://docs.astral.sh/ruff/rules/
+    # Basic list from: https://docs.astral.sh/ruff/linter/#rule-selection
+    "E", # https://docs.astral.sh/ruff/rules/#error-e
+    "F", # https://docs.astral.sh/ruff/rules/#pyflakes-f
     "UP", # https://docs.astral.sh/ruff/rules/#pyupgrade-up
-    "B",  # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
-    "I",  # https://docs.astral.sh/ruff/rules/#isort-i
+    "B", # https://docs.astral.sh/ruff/rules/#flake8-bugbear-b
+    "I", # https://docs.astral.sh/ruff/rules/#isort-i
+    # Other possibilities:
+    # "D", # https://docs.astral.sh/ruff/rules/#pydocstyle-d
+    # "Q", # https://docs.astral.sh/ruff/rules/#flake8-quotes-q
+    # "COM", # https://docs.astral.sh/ruff/rules/#flake8-commas-com
+    # "SIM", # https://docs.astral.sh/ruff/rules/#flake8-simplify-sim
+
 ]
 ignore = [
-    "E501",  # https://docs.astral.sh/ruff/rules/line-too-long/
-    "E731",  # https://docs.astral.sh/ruff/rules/lambda-assignment/
-    # Disabled for formatter compatibility:
-    "W191",  # https://docs.astral.sh/ruff/rules/tab-indentation/
-    "E111",  # https://docs.astral.sh/ruff/rules/indentation-with-invalid-multiple/
-    "E114",  # https://docs.astral.sh/ruff/rules/indentation-with-invalid-multiple-comment/
-    "E117",  # https://docs.astral.sh/ruff/rules/over-indented/
-    "D206",  # https://docs.astral.sh/ruff/rules/docstring-tab-indentation/
-    "D300",  # https://docs.astral.sh/ruff/rules/triple-single-quotes/
-    "Q000",  # https://docs.astral.sh/ruff/rules/bad-quotes-inline-string/
-    "Q001",  # https://docs.astral.sh/ruff/rules/bad-quotes-multiline-string/
-    "Q002",  # https://docs.astral.sh/ruff/rules/bad-quotes-docstring/
-    "Q003",  # https://docs.astral.sh/ruff/rules/avoidable-escaped-quote/
-    "COM812",  # https://docs.astral.sh/ruff/rules/missing-trailing-comma/
-    "COM819",  # https://docs.astral.sh/ruff/rules/prohibited-trailing-comma/
-    "ISC002",  # https://docs.astral.sh/ruff/rules/multi-line-implicit-string-concatenation/
+    # Disable some rules that are overly pedantic. Add/remove as desired:
+    "E501", # https://docs.astral.sh/ruff/rules/line-too-long/
+    "E731", # https://docs.astral.sh/ruff/rules/lambda-assignment/
+    # We use both ruff formatter and linter so some rules should always be disabled.
+    # See: https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+    "W191", # https://docs.astral.sh/ruff/rules/tab-indentation/
+    "E111", # https://docs.astral.sh/ruff/rules/indentation-with-invalid-multiple/
+    "E114", # https://docs.astral.sh/ruff/rules/indentation-with-invalid-multiple-comment/
+    "E117", # https://docs.astral.sh/ruff/rules/over-indented/
+    "D206", # https://docs.astral.sh/ruff/rules/docstring-tab-indentation/
+    "D300", # https://docs.astral.sh/ruff/rules/triple-single-quotes/
+    "Q000", # https://docs.astral.sh/ruff/rules/bad-quotes-inline-string/
+    "Q001", # https://docs.astral.sh/ruff/rules/bad-quotes-multiline-string/
+    "Q002", # https://docs.astral.sh/ruff/rules/bad-quotes-docstring/
+    "Q003", # https://docs.astral.sh/ruff/rules/avoidable-escaped-quote/
+    "COM812", # https://docs.astral.sh/ruff/rules/missing-trailing-comma/
+    "COM819", # https://docs.astral.sh/ruff/rules/prohibited-trailing-comma/
+    "ISC002", # https://docs.astral.sh/ruff/rules/multi-line-implicit-string-concatenation/
 ]
 
 [tool.basedpyright]
+# BasedPyright currently seems like the best type checker option, much faster
+# than mypy and with a good extension for VSCode/Cursor.
+# https://marketplace.visualstudio.com/items?itemName=detachhead.basedpyright
+# https://docs.basedpyright.com/latest/configuration/config-files/#sample-pyprojecttoml-file
 include = ["repren", "tests", "devtools"]
-# Standard settings for a well-typed codebase:
+# By default BasedPyright is very strict, so you almost certainly want to disable
+# some of the rules.
+# Disable only the noisy rules this codebase has intentionally chosen not to enforce.
 reportMissingTypeStubs = false
 reportUnusedCallResult = false
 reportAny = false
@@ -126,6 +157,10 @@ reportImplicitStringConcatenation = false
 reportPrivateUsage = false
 reportImplicitOverride = false
 reportUnreachable = false
+# reportPrivateImportUsage = false
+# reportPrivateLocalImportUsage = false
+# reportMissingImports = false
+# reportUnnecessaryIsInstance = false
 # These require more type annotations to enable:
 reportUnknownParameterType = false
 reportMissingParameterType = false
@@ -135,6 +170,7 @@ reportUnknownVariableType = false
 reportUnknownLambdaType = false
 
 [tool.codespell]
+# Add here as needed:
 # ignore-words-list = "foo,bar"
 # skip = "foo.py,bar.py"
 

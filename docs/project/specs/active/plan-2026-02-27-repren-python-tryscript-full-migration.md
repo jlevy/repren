@@ -85,7 +85,8 @@ Out of scope:
 
 ### Acceptance criteria
 
-1. `npx tryscript@latest run tests/tryscript/*.tryscript.md` passes
+1. `npx --no-install tryscript run tests/tryscript/*.tryscript.md` passes from the
+   npm-locked development environment
 2. `bash scripts/check-golden-coverage.sh` passes
 3. `make test` runs pytest + golden gates + tryscript
 4. CI runs golden coverage gate + tryscript
@@ -158,7 +159,8 @@ Out of scope:
 - [x] update CI workflow to run gate + tryscript
 - [x] switch pytest integration wrapper to run tryscript
 - [x] update developer docs and publishing checklist references
-- [ ] remove or archive legacy shell harness artifacts (follow-up if retained temporarily)
+- [ ] remove or archive legacy shell harness artifacts (follow-up if retained
+  temporarily)
 
 ## Validation Plan
 
@@ -167,7 +169,7 @@ Primary checks:
 ```bash
 uv run pytest
 bash scripts/check-golden-coverage.sh
-npx tryscript@latest run tests/tryscript/*.tryscript.md
+npx --no-install tryscript run tests/tryscript/*.tryscript.md
 ```
 
 Secondary checks:
@@ -184,6 +186,18 @@ Secondary checks:
 4. updated Make/CI/test integration wiring
 5. updated documentation for golden workflow
 
+## 2026-08-25 Maintenance Update
+
+Tryscript is now exact-pinned at 0.2.1 in `package.json` and `package-lock.json` under
+the maintainer-approved first-party cool-off exception.
+Local development, CI, the Makefile, and the pytest integration bridge all use the
+locked installation through `npx --no-install`, so no test path resolves
+`tryscript@latest` or fetches at runtime.
+
+The full 97-session Tryscript suite and golden coverage gate pass.
+The pytest bridge also passes with the npm registry set to an unreachable address,
+confirming that it uses the installed lockfile artifact.
+
 ## Tracking
 
 `tbd` issue tree for this migration:
@@ -193,3 +207,7 @@ Secondary checks:
 - G2 modular suite: `rpy-i8pi`
 - G3 config/gates: `rpy-xxmw`
 - G4 integration/validation: `rpy-i0xu`
+
+<!-- This document follows common-doc-guidelines.md.
+See github.com/jlevy/practical-prose and review guidelines before editing.
+-->

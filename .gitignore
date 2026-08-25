@@ -15,6 +15,11 @@ tmp.*
 # Vim
 .*.sw?
 
+# Python tool caches
+.ruff_cache/
+
+# GitHub's standard Python .gitignore:
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
@@ -147,6 +152,7 @@ celerybeat.pid
 # Environments
 .env
 .venv
+node_modules/
 env/
 venv/
 ENV/

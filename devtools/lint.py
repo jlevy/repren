@@ -1,4 +1,6 @@
+import argparse
 import subprocess
+import sys
 
 from funlog import log_calls
 from rich import get_console, reconfigure
@@ -12,13 +14,24 @@ DOC_PATHS = ["README.md"]
 reconfigure(emoji=not get_console().options.legacy_windows)  # No emojis on legacy windows.
 
 
-def main():
+def main() -> int:
+    parser = argparse.ArgumentParser(description="Run linting and formatting.")
+    # CI should not modify files: check-only mode fails on any issue instead of
+    # silently fixing it, so unformatted code can't slip through.
+    parser.add_argument("--check", action="store_true", help="Check only, without modifying files.")
+    args = parser.parse_args()
+
     rprint()
 
     errcount = 0
-    errcount += run(["codespell", "--write-changes", *SRC_PATHS, *DOC_PATHS])
-    errcount += run(["ruff", "check", "--fix", *SRC_PATHS])
-    errcount += run(["ruff", "format", *SRC_PATHS])
+    if args.check:
+        errcount += run(["codespell", *SRC_PATHS, *DOC_PATHS])
+        errcount += run(["ruff", "check", *SRC_PATHS])
+        errcount += run(["ruff", "format", "--check", *SRC_PATHS])
+    else:
+        errcount += run(["codespell", "--write-changes", *SRC_PATHS, *DOC_PATHS])
+        errcount += run(["ruff", "check", "--fix", *SRC_PATHS])
+        errcount += run(["ruff", "format", *SRC_PATHS])
     errcount += run(["basedpyright", "--stats", *SRC_PATHS])
 
     rprint()
@@ -50,4 +63,4 @@ def run(cmd: list[str]) -> int:
 
 
 if __name__ == "__main__":
-    exit(main())
+    sys.exit(main())

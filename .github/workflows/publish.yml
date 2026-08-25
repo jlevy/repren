@@ -6,39 +6,120 @@ on:
   workflow_dispatch: # Enable manual trigger.
 
 jobs:
-  build-and-publish:
+  validate:
     runs-on: ubuntu-latest
     permissions:
-      id-token: write # Mandatory for OIDC.
       contents: read
+    env:
+      UV_CONFIG_FILE: ${{ github.workspace }}/uv.toml
+      UV_EXCLUDE_NEWER: "14 days"
     steps:
       - name: Checkout (official GitHub action)
-        uses: actions/checkout@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          # Important for versioning plugins:
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Install uv (official Astral action)
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
         with:
-          version: "0.9.25"
-          enable-cache: true
+          version: "0.12.3"
+          # uv-x86_64-unknown-linux-gnu.
+          checksum: "600cf9a742aca00d292673b16b5acffaa7b8c269a364ad0c2e79498dcb1fe101"
+          enable-cache: false
           python-version: "3.12"
 
       - name: Set up Python (using uv)
         run: uv python install
 
-      - name: Install all dependencies
-        run: uv sync --all-extras
+      - name: Install locked dependencies
+        run: |
+          uv sync --locked --all-extras --all-groups
+          npm ci --ignore-scripts
 
-      - name: Run tests
+      - name: Run linting
+        run: uv run python devtools/lint.py --check
+
+      - name: Check Markdown formatting
+        run: uvx flowmark-rs@0.3.2 --auto --check docs/repren-docs.md repren/skills/SKILL.md
+
+      - name: Check generated documentation
+        run: |
+          uv run python devtools/gendocs.py
+          git diff --exit-code -- README.md repren/repren.py
+
+      - name: Run unit tests
         run: uv run pytest
 
+      - name: Check golden coverage
+        run: bash scripts/check-golden-coverage.sh
+
+      - name: Run golden tests
+        run: npx --no-install tryscript run tests/tryscript/*.tryscript.md
+
+  build:
+    needs: validate
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      UV_CONFIG_FILE: ${{ github.workspace }}/uv.toml
+      UV_EXCLUDE_NEWER: "14 days"
+    steps:
+      - name: Checkout (official GitHub action)
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install uv (official Astral action)
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.3"
+          # uv-x86_64-unknown-linux-gnu.
+          checksum: "600cf9a742aca00d292673b16b5acffaa7b8c269a364ad0c2e79498dcb1fe101"
+          enable-cache: false
+          python-version: "3.12"
+
+      - name: Set up Python (using uv)
+        run: uv python install
+
+      - name: Install locked build dependencies
+        run: uv sync --locked --only-group build
+
       - name: Build package
-        run: uv build
+        run: uv build --no-build-isolation
+
+      - name: Upload distributions
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: distributions
+          path: dist/*
+          if-no-files-found: error
+          retention-days: 1
+
+  publish:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write # Restricted to the job that publishes the reviewed artifacts.
+    steps:
+      - name: Install uv (official Astral action)
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          version: "0.12.3"
+          # uv-x86_64-unknown-linux-gnu.
+          checksum: "600cf9a742aca00d292673b16b5acffaa7b8c269a364ad0c2e79498dcb1fe101"
+          enable-cache: false
+
+      - name: Download distributions
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: distributions
+          path: dist
 
       - name: Publish to PyPI
         run: uv publish --trusted-publishing always
-        # Although uv is newer and faster, the "official" publishing option is the one from PyPA,
-        # which uses twine. If desired, replace `uv publish` with:
-        # uses: pypa/gh-action-pypi-publish@release/v1
+        # PyPA's official publisher is an alternative; pin a reviewed full SHA before use.
+        # uses: pypa/gh-action-pypi-publish@FULL_COMMIT_SHA

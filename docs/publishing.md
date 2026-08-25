@@ -8,21 +8,32 @@ Thanks to
 [the dynamic versioning plugin](https://github.com/ninoseki/uv-dynamic-versioning/) and
 the
 [`publish.yml` workflow](https://github.com/jlevy/repren/blob/master/.github/workflows/publish.yml),
-you can simply create tagged releases (using the tag name format matching your version,
-e.g. `1.0.2`) on GitHub and the tag will trigger a release build, which then uploads it
-to PyPI.
+you can simply create tagged releases (using standard format for the tag name, e.g.
+`3.1.0`) on GitHub and the tag will trigger a release build, which then uploads it to
+PyPI.
+
+The workflow validates without publishing credentials, then builds from a fresh checkout
+containing only the locked build toolchain.
+A third job receives only the built distributions and holds the short-lived PyPI OIDC
+permission.
 
 ### First-Time Setup
 
 This part is a little confusing the first time.
 Here is the simplest way to do it.
 
+**Note:** These steps assume you already have a GitHub repo with your code pushed.
+If not, create an **empty** GitHub repo (no README, no .gitignore, no license; the
+template already provides these) and push your code to it.
+See the
+[README](https://github.com/jlevy/simple-modern-uv#option-2-use-copier-and-git-yourself)
+for details.
+
 1. **Get a PyPI account** at [pypi.org](https://pypi.org/) and sign in.
 
 2. **Pick a name for the project** that isn’t already taken.
 
-   - Go to `https://pypi.org/project/PROJECT` to see if another project with that name
-     already exits.
+   - Repren’s package page is <https://pypi.org/project/repren/>.
 
    - If needed, update your `pyproject.toml` with the correct name.
 
@@ -33,8 +44,9 @@ Here is the simplest way to do it.
    - Find “Trusted Publisher Management” and register your GitHub repo as a new
      “pending” trusted publisher.
 
-   - Enter the project name, repo owner, repo name, and `publish.yml` as the workflow
-     name. (You can leave the “environment name” field blank.)
+   - Enter `repren` as the project, `jlevy` as the owner, `repren` as the repository,
+     and `publish.yml` as the workflow name.
+     You can leave the environment name blank.
 
 4. **Create a release** on GitHub:
 
@@ -50,8 +62,8 @@ Here is the simplest way to do it.
 
    - Fill in the tag and the release name.
      Select to create a new tag, and pick a version.
-     A good option is `0.1.0` (matching `pattern = "default-unprefixed"` in
-     pyproject.toml).
+     Repren uses an unprefixed semantic version such as `3.1.0`, matching
+     `pattern = "default-unprefixed"` in `pyproject.toml`.
 
    - Submit to create the release.
 
@@ -59,7 +71,7 @@ Here is the simplest way to do it.
 
    - Watch for the release workflow in the GitHub Actions tab.
 
-   - If it succeeds, you should see it appear at `https://pypi.org/project/repren`.
+   - If it succeeds, it appears at <https://pypi.org/project/repren/>.
 
 ### Publishing Subsequent Releases
 
@@ -67,31 +79,41 @@ Follow this checklist for each new release.
 
 #### Pre-Release Checklist
 
-1. **Verify all changes are committed and pushed:**
+1. **Cut the release from an up-to-date `master`:**
 
    ```shell
-   git status
+   git checkout master
+   git pull origin master
+   git status  # confirm a clean working tree
+   ```
+
+2. **Verify all changes are committed and pushed:**
+
+   ```shell
    git log origin/master..HEAD  # should be empty if pushed
    ```
 
-2. **Run linting and tests locally:**
+3. **Run linting and tests locally:**
 
    ```shell
-   make lint
-   make test
-   make test-golden-coverage
-   make test-golden
+   make
+   make lint-check
+   make format-check
+   make gendocs-check
+   make build
    ```
 
-3. **Confirm CI is passing:**
+4. **Confirm CI is passing on `master`:**
 
    ```shell
-   gh run list --limit 3
+   gh run list --branch master --limit 3
    ```
 
    Or check the Actions tab on GitHub.
+   The most recent run for the commit you’re about to tag must be green (a superseded
+   older failure is fine).
 
-4. **Determine the new version number:**
+5. **Determine the new version number:**
 
    ```shell
    # Check current/latest version:
@@ -100,60 +122,63 @@ Follow this checklist for each new release.
 
    Use [semantic versioning](https://semver.org/):
 
-   - **Patch** (e.g., `1.0.1` → `1.0.2`): Bug fixes, minor changes
+   - **Patch** (e.g., `3.1.0` → `3.1.1`): Bug fixes, minor changes
 
-   - **Minor** (e.g., `1.0.2` → `1.1.0`): New features, backward-compatible
+   - **Minor** (e.g., `3.1.1` → `3.2.0`): New features, backward-compatible
 
-   - **Major** (e.g., `1.1.0` → `2.0.0`): Breaking changes
+   - **Major** (e.g., `3.2.0` → `4.0.0`): Breaking changes
 
 #### Create the Release
 
-5. **Generate release notes content:**
-
-   Review changes since the last release:
+6. **Review changes since the last release:**
 
    ```shell
    # Get the last release tag:
    LAST_TAG=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
-   
+
    # View commits since last release:
    git log ${LAST_TAG}..HEAD --oneline
-   
+
    # View full diff:
    git diff ${LAST_TAG}..HEAD
    ```
 
-6. **Create the release with `gh`:**
+7. **Write the release notes in a file, then create the release:**
+
+   Author the notes as plain Markdown in a file (see
+   [Release Notes Format](#release-notes-format) below), then pass it with
+   `--notes-file`. Writing the notes in a file keeps the shell out of the way: release
+   notes routinely contain backticks and `$`, which a shell heredoc would try to run as
+   commands or expand as variables.
+   End the notes with a *concrete* compare link built from the actual tags (substitute
+   the real `LAST_TAG` and `NEW_TAG` values into the URL), e.g.
+   `https://github.com/jlevy/repren/compare/3.1.0...3.1.1`.
 
    ```shell
-   NEW_TAG="X.Y.Z"  # Replace with actual version (unprefixed)
-   LAST_TAG=$(gh release list --limit 1 --json tagName -q '.[0].tagName')
-   
-   gh release create "${NEW_TAG}" \
-     --title "${NEW_TAG}" \
-     --notes "$(cat <<'EOF'
-   ## What's Changed
-   
-   [Summarize changes here--see format guide below]
-   
-   ### Full Changelog
-   
-   https://github.com/jlevy/repren/compare/${LAST_TAG}...${NEW_TAG}
-   EOF
-   )"
+   NEW_TAG="X.Y.Z"  # Replace with the actual unprefixed version
+
+   # Edit release-notes.md in your editor, ending with the concrete compare link.
+
+   gh release create "${NEW_TAG}" --title "${NEW_TAG}" --notes-file release-notes.md
    ```
 
-   Alternatively, use `--generate-notes` for GitHub’s auto-generated notes, or
-   `--notes-file FILENAME` to read from a file.
+   Alternatively, use `--generate-notes` for GitHub’s auto-generated notes.
 
-7. **Verify the release published successfully:**
+8. **Verify the release published successfully:**
 
    ```shell
    # Check the release workflow:
    gh run list --workflow=publish.yml --limit 1
-   
+
    # Verify on PyPI (may take a minute):
    # https://pypi.org/project/repren
+   ```
+
+   Once it appears on PyPI, smoke-test that the published artifact actually resolves and
+   installs from PyPI. If your project exposes a CLI:
+
+   ```shell
+   uvx --from repren==X.Y.Z repren --version
    ```
 
 ### Release Notes Format
@@ -203,4 +228,9 @@ Guidelines:
 
 * * *
 
-*This project uses [simple-modern-uv](https://github.com/jlevy/simple-modern-uv).*
+*This file was built with
+[simple-modern-uv](https://github.com/jlevy/simple-modern-uv).*
+
+<!-- This document follows common-doc-guidelines.md.
+See github.com/jlevy/practical-prose and review guidelines before editing.
+-->

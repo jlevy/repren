@@ -118,7 +118,7 @@ def test_integration_tryscript_golden_suite():
     tryscript sessions that are committed as golden specifications.
     """
     result = subprocess.run(
-        ["npx", "tryscript@latest", "run", "tests/tryscript/*.tryscript.md"],
+        ["npx", "--no-install", "tryscript", "run", "tests/tryscript/*.tryscript.md"],
         cwd=Path(__file__).parent.parent,  # Run from project root
         capture_output=True,
         text=True,

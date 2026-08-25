@@ -1,8 +1,7 @@
-IMPORTANT: You MUST read ./docs/development.md and ./docs/docs-overview.md for project documentation.
-(This project uses Speculate project structure.)
+IMPORTANT: You MUST read ./docs/development.md and ./docs/docs-overview.md for project
+documentation. (This project uses Speculate project structure.)
 
 IMPORTANT: Before adding or upgrading any dependency, read ./SUPPLY-CHAIN-SECURITY.md.
-
 
 <!-- BEGIN TBD INTEGRATION format=f08 surface=agents-md -->
 ## tbd

@@ -1,9 +1,12 @@
 # Changes here will be overwritten by Copier. Do not edit manually.
-_commit: v0.2.20
+_commit: v0.5.0
 _src_path: gh:jlevy/simple-modern-uv
 package_author_email: joshua@cal.berkeley.edu
 package_author_name: Joshua Levy
-package_description: 'Multi-pattern string replacement and file renaming'
+package_description: Powerful CLI string replacement and file renaming for agents
+    and humans
 package_github_org: jlevy
+package_license: MIT
 package_module: repren
 package_name: repren
+publish_to_pypi: true
