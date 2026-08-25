@@ -2,13 +2,14 @@
 
 **Last Updated**: 2026-08-25
 
-**Status**: Complete
+**Status**: Complete; upstream PR open with CI passing
 
 **Related**:
 
 - Repren upgrade bead: `rpy-1p85`
 - Simple Modern uv follow-up bead: `rpy-z0un`
 - [Simple Modern uv](https://github.com/jlevy/simple-modern-uv)
+- [Simple Modern uv PR #31](https://github.com/jlevy/simple-modern-uv/pull/31)
 - [Copier update documentation](https://copier.readthedocs.io/en/stable/updating/)
 
 * * *
@@ -42,7 +43,7 @@ maintainers can detect long-range migration problems before users encounter them
 
 ### SMUV-01: Make Direct-to-Latest the Default Update Path
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**:
 
@@ -75,7 +76,7 @@ replaced.
 
 ### SMUV-02: Test Upgrades From Representative Historical Tags
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**: The direct migration exercised a larger local delta than a freshly
 generated project and exposed conflicts that a current-template generation test cannot
@@ -96,7 +97,7 @@ states still migrate cleanly.
 
 ### SMUV-03: Document the Customizations an Update Must Preserve
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**: Repren intentionally differs from the latest template in three important
 ways: it still supports Python 3.10, keeps its package at the repository root, and uses
@@ -113,7 +114,7 @@ Require each difference to be preserved, adopted, or retired intentionally.
 
 ### SMUV-04: Keep Supply-Chain Controls in Operational Configuration
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**: Repren has no runtime dependencies, yet its README contained optional
 cool-off and exact-pin advice in the primary installation path.
@@ -130,7 +131,7 @@ affects the user.
 
 ### SMUV-05: Avoid a Stale Hard-Coded Python in the Installation Guide
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**: The v0.5.0 project metadata and CI matrix include Python 3.14, but the
 generated installation guide still says `uv python install 3.13`.
@@ -146,7 +147,7 @@ version is not important.
 
 ### SMUV-06: Inventory and Lock Non-Python Developer Tools
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**: Repren’s golden tests used `npx tryscript@latest`. Changing that to an
 exact top-level version still left ranged transitive npm dependencies unresolved on each
@@ -164,7 +165,7 @@ tool, or record a deliberate exception when locking is impractical.
 
 ### SMUV-07: Render Project-Specific Publishing Instructions
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**: The generated publishing guide links to the template repository’s workflow
 and retains `OWNER`, `PROJECT`, `main`, and `vX.Y.Z` placeholders even though Copier
@@ -180,7 +181,7 @@ fields in the post-generation customization checklist.
 
 ### SMUV-08: Treat Agent Instructions as a Protected Policy Surface
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**: Repren’s `AGENTS.md` contains mandatory project-document routing,
 supply-chain rules, and the tbd integration.
@@ -196,7 +197,7 @@ never treat the latest template render as authoritative for the whole file.
 
 ### SMUV-09: Make `UV_CONFIG_FILE` Absolute in CI
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**: The v0.5.0 workflows export `UV_CONFIG_FILE=uv.toml`. Repren tests that
 change to a temporary directory and launch a child `uv run` inherit that relative value.
@@ -214,7 +215,7 @@ Add a template validation that changes directory before launching a child uv com
 
 ### SMUV-10: Audit Tool Pins at Project-Update Time
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**: v0.5.0 renders uv 0.12.0 in both workflows.
 By the Repren migration date, uv 0.12.3 had cleared the 14-day cool-off and was the
@@ -234,7 +235,7 @@ and record why newer releases remain held.
 
 ### SMUV-11: Define the Source-Distribution Inclusion Policy
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**: The Repren wheel is 35 KiB and contains only package/runtime material.
 The default Hatch sdist is 754 KiB and includes the full tracked repository, including
@@ -253,7 +254,7 @@ Add an artifact-content assertion to template validation so growth is intentiona
 
 ### SMUV-12: Preserve Existing Lint and Type-Check Strictness
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**: The v0.5.0 render adds a global Ruff `E402` exemption and disables two
 BasedPyright checks for incomplete or unnecessary ignore comments.
@@ -271,7 +272,7 @@ existing project’s exemptions.
 
 ### SMUV-13: Isolate Trusted-Publishing Permission
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**: The v0.5.0 publish workflow grants `id-token: write` to the job that
 checks out the repository, installs all development dependencies, runs tests, and builds
@@ -290,7 +291,7 @@ project code.
 
 ### SMUV-14: Apply Cool-Off Exceptions Only to the Approved Package
 
-**Status**: Confirmed
+**Status**: Implemented in upstream PR #31
 
 **Evidence**: Tryscript 0.2.1 had a maintainer-approved first-party exception to the
 14-day cool-off, but a normal npm lock resolution also selected third-party `ansi-regex`
@@ -310,9 +311,16 @@ beside the exception.
 Update the supply-chain guidance with a tested npm procedure rather than relying on
 unsupported configuration keys.
 
-## Follow-Up Pull Request Scope
+## Follow-Up Pull Request
 
-The follow-up Simple Modern uv pull request should initially include:
+[Simple Modern uv PR #31](https://github.com/jlevy/simple-modern-uv/pull/31) implements
+every confirmed finding in this review.
+Its CI renders default, private, and no-license projects; exercises locked install,
+lint, type-check, tests, artifacts, and the build-only publishing environment; and tests
+direct updates from v0.5.0, v0.4.0, and v0.2.20. All eight checks passed on the
+submitted branch.
+
+The pull request includes:
 
 1. The direct-to-latest policy correction in the skill’s update instructions.
 2. Historical migration tests or a focused test-plan issue if the fixture work is too
@@ -328,13 +336,21 @@ The follow-up Simple Modern uv pull request should initially include:
 11. Package-scoped cool-off exceptions and a tested npm publication-date audit.
 12. Any additional findings confirmed by Repren’s final validation.
 
-## Open Questions
+## Decisions From the Follow-Up
 
-1. Which historical template tags should receive explicit update guarantees?
-2. Should the migration test matrix live in the template repository’s CI or in a
-   reusable validation script invoked locally and in CI?
-3. Does the generated installation guide need user-facing supply-chain prose after
-   `uv.toml` and pinned CI actions are in place?
+1. The template CI now validates direct updates from the previous release, v0.4.0, and
+   v0.2.20. These are representative gates, not a promise that every historical custom
+   project is conflict-free.
+2. The migration matrix lives in the template repository’s CI so every pull request
+   exercises it automatically.
+3. The generated end-user README stays concise.
+   Supply-chain policy lives in `uv.toml`, CI, the Makefile, and developer guidance
+   where it changes maintainer behavior.
+
+The upstream tbd refresh also exposed a separate tool-maintenance concern: an exact
+`get-tbd` fallback still resolves an unlocked transitive npm graph.
+Simple Modern uv bead `smu-ifum` tracks a reproducible fallback design; this is a tbd
+packaging issue rather than a template finding.
 
 ## Repren Final Review
 
