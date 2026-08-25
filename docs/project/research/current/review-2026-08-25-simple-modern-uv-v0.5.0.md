@@ -2,12 +2,15 @@
 
 **Last Updated**: 2026-08-25
 
-**Status**: Complete; upstream PR open with CI passing
+**Status**: Complete; upstream PR open
 
 **Related**:
 
 - Repren upgrade bead: `rpy-1p85`
 - Simple Modern uv follow-up bead: `rpy-z0un`
+- Repren PyPI environment follow-up bead: `rpy-j2bz`
+- Repren source-distribution bead: `rpy-5z51`
+- Cross-project supply-chain policy bead: `smu-hb6u`
 - [Simple Modern uv](https://github.com/jlevy/simple-modern-uv)
 - [Simple Modern uv PR #31](https://github.com/jlevy/simple-modern-uv/pull/31)
 - [Copier update documentation](https://copier.readthedocs.io/en/stable/updating/)
@@ -38,6 +41,40 @@ isolated worktree or clone, and reserve intermediate releases for diagnosis when
 direct result is ambiguous or a migration explicitly requires staging.
 The template’s test strategy should cover upgrades from representative older tags so
 maintainers can detect long-range migration problems before users encounter them.
+
+## Threat Model and Proportionality
+
+The security review protects developer and CI credentials, authority to publish Repren,
+the integrity of the selected dependency graph, and the correspondence between reviewed
+source and published distributions.
+It considers malicious or broken registry uploads, an unreviewed collaborator branch,
+compromised project or build code, and compromised tooling.
+It does not assume that an older dependency, a passing test suite, an OIDC identity, or
+an attestation makes code trustworthy.
+
+The controls are selected against named failure modes:
+
+| Risk | Baseline control | Limit and operational tradeoff |
+| --- | --- | --- |
+| A newly compromised or broken registry artifact is selected before detection | A 14-day resolution delay, reviewed lockfile, and package-scoped exceptions | Age creates detection time but is not evidence of safety and does not catch long-lived compromise |
+| An ordinary branch or accidental manual run reaches publishing | Release-only workflow trigger and a PyPI publisher constrained to the named `pypi` environment | Removes that invocation path, but someone allowed to create a matching release tag may still publish; separate release authority needs a tag ruleset or reviewer |
+| Project or build code steals a publishing credential | Separate validation, build, and publish jobs; OIDC only in the final job | Limits credential exposure but does not make the artifact safe because the final job publishes build output |
+| An artifact changes during the same workflow | Immutable GitHub artifact handoff with built-in digest validation | Trusts GitHub Actions; a second hash computed inside the same trust boundary would add ceremony, not independent assurance |
+| A workflow action or bootstrap tool changes unexpectedly | Full commit SHAs, an exact uv version, and the official uv checksum | Adds periodic pin maintenance; this is proportionate because the tools execute inside CI and publishing jobs |
+
+These boundaries follow the
+[PyPI Trusted Publisher security model](https://docs.pypi.org/trusted-publishers/security-model/),
+[GitHub environment protections](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments),
+and GitHub’s
+[same-run artifact handoff](https://docs.github.com/en/actions/tutorials/store-and-share-data#passing-data-between-jobs-in-a-workflow).
+
+A required second-person approval is not a baseline control.
+Repren has one maintainer, so preventing self-review would stop releases without
+creating an independent reviewer.
+If a repository has writers who should not publish, protect creation and updates of
+release-pattern tags with a ruleset and/or require an environment reviewer.
+An environment rule that selects release tags rejects other refs, but does not decide
+who may create a matching tag.
 
 ## Findings
 
@@ -238,10 +275,15 @@ and record why newer releases remain held.
 **Status**: Implemented in upstream PR #31
 
 **Evidence**: The Repren wheel is 35 KiB and contains only package/runtime material.
-The default Hatch sdist is 754 KiB and includes the full tracked repository, including
-agent integration files, tbd documentation, npm development locks, research, and
-workflow configuration.
+Before this review, the default Hatch sdist was 754 KiB and included the full tracked
+repository, including agent integration files, tbd documentation, npm development locks,
+research, and workflow configuration.
 The published 3.1.0 sdist was 306 KiB before the expanded repository tooling.
+Repren now has a project-specific allowlist, and a clean build confirmed that the source
+archive excludes repository-management state while retaining the package,
+downstream-verifiable tests, their small test harness, licensing and security material,
+and public documentation.
+The resulting archive is about 83 KiB.
 
 **Impact**: The build is valid, but new template integrations can silently increase the
 published source artifact and expose repository-management material that is not needed
@@ -311,14 +353,109 @@ beside the exception.
 Update the supply-chain guidance with a tested npm procedure rather than relying on
 unsupported configuration keys.
 
+### SMUV-15: Use uv’s Package-Scoped Cool-Off Mechanism
+
+**Status**: Implemented in upstream PR #31
+
+**Evidence**: The generated developer guide recommended setting
+`UV_EXCLUDE_NEWER="0 days"` for a reviewed fresh release.
+That disables the global gate for the whole resolution and records resolution options
+that do not match the checked-in 14-day project policy.
+uv 0.12.3 supports `exclude-newer-package`, and uv records these settings in `uv.lock`
+for `--locked` consistency.
+The final review also demonstrated the ambient-config risk directly: a bare
+`uv lock --check` merged user-level package exceptions into `uv.lock` before reporting
+that the lock needed an update.
+Selecting the checked-in `uv.toml` explicitly avoided the mutation and passed.
+
+**Impact**: A broad one-shot bypass can admit unapproved fresh transitives and can make
+the resulting lock disagree with CI’s project configuration.
+
+**Proposed change**: Keep the 14-day global gate.
+Record an absolute `exclude-newer-package` cutoff in `uv.toml` just after the final
+approved artifact upload, resolve only the named package with
+`UV_CONFIG_FILE="$PWD/uv.toml"`, confirm the lock selects the approved version, and
+commit the configuration with the lock.
+Remove the exception and relock when the release clears the normal window.
+
+### SMUV-16: Restrict Publishing to the Release Boundary
+
+**Status**: Implemented in upstream PR #31
+
+**Evidence**: The generated workflow accepted `workflow_dispatch`, which can run a
+workflow from a selected branch or tag.
+PyPI authorizes the repository and workflow path; without an environment restriction, a
+collaborator who can push a branch and dispatch Actions may bypass the normal release
+path even when `main` is protected.
+PyPI’s guidance identifies manual dispatch added by repository writers as a Trusted
+Publisher risk and recommends a dedicated environment for stronger policy.
+A release-only event narrows the invocation path, but anyone allowed to create a
+matching release tag may still invoke it.
+
+**Impact**: A convenience recovery trigger weakens the boundary between reviewed release
+authority and ordinary branch write access.
+Failed release workflows can already be re-run against their original event and ref.
+
+**Proposed change**: Trigger only on a published GitHub Release, declare `pypi` on the
+final job, require new Trusted Publishers to use the same environment, and tell existing
+projects to constrain their blank publisher setting.
+When not every repository writer should publish, restrict creation and updates of
+release-pattern tags to release maintainers and/or require an environment reviewer.
+Do not require a reviewer by default when the project has no independent approver.
+
+### SMUV-17: State Security Guarantees and Limits Precisely
+
+**Status**: Implemented in upstream PR #31
+
+**Evidence**: The prior guidance said most malicious uploads are caught within days,
+described built distributions as reviewed artifacts, and preferred first-party code over
+dependencies without limiting the kinds of code that should be reimplemented.
+A vulnerability audit was presented without its known-advisory boundary.
+
+**Impact**: Absolute or unsupported wording can turn useful heuristics into false
+assurance. Avoiding a mature dependency can also increase risk when the replacement is
+cryptography, a security-sensitive parser, or a complex protocol.
+
+**Proposed change**: Describe the cool-off as detection time rather than trust evidence;
+state that the release split protects credentials, not artifact safety; qualify
+first-party code as small, understood, and testable; and state that audits report known
+advisories rather than detecting all malware.
+
+### Controls Deliberately Kept Optional
+
+- **Required reviewers**: Recommended for high-impact or multi-maintainer packages with
+  an independent reviewer; not workable as a solo-maintainer default.
+- **Tag rulesets**: Needed when repository writers should not all have release
+  authority; optional for a solo repository where the only writer is already the release
+  maintainer. Selecting release tags in the environment filters refs but does not
+  restrict who can create those tags.
+- **Generated package attestations**: Useful when consumers verify provenance, but the
+  current `uv publish` uploads attestations without generating them.
+  Adding an attestation action would expand the privileged job and should follow a
+  separate benefit and pin review rather than being implied by OIDC.
+- **A second artifact hash**: Not added.
+  GitHub’s same-run artifact handoff is immutable and validates its digest.
+  A hash produced and checked inside the same platform would not create an independent
+  trust boundary.
+- **A mandatory sandbox or runner egress policy**: Appropriate for untrusted
+  repositories or higher-risk release systems, but disproportionate for the default
+  hosted-runner workflow without a concrete enforcement and recovery design.
+- **Replacing uv with another publishing action**: Not proposed.
+  The selected uv binary is exact and checksum-verified; substituting another action has
+  no demonstrated security benefit and would add another implementation to review.
+
+The shared `supply-chain-hardening` guide and tbd-managed copy still use more
+categorical cool-off language and do not document uv’s persistent package-scoped
+exception. Simple Modern uv bead `smu-hb6u` tracks that cross-project policy update; it
+is separate from the template fixes in PR #31.
+
 ## Follow-Up Pull Request
 
 [Simple Modern uv PR #31](https://github.com/jlevy/simple-modern-uv/pull/31) implements
 every confirmed finding in this review.
 Its CI renders default, private, and no-license projects; exercises locked install,
 lint, type-check, tests, artifacts, and the build-only publishing environment; and tests
-direct updates from v0.5.0, v0.4.0, and v0.2.20. All eight checks passed on the
-submitted branch.
+direct updates from v0.5.0, v0.4.0, and v0.2.20.
 
 The pull request includes:
 
@@ -334,7 +471,10 @@ The pull request includes:
 9. Selective preservation of existing lint and type-check strictness.
 10. Least-privilege separation for the trusted-publishing job.
 11. Package-scoped cool-off exceptions and a tested npm publication-date audit.
-12. Any additional findings confirmed by Repren’s final validation.
+12. A uv-native package-scoped exception that remains consistent with locked CI.
+13. A release-only Trusted Publisher bound to a named `pypi` environment.
+14. Threat-model limits and proportional escalation guidance in generated documentation.
+15. Any additional findings confirmed by Repren’s final validation.
 
 ## Decisions From the Follow-Up
 
@@ -346,6 +486,17 @@ The pull request includes:
 3. The generated end-user README stays concise.
    Supply-chain policy lives in `uv.toml`, CI, the Makefile, and developer guidance
    where it changes maintainer behavior.
+4. The 14-day cool-off remains a default, not an absolute prohibition.
+   A reviewed first-party or urgent uv release advances through a package-specific
+   cutoff while the global gate remains active for the rest of the graph.
+5. Release jobs run only for published GitHub Releases and declare the `pypi`
+   environment. PyPI enforces the environment match after the Trusted Publisher is
+   constrained to the same name.
+   If repository writers should not all publish, a tag ruleset and/or environment
+   reviewer must provide that separate release authority; the trigger and environment
+   name do not provide it alone.
+6. The documentation distinguishes credential isolation, artifact integrity, provenance,
+   and code trust rather than treating any one control as proof of the others.
 
 The upstream tbd refresh also exposed a separate tool-maintenance concern: an exact
 `get-tbd` fallback still resolves an unlocked transitive npm graph.
@@ -383,6 +534,12 @@ packaging issue rather than a template finding.
   version was pinned in the Makefile, but the Makefile only invokes the installed
   binary. The guide now identifies `package.json` and `package-lock.json` as the actual
   version and graph pins.
+- **RPR-08 (Medium), `pyproject.toml`**: Hatch’s default source distribution included
+  repository workflows, agent integrations, tbd state, and internal project records.
+  An explicit allowlist now keeps the package, downstream-verifiable tests and harness,
+  licensing and security material, and public docs.
+  A wheel built from the resulting source archive installed and ran in an isolated
+  Python 3.10 environment.
 
 ### Design Assessment
 
@@ -394,8 +551,9 @@ Project-owned uv configuration and both ecosystem lockfiles make local, CI, and 
 resolution reproducible.
 
 The release pipeline follows least privilege across validation, build, and publishing.
-The remaining broad sdist contents are valid and contain no runtime dependencies, but
-SMUV-11 tracks the opportunity to define a narrower upstream policy.
+The source-distribution boundary is now explicit as well: it preserves useful source
+release material without publishing repository-management state merely because it is
+tracked by Git.
 
 ### Documentation
 
@@ -413,7 +571,8 @@ Generated outputs were regenerated from `docs/repren-docs.md` and verified stabl
   The pytest bridge also passed with the npm registry set to an unreachable address,
   confirming that `npx --no-install` performs no network fetch.
 - The wheel and source distribution installed and ran in separate isolated Python 3.10
-  environments. The wheel metadata requires Python 3.10 through 3.x and declares no
+  environments. A second wheel built directly from the narrowed source archive also
+  installed and ran. The wheel metadata requires Python 3.10 through 3.x and declares no
   runtime dependencies.
 - `pip-audit` 2.10.1 and `npm audit` reported no known vulnerabilities.
   The Python audit skipped only the editable Repren project itself.
@@ -429,6 +588,11 @@ Generated outputs were regenerated from `docs/repren-docs.md` and verified stabl
 
 - [Copier: Updating a Project](https://copier.readthedocs.io/en/stable/updating/)
 - [Copier: Configuring a Template](https://copier.readthedocs.io/en/latest/configuring/)
+- [uv: Dependency Cooldowns](https://docs.astral.sh/uv/concepts/resolution/#dependency-cooldowns)
+- [PyPI: Trusted Publisher Security Model](https://docs.pypi.org/trusted-publishers/security-model/)
+- [GitHub: Events That Trigger Workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)
+- [GitHub: Deployments and Environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments)
+- [GitHub: Store and Share Data with Workflow Artifacts](https://docs.github.com/en/actions/tutorials/store-and-share-data)
 - [Simple Modern uv repository](https://github.com/jlevy/simple-modern-uv)
 
 <!-- This document follows common-doc-guidelines.md.

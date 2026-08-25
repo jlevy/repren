@@ -132,27 +132,47 @@ Dependencies are an attack surface.
 Before adding or upgrading any dependency, follow
 [**supply-chain-hardening**](https://github.com/jlevy/supply-chain-hardening), a concise
 cross-ecosystem guide on installing dependencies safely.
-Its key defaults:
+The following defaults balance protection and maintenance cost for an ordinary project.
+Use stricter review or isolation for an untrusted repository or a higher-impact release
+system.
 
-- **Cool-off period:** Don’t install or upgrade to a release less than 14 days old
-  (absent a documented exception); most malicious publishes are caught within days.
-  uv supports a relative
+- **Cool-off period:** By default, don’t select a registry artifact uploaded less than
+  14 days ago. This delay gives maintainers, registries, and researchers time to detect
+  and remove a newly compromised or broken release.
+  Age is not proof that a package is safe; the gate does not protect against a
+  long-lived compromise, an already locked bad release, or malicious code that runs
+  during a build. uv supports a relative
   [dependency cooldown](https://docs.astral.sh/uv/concepts/resolution/#dependency-cooldowns)
   such as `"14 days"`. This project records the policy in `uv.toml`; the Makefile, CI,
   and examples select that file explicitly so user- or system-level
   [uv configuration](https://docs.astral.sh/uv/configuration/files/) cannot leak into
   the committed lockfile.
   Override it explicitly for a stricter window, such as
-  `UV_EXCLUDE_NEWER="30 days" make upgrade`. A reviewed emergency exception must be
-  equally explicit, using `UV_EXCLUDE_NEWER="0 days"` only for that invocation and
-  recording why the normal gate was bypassed.
+  `UV_EXCLUDE_NEWER="30 days" make upgrade`. A reviewed exception for a first-party or
+  urgent release should keep the global gate and add an absolute package-specific cutoff
+  to `uv.toml`, set just after the last approved artifact was uploaded and before any
+  unreviewed release:
+
+  ```toml
+  # Exception: package-name X.Y.Z reviewed YYYY-MM-DD; remove after it clears 14 days.
+  exclude-newer-package = { package-name = "YYYY-MM-DDTHH:MM:SSZ" }
+  ```
+
+  Then run `UV_CONFIG_FILE="$PWD/uv.toml" uv lock --upgrade-package package-name`,
+  inspect the complete lockfile diff, and commit both files.
+  Keeping the exception in project configuration lets locked CI reproduce the same
+  policy. Remove it and relock after the normal window admits the release.
 
 - **Vet before adding:** Confirm the package is actually needed and its name is spelled
-  correctly (typosquats are common), and prefer a little first-party code over a new
-  dependency.
+  correctly (typosquats are common).
+  Prefer a small, well-understood, easily tested piece of first-party code over a new
+  dependency; do not reimplement cryptography, security-sensitive parsers, or complex
+  protocols merely to avoid a dependency.
 
 - **Pin, lock, and audit:** Commit your `uv.lock`, pin GitHub Actions to a commit SHA or
   immutable tag, and run a vulnerability audit (e.g. `pip-audit`) after changes.
+  Audits report known advisories; they are not malware scanners or proof that the graph
+  is safe.
 
 ## Publishing Releases
 

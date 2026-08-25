@@ -3,7 +3,6 @@ name: Publish to PyPI
 on:
   release:
     types: [published]
-  workflow_dispatch: # Enable manual trigger.
 
 jobs:
   validate:
@@ -101,9 +100,9 @@ jobs:
   publish:
     needs: build
     runs-on: ubuntu-latest
+    environment: pypi
     permissions:
-      contents: read
-      id-token: write # Restricted to the job that publishes the reviewed artifacts.
+      id-token: write # Only this job can request the short-lived publishing credential.
     steps:
       - name: Install uv (official Astral action)
         uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0

@@ -4,7 +4,9 @@ This repository adopts the 14-day cool-off, disabled-install-script, and lockfil
 practices from
 [Supply Chain Hardening](https://github.com/jlevy/supply-chain-hardening).
 Before adding or upgrading a dependency, also load
-`tbd guidelines supply-chain-hardening`.
+`tbd guidelines supply-chain-hardening`. This is the balanced baseline.
+Use stricter source review or isolation for an untrusted repository or a runner with
+broader production or publishing authority.
 
 Repren’s published package has zero runtime dependencies.
 The development and release toolchain is separate: those tools execute with contributor
@@ -22,7 +24,12 @@ The README uses `@latest` deliberately so people and agents get the current
 self-documenting CLI and skill installer.
 This is an exception to the usual exact-pin rule for zero-install runners, scoped only
 to Repren’s own zero-dependency package.
-It does not relax development-tool controls.
+The choice favors current user-facing behavior over reproducibility.
+Zero dependencies remove transitive-package risk, but do not protect against a
+compromised Repren release or publishing account.
+Privileged or reproducible environments may impose an exact Repren version in their own
+deployment policy; the primary README stays concise.
+This exception does not relax development-tool controls.
 
 ## Development Dependencies
 
@@ -49,14 +56,33 @@ When changing dependencies:
 2. Use the ecosystem’s native lockfile and review the complete lockfile diff.
 3. Keep install scripts disabled where the toolchain permits it.
 4. Run vulnerability audits and the full test suite.
+   Audits report known advisories; they do not establish that a package is benign.
 5. Document any cool-off exception, exact version, reason, and human approval.
+
+For a reviewed fresh Python release, keep the global gate and add an absolute
+`exclude-newer-package` cutoff to `uv.toml` just after the approved release’s final
+artifact upload. Resolve only that package with
+`UV_CONFIG_FILE="$PWD/uv.toml" uv lock --upgrade-package package-name`, inspect the
+complete lock diff, and commit the configuration with `uv.lock` so locked CI sees the
+same policy. Remove the exception and relock after the release clears the normal window.
 
 CI uses `uv sync --locked --all-extras --all-groups`, which installs from the committed
 lock and fails when `pyproject.toml` would require it to change.
 The release workflow validates with the full development toolchain, then builds from a
 fresh checkout with only the exact-pinned build group.
 A third job receives only the distributions and is the only one with `id-token: write`;
-it cannot execute project or development code.
+it does not check out or execute project or development code.
+The workflow runs only for a published GitHub Release and declares the `pypi`
+environment. PyPI enforces that environment only when Repren’s Trusted Publisher is
+constrained to the same name; a blank existing setting remains compatible but
+unconstrained. This separation limits credential exposure.
+The release-only trigger removes the ordinary manual-branch path, but it does not
+override repository permissions: anyone allowed to create a matching release tag may
+still invoke it. If repository writers who should not publish are added, restrict
+creation and updates of version tags to release maintainers with a tag ruleset and/or
+require an environment reviewer.
+It does not make the source or distributions safe: the build job executes repository and
+build-backend code, and the final job publishes its output.
 
 ## Non-Python Development Tools
 
@@ -85,7 +111,7 @@ Tryscript is installed through npm:
 | Python development tools | Resolve through `uv.toml`, commit `uv.lock`, and install with `--locked` in CI. |
 | Flowmark | Exact-pinned at 0.3.2 and subject to the uv cool-off. |
 | Tryscript | Exact-pinned and npm-locked at 0.2.1; first-party release-age exception approved on 2026-08-25, with third-party transitive packages still gated. |
-| Publishing | Build from a clean, tested tag with GitHub trusted publishing. |
+| Publishing | Build from a clean, tested release tag; publish only through the `pypi` environment, with OIDC isolated from project code. |
 
 <!-- This document follows common-doc-guidelines.md.
 See github.com/jlevy/practical-prose and review guidelines before editing.

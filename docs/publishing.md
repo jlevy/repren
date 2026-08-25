@@ -15,7 +15,12 @@ PyPI.
 The workflow validates without publishing credentials, then builds from a fresh checkout
 containing only the locked build toolchain.
 A third job receives only the built distributions and holds the short-lived PyPI OIDC
-permission.
+permission. This separation limits credential exposure; the
+[PyPI Trusted Publisher security model](https://docs.pypi.org/trusted-publishers/security-model/)
+does not treat it as proof that the source, build dependencies, or distributions are
+safe. The validation and build jobs execute repository code, and the final job publishes
+their output. Code review, protected release authority, and lockfile review remain the
+controls against a malicious or compromised build.
 
 ### First-Time Setup
 
@@ -39,14 +44,33 @@ for details.
 
 3. **Authorize** your repository to publish to PyPI:
 
+   - In the GitHub repository, go to **Settings → Environments** and create a
+     [GitHub environment](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments)
+     named `pypi`. No secret is stored there.
+     Entering the same name in PyPI restricts this Trusted Publisher to jobs that
+     declare the environment.
+
+   - Repren has a solo maintainer, so a mandatory second approval would block releases.
+     The release-only trigger removes the ordinary manual-branch path, but anyone
+     allowed to create a matching release tag may still invoke it.
+     If repository writers who should not publish are added, use a GitHub tag ruleset to
+     restrict creation and updates of version tags to release maintainers, and/or
+     require an environment reviewer.
+     Limiting the environment to selected release tags rejects other refs but does not
+     control who can create a matching tag.
+
    - Go to [the publishing settings page](https://pypi.org/manage/account/publishing/).
 
    - Find “Trusted Publisher Management” and register your GitHub repo as a new
      “pending” trusted publisher.
 
    - Enter `repren` as the project, `jlevy` as the owner, `repren` as the repository,
-     and `publish.yml` as the workflow name.
-     You can leave the environment name blank.
+     `publish.yml` as the workflow name, and `pypi` as the environment.
+
+     If Repren’s existing Trusted Publisher still has a blank environment, it remains
+     compatible but unconstrained.
+     Update it to `pypi` in the project’s PyPI publishing settings to obtain the
+     environment restriction.
 
 4. **Create a release** on GitHub:
 

@@ -94,6 +94,28 @@ pattern = "default-unprefixed"
 # The source location for the package.
 packages = ["repren"]
 
+[tool.hatch.build.targets.sdist]
+# Ship the package, downstream-verifiable tests and their small harness, and public
+# documentation. Repository workflows, agent integrations, tbd state, and internal
+# project records are intentionally not release artifacts.
+include = [
+    "/repren",
+    "/tests",
+    "/scripts",
+    "/.npmrc",
+    "/package.json",
+    "/package-lock.json",
+    "/tryscript.config.js",
+    "/docs/development.md",
+    "/docs/installation.md",
+    "/docs/publishing.md",
+    "/docs/repren-docs.md",
+    "/docs/research-replace-rename-landscape.md",
+    "/README.md",
+    "/LICENSE",
+    "/SUPPLY-CHAIN-SECURITY.md",
+]
+
 
 # ---- Tool Settings ----
 
