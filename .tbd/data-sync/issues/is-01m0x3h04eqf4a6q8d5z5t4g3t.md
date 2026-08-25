@@ -3,9 +3,9 @@ type: is
 id: is-01m0x3h04eqf4a6q8d5z5t4g3t
 title: Upgrade Repren to the current Flowmark process
 kind: task
-status: in_progress
+status: closed
 priority: 1
-version: 4
+version: 5
 docs:
   - path: docs/project/research/current/review-2026-08-25-simple-modern-uv-v0.5.0.md
     role: qa
@@ -15,7 +15,11 @@ labels:
   - docs
 dependencies: []
 created_at: 2026-08-25T18:39:36.588Z
-updated_at: 2026-08-25T18:57:44.079Z
+updated_at: 2026-08-25T18:59:25.809Z
+closed_at: 2026-08-25T18:59:25.808Z
+close_reason: Current Flowmark process installed, reviewed, validated, committed in 87034df and afd26e3, and pushed. Upstream installer follow-ups remain independently tracked as rpy-r7iu and rpy-ncar.
+resolution: null
+duplicate_of: null
 ---
 Compare Repren Flowmark usage with the latest jlevy/flowmark release and project guidance; review the maintained Flowmark skill before installation; update pins, commands, CI, agent routing, and documentation as appropriate; install the skill at the correct scope; validate formatting and the full project; commit, push, and confirm CI.
 
