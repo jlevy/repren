@@ -196,17 +196,7 @@ script somewhere convenient and make it executable.
 **A note on freshness and safety.** These examples use `@latest` for simplicity. Because
 repren has **zero runtime dependencies**, the only code fetched and run is repren itself.
 There is no transitive dependency tree to audit or be compromised, so `@latest` carries
-far less supply-chain risk here than for a typical package. If you want an extra safety
-margin, you can opt into uv’s release “cool-off” (which excludes very recent uploads), or
-pin an exact version:
-
-```bash
-# Skip uploads newer than 14 days, then run the latest within that window:
-UV_EXCLUDE_NEWER="14 days" uvx repren@latest --help
-
-# Or pin an exact version:
-uvx repren@3.1.0 --help
-```
+far less supply-chain risk here than for a typical package.
 
 ## Agent Use
 

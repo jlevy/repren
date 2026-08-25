@@ -4,12 +4,12 @@ IMPORTANT: You MUST read ./docs/development.md and ./docs/docs-overview.md for p
 IMPORTANT: Before adding or upgrading any dependency, read ./SUPPLY-CHAIN-SECURITY.md.
 
 
-<!-- BEGIN TBD INTEGRATION format=f04 surface=agents-md -->
+<!-- BEGIN TBD INTEGRATION format=f08 surface=agents-md -->
 ## tbd
 
 This repository uses **tbd** for git-native issue tracking (beads), spec-driven
 planning, and on-demand engineering guidelines.
-As the agent, you operate tbd on the user’s behalf — translate their requests into tbd
+As the agent, you operate tbd on the user’s behalf: translate their requests into tbd
 actions rather than telling them to run commands.
 
 - Run `tbd prime` to load current project state and the full tbd workflow.
@@ -18,3 +18,7 @@ actions rather than telling them to run commands.
 - Track all work as beads: `tbd create`, `tbd ready`, `tbd close`, and `tbd sync`.
 
 <!-- END TBD INTEGRATION -->
+
+<!-- This document follows common-doc-guidelines.md.
+See github.com/jlevy/practical-prose and review guidelines before editing.
+-->
