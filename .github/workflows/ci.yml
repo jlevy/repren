@@ -85,9 +85,6 @@ jobs:
         # Check-only mode so CI fails on unformatted code instead of fixing it.
         run: uv run python devtools/lint.py --check
 
-      - name: Check Markdown formatting
-        run: uvx flowmark-rs@0.3.2 --auto --check docs/repren-docs.md repren/skills/SKILL.md
-
       - name: Check generated documentation
         run: |
           uv run python devtools/gendocs.py

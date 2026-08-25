@@ -14,16 +14,24 @@ UV_EXCLUDE_NEWER ?= 14 days
 export UV_EXCLUDE_NEWER
 
 # Pin standalone developer tools that are not part of the uv lockfile.
-FLOWMARK := uvx flowmark-rs@0.3.2
+FLOWMARK := uvx --from flowmark-rs==0.3.2 flowmark
 TRYSCRIPT := npx --no-install tryscript
 
-.PHONY: default install lint lint-check format format-check gendocs gendocs-check test test-golden test-golden-coverage update-golden upgrade build clean
+.PHONY: default install install-hooks lint lint-check format format-check gendocs gendocs-check test test-golden test-golden-coverage update-golden upgrade build clean
 
 default: install lint gendocs test
 
 install:
 	uv sync --all-extras --all-groups
 	npm ci --ignore-scripts
+
+install-hooks:
+	@current="$$(git config --get core.hooksPath || true)"; \
+	if [ -n "$$current" ] && [ "$$current" != ".githooks" ]; then \
+		echo "Refusing to replace existing core.hooksPath: $$current" >&2; \
+		exit 1; \
+	fi
+	git config --worktree core.hooksPath .githooks
 
 lint:
 	uv run python devtools/lint.py
@@ -33,10 +41,11 @@ lint-check:
 	uv run python devtools/lint.py --check
 
 format:
-	$(FLOWMARK) --auto --inplace --nobackup docs/repren-docs.md repren/skills/SKILL.md
+	$(FLOWMARK) --auto .
+	$(MAKE) gendocs
 
 format-check:
-	$(FLOWMARK) --auto --check docs/repren-docs.md repren/skills/SKILL.md
+	$(FLOWMARK) --auto --check .
 
 gendocs:
 	uv run python devtools/gendocs.py

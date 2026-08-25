@@ -18,6 +18,19 @@ actions rather than telling them to run commands.
 
 <!-- END TBD INTEGRATION -->
 
+<!-- BEGIN FLOWMARK INTEGRATION format=f03 surface=agents-md -->
+## flowmark
+
+Auto-format Markdown with `flowmark` for clean, semantic git diffs.
+
+- Run `flowmark --auto <files>` on Markdown you create or edit.
+- Run `flowmark --docs` for full usage and `flowmark --skill` for the skill.
+- If `flowmark` is not on `PATH`, use a pinned `uvx` runner (never `@latest`).
+- Fast Rust port (recommended): `uvx --from flowmark-rs==0.3.2 flowmark`.
+- Python build (library / newest patch): `uvx --from flowmark==0.7.3 flowmark`.
+
+<!-- END FLOWMARK INTEGRATION -->
+
 <!-- This document follows common-doc-guidelines.md.
 See github.com/jlevy/practical-prose and review guidelines before editing.
 -->

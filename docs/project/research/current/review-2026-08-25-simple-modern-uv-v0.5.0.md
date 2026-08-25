@@ -10,6 +10,9 @@
 - Simple Modern uv follow-up bead: `rpy-z0un`
 - Repren PyPI environment follow-up bead: `rpy-j2bz`
 - Repren source-distribution bead: `rpy-5z51`
+- Repren Flowmark process bead: `rpy-kqtq`
+- Flowmark Rust installer follow-up bead: `rpy-r7iu`
+- Flowmark installer hardening bead: `rpy-ncar`
 - Cross-project supply-chain policy bead: `smu-hb6u`
 - [Simple Modern uv](https://github.com/jlevy/simple-modern-uv)
 - [Simple Modern uv PR #31](https://github.com/jlevy/simple-modern-uv/pull/31)
@@ -540,6 +543,25 @@ packaging issue rather than a template finding.
   licensing and security material, and public docs.
   A wheel built from the resulting source archive installed and ran in an isolated
   Python 3.10 environment.
+- **RPR-09 (Medium), Flowmark integration**: Repren pinned the latest Rust formatter but
+  formatted only two hand-listed files, had no project Flowmark skill or discovery
+  policy, and offered no automatic local formatting path.
+  The repository now installs the reviewed Flowmark 0.7.3 skill bundle, discovers
+  project-owned Markdown through `.flowmarkignore`, uses the exact `flowmark-rs==0.3.2`
+  command everywhere, and provides a dependency-free pre-commit hook that formats and
+  stages complete files while refusing partial staging.
+  Formatting the canonical manual also regenerates and stages its README and Python
+  mirrors unless either has unstaged changes.
+  Ordinary Markdown layout is intentionally not a CI or release gate; the existing
+  generated-document check remains because those byte-exact mirrors are a correctness
+  contract. Generated docs, tool-managed guidance, and byte-exact golden sessions are
+  excluded because changing those mirrors directly would damage their ownership or test
+  semantics. The Rust 0.3.2 skill installer was not used: it emits a stale
+  `flowmark==0.7.2` fallback even though Flowmark 0.7.3 is current.
+  The Python installer’s five-package transitive graph is not frozen by its exact
+  top-level pin, so the reviewed refresh command uses isolated configuration and the
+  project cool-off. Beads `rpy-r7iu` and `rpy-ncar` track cross-installer equivalence and
+  stronger upstream installation guidance.
 
 ### Design Assessment
 
@@ -581,6 +603,12 @@ Generated outputs were regenerated from `docs/repren-docs.md` and verified stabl
 - The uv lock check, npm lock install, Copier and workflow YAML parsing, JSON parsing,
   shell syntax checks, conflict-marker scan, whitespace checks, and `tbd doctor` all
   passed.
+- The Flowmark 0.7.3 skill installer was idempotent, and the installed project bundle
+  matched the tagged source byte for byte.
+  Repository-wide formatting and check mode passed with the reviewed ignore boundary.
+  Isolated hook smoke tests covered no-op commits, automatic formatting and staging,
+  ignored fixtures, generated-mirror refresh, and rejection of partial staging or unsafe
+  generated-file overwrites.
 - The three-job publishing design was exercised locally through its isolated,
   build-group-only build step; both distributions were produced successfully.
 
@@ -593,6 +621,8 @@ Generated outputs were regenerated from `docs/repren-docs.md` and verified stabl
 - [GitHub: Events That Trigger Workflows](https://docs.github.com/en/actions/reference/workflows-and-actions/events-that-trigger-workflows)
 - [GitHub: Deployments and Environments](https://docs.github.com/en/actions/reference/workflows-and-actions/deployments-and-environments)
 - [GitHub: Store and Share Data with Workflow Artifacts](https://docs.github.com/en/actions/tutorials/store-and-share-data)
+- [Flowmark repository](https://github.com/jlevy/flowmark)
+- [Flowmark v0.7.3](https://github.com/jlevy/flowmark/releases/tag/v0.7.3)
 - [Simple Modern uv repository](https://github.com/jlevy/simple-modern-uv)
 
 <!-- This document follows common-doc-guidelines.md.

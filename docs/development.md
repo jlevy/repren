@@ -29,6 +29,9 @@ export UV_CONFIG_FILE="$PWD/uv.toml"
 # This installs the uv-locked Python groups and the npm-locked golden-test runner.
 make install
 
+# Opt into the repository's auto-formatting pre-commit hook for this worktree:
+make install-hooks
+
 # Install, lint, regenerate docs, and run the complete test suite:
 make
 
@@ -41,7 +44,7 @@ make lint
 # Linting in check-only mode, matching CI (fails on issues, does not modify files):
 make lint-check
 
-# Format the Markdown sources owned by Flowmark:
+# Format project-owned Markdown and regenerate its generated mirrors:
 make format
 
 # Check Markdown formatting without changing files:
@@ -94,6 +97,22 @@ uv lock --upgrade-package package_name
 uv venv
 source .venv/bin/activate
 ```
+
+Flowmark discovers project Markdown recursively.
+`.flowmarkignore` excludes generated documentation, tool-managed agent content, vendored
+guidance, and byte-exact golden fixtures; edit the canonical inputs for those files
+instead.
+The pre-commit hook formats complete staged Markdown files and stages its fixes.
+It refuses to run on a partially staged Markdown file so it cannot silently add an
+unstaged hunk to the commit.
+When the canonical manual is staged, the hook also regenerates and stages `README.md`
+and the embedded module documentation; it refuses to overwrite unstaged changes in
+either mirror. Hook installation is explicit because `core.hooksPath` is
+checkout-specific and may already point to a developer’s own hook system;
+`make install-hooks` refuses to replace a different configured path.
+CI still checks those generated mirrors because their exact content is a correctness
+contract, but ordinary Markdown layout remains an automatic local concern rather than a
+build gate.
 
 See [uv docs](https://docs.astral.sh/uv/) for details.
 

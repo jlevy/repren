@@ -90,6 +90,20 @@ Flowmark is an exact-pinned zero-install tool:
 
 - `flowmark-rs==0.3.2` runs through `uvx` and the project cool-off.
 
+- The checked-in agent skill comes from the reviewed `flowmark==0.7.3` release.
+  Its Python installer has transitive dependencies, so refresh it with an exact version,
+  isolated configuration, and the cool-off; then review the generated instruction diff
+  as code:
+
+  ```shell
+  uvx --no-config --exclude-newer "14 days" --isolated \
+    --from flowmark==0.7.3 flowmark --install-skill
+  ```
+
+  The `flowmark-rs==0.3.2` skill installer is not used because its embedded Python
+  fallback still names 0.7.2; bead `rpy-r7iu` tracks the upstream correction.
+  Bead `rpy-ncar` tracks stronger upstream installer guidance.
+
 Tryscript is installed through npm:
 
 - `tryscript==0.2.1` is exact-pinned in `package.json`.
@@ -109,7 +123,7 @@ Tryscript is installed through npm:
 | --- | --- |
 | Running Repren | Zero runtime dependencies; the documented `uvx repren@latest` is deliberate. |
 | Python development tools | Resolve through `uv.toml`, commit `uv.lock`, and install with `--locked` in CI. |
-| Flowmark | Exact-pinned at 0.3.2 and subject to the uv cool-off. |
+| Flowmark | Formatter exact-pinned at 0.3.2; agent skill installed from reviewed 0.7.3; both are subject to the uv cool-off. |
 | Tryscript | Exact-pinned and npm-locked at 0.2.1; first-party release-age exception approved on 2026-08-25, with third-party transitive packages still gated. |
 | Publishing | Build from a clean, tested release tag; publish only through the `pypi` environment, with OIDC isolated from project code. |
 
