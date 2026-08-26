@@ -5,11 +5,15 @@ title: Upgrade Repren to the current Flowmark process
 kind: task
 status: in_progress
 priority: 1
-version: 7
+version: 9
 docs:
   - path: docs/project/research/current/review-2026-08-25-simple-modern-uv-v0.5.0.md
     role: qa
     title: Flowmark process and migration review
+refs:
+  - kind: pr
+    url: https://github.com/jlevy/repren/pull/53
+    at: 2026-08-26T02:46:50.536Z
 delegate: codex@spud10.local
 labels:
   - tooling
@@ -18,7 +22,7 @@ dependencies: []
 hold: null
 hold_until: null
 created_at: 2026-08-25T18:39:36.588Z
-updated_at: 2026-08-26T02:45:50.583Z
+updated_at: 2026-08-26T02:46:51.200Z
 started_at: 2026-08-26T02:45:50.582Z
 closed_at: null
 close_reason: null
@@ -29,6 +33,4 @@ Compare Repren Flowmark usage with the latest jlevy/flowmark release and project
 
 ## Notes
 
-Verified latest releases: flowmark 0.7.3 and flowmark-rs 0.3.2. Installed the reviewed 0.7.3 skill globally and project-locally; exact tagged skill bytes and installer idempotency verified. Adopted recursive discovery with explicit generated/vendor/golden exclusions, exact Rust runner, safe auto-staging hook with partial-staging and generated-mirror guards, local check target, and no ordinary Markdown CI gate. Full Repren suite, builds, audits, formatter parity, and isolated hook smoke tests pass. Rust installer mismatch and Python-installer transitive risk are split into rpy-r7iu and rpy-ncar.
-
-Reopened: Reopened because the Repren branch had been pushed without creating a PR, so its required remote CI confirmation had not occurred.
+Repren PR #53 created with tbd shortcut create-or-update-pr-simple; waiting for the final GitHub Actions matrix before closing.
