@@ -39,7 +39,8 @@ Keep the shell golden harness as the authoritative baseline for now.
 
 ## Operational guidance for current harness
 
-1. Run `./tests/run.sh` serially (do not run in parallel with pytest jobs that invoke it).
+1. Run `./tests/run.sh` serially (do not run in parallel with pytest jobs that invoke
+   it).
 2. Treat `tests/golden-tests-expected.log` as a versioned contract artifact.
 3. Update baseline only when behavior change is intentional and documented.
 
@@ -64,3 +65,7 @@ If migration is needed later:
 
 - `docs/project/specs/active/plan-2026-02-27-rust-port-prep-and-test-hardening.md`
 - `../repren-rs/docs/project/specs/active/plan-2026-02-27-repren-port-master-plan.md`
+
+<!-- This document follows common-doc-guidelines.md.
+See github.com/jlevy/practical-prose and review guidelines before editing.
+-->

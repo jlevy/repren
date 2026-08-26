@@ -331,15 +331,19 @@ found. Fixed in `repren.py:761` by adding `counts.add(new_counts)`.
    ```bash
    # All tests (unit + golden)
    make test
-   
+
    # Just golden tests
    ./tests/run.sh
-   
+
    # Update golden baseline after intentional changes
    make update-golden
-   
+
    # Unit tests with coverage
    uv run pytest --cov=repren --cov-report=term-missing tests/pytests.py
    ```
 
 3. **pytest-cov added** to dev dependencies for coverage reporting
+
+<!-- This document follows common-doc-guidelines.md.
+See github.com/jlevy/practical-prose and review guidelines before editing.
+-->

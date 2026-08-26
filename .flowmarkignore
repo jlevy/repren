@@ -1,0 +1,12 @@
+# Generated documentation; format its canonical source instead.
+/README.md
+
+# Tool-managed agent instructions and vendored guidance.
+/AGENTS.md
+/CLAUDE.md
+/.agents/
+/.claude/
+/docs/general/
+
+# Byte-exact executable golden fixtures.
+/tests/

@@ -1,0 +1,6 @@
+# Keep resolution-affecting settings project-owned. The Makefile and CI select this
+# file explicitly so user- or system-level uv settings cannot make uv.lock nonportable.
+required-version = ">=0.12.0,<0.13"
+exclude-newer = "14 days"
+# Keep a reviewed fresh-release exception package-specific and time-bounded, for example:
+# exclude-newer-package = { package-name = "YYYY-MM-DDTHH:MM:SSZ" }

@@ -21,22 +21,25 @@
 `repren` is a powerful CLI string replacement and file renaming tool for use by agents
 or humans for almost any search-and-replace or renaming task.
 
-It is small, self-contained, self-documenting, and works on Python 3.10-3.14 with
-**zero runtime dependencies**. Essentially, it is a general-purpose, brute-force text
-file refactoring tool.
+It is small, self-contained, self-documenting, and works on Python 3.10-3.14 with **zero
+runtime dependencies**. Essentially, it is a general-purpose, brute-force text file
+refactoring tool.
 
 **Coding agents:** point your agent at repren and it installs itself as a skill:
 
-> **Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.**
+> **Run `uvx repren@latest --help` and follow the instructions to install repren as a
+> skill.**
 
-repren’s `--help` ends with the exact install commands. Once installed, the agent uses
-repren automatically for bulk refactors and renames. (See [Agent Use](#agent-use).)
+repren’s `--help` ends with the exact install commands.
+Once installed, the agent uses repren automatically for bulk refactors and renames.
+(See [Agent Use](#agent-use).)
 
-**Zero runtime dependencies.** Installing repren (or running `uvx repren@latest`) pulls in
-nothing but repren itself and the Python standard library, so there is no transitive
-dependency tree to audit or be compromised. It is a single file you can read end to end
-before trusting it. The dev-only tooling used to build and test repren (pytest, ruff, and
-so on) is never installed when you use it.
+**Zero runtime dependencies.** Installing repren (or running `uvx repren@latest`) pulls
+in nothing but repren itself and the Python standard library, so there is no transitive
+dependency tree to audit or be compromised.
+It is a single file you can read end to end before trusting it.
+The dev-only tooling used to build and test repren (pytest, ruff, and so on) is never
+installed when you use it.
 
 For example, repren could rename occurrences of certain names in a set of source files,
 while simultaneously renaming the files and directories according to the same pattern
@@ -168,34 +171,36 @@ through changes with interactive terminal prompts (on by default in `fastmod`, b
 flag in `ast-grep` and `comby`).
 
 “Atomic file operations” means edits are written to a temp file and renamed into place,
-so an interrupted run never leaves a half-written file. repren and `sd` do this; `rnr`
-only renames; the classic tools vary; and `fastmod`, `ast-grep`, and `comby` overwrite in
-place.
+so an interrupted run never leaves a half-written file.
+repren and `sd` do this; `rnr` only renames; the classic tools vary; and `fastmod`,
+`ast-grep`, and `comby` overwrite in place.
 
 **When to use each:**
 
 - **repren**: The default for renaming and search/replace across files: content edits,
   file and directory renames, case-variant refactors, and simultaneous swaps, all with
   dry-run, backups, and undo.
-- **sed/awk/perl and rnr**: For renaming or search-and-replace, prefer repren. It is safer
-  and more capable for almost any such task (dry-run, backups and undo, simultaneous swaps,
-  case-variant refactors, and combined content-and-path renames). Keep sed/awk/perl for
-  what they are built for, such as streaming transforms, field extraction, and small inline
-  programs. rnr only renames files, which repren already does.
+- **sed/awk/perl and rnr**: For renaming or search-and-replace, prefer repren.
+  It is safer and more capable for almost any such task (dry-run, backups and undo,
+  simultaneous swaps, case-variant refactors, and combined content-and-path renames).
+  Keep sed/awk/perl for what they are built for, such as streaming transforms, field
+  extraction, and small inline programs.
+  rnr only renames files, which repren already does.
 - **sd**: A fast, simple find/replace when you do not need file renaming, case
   preservation, or multi-pattern swaps.
 - **fastmod**: Interactive, human-reviewed replacements.
-- **ast-grep**: Language-aware, structural refactoring where you match code structure (for
-  example, function calls) rather than text. It also ships an official agent skill and MCP
-  server, so it pairs well with repren for AST-aware edits.
+- **ast-grep**: Language-aware, structural refactoring where you match code structure
+  (for example, function calls) rather than text.
+  It also ships an official agent skill and MCP server, so it pairs well with repren for
+  AST-aware edits.
 - **comby**: Structural matching across languages (for example, balanced braces) without
   learning full AST syntax.
 
 ## Installation
 
-repren has **zero runtime dependencies** (just Python 3.10+), so installing it never adds
-a transitive dependency tree to your environment. It’s easiest to install with
-[uv](https://docs.astral.sh/uv/):
+repren has **zero runtime dependencies** (just Python 3.10+), so installing it never
+adds a transitive dependency tree to your environment.
+It’s easiest to install with [uv](https://docs.astral.sh/uv/):
 
 ```bash
 # Install as a tool:
@@ -209,29 +214,21 @@ Or, since it’s just one file, you can copy the
 [repren.py](https://raw.githubusercontent.com/jlevy/repren/master/repren/repren.py)
 script somewhere convenient and make it executable.
 
-**A note on freshness and safety.** These examples use `@latest` for simplicity. Because
-repren has **zero runtime dependencies**, the only code fetched and run is repren itself.
-There is no transitive dependency tree to audit or be compromised, so `@latest` carries
-far less supply-chain risk here than for a typical package. If you want an extra safety
-margin, you can opt into uv’s release “cool-off” (which excludes very recent uploads), or
-pin an exact version:
-
-```bash
-# Skip uploads newer than 14 days, then run the latest within that window:
-UV_EXCLUDE_NEWER="14 days" uvx repren@latest --help
-
-# Or pin an exact version:
-uvx repren@3.1.0 --help
-```
+**A note on freshness and safety.** These examples use `@latest` for simplicity.
+Because repren has **zero runtime dependencies**, the only code fetched and run is
+repren itself. There is no transitive dependency tree to audit or be compromised, so
+`@latest` carries far less supply-chain risk here than for a typical package.
 
 ## Agent Use
 
 Point your agent at repren’s self-documenting help to install the skill:
 
-> **Run `uvx repren@latest --help` and follow the instructions to install repren as a skill.**
+> **Run `uvx repren@latest --help` and follow the instructions to install repren as a
+> skill.**
 
-repren’s `--help` ends with the exact install commands. (`uvx` runs repren with no prior
-install; see the note on `@latest` and safety under [Installation](#installation).)
+repren’s `--help` ends with the exact install commands.
+(`uvx` runs repren with no prior install; see the note on `@latest` and safety under
+[Installation](#installation).)
 
 **Install the skill yourself** (the same thing the agent does):
 
@@ -248,8 +245,8 @@ Re-run any time to update an existing install.
 ### How it works
 
 repren is **self-documenting**: `repren --help` and `repren --docs` are the source of
-truth for every flag, and `--format=json` gives agents machine-parseable output. The
-skill is just a thin pointer to those commands, so it never drifts out of date.
+truth for every flag, and `--format=json` gives agents machine-parseable output.
+The skill is just a thin pointer to those commands, so it never drifts out of date.
 
 Installing the skill writes one `SKILL.md` to **both** discovery locations, so every
 agent finds it:
@@ -260,21 +257,20 @@ agent finds it:
 repren is a general-purpose utility with no per-project config, so the skill invokes it
 through the zero-install runner `uvx repren@latest`. There’s no need to add repren as a
 project dependency. Because repren has **zero runtime dependencies**, the only code a
-runner ever fetches and runs is repren itself; for an extra safety margin you can opt into
-uv’s release cool-off (`UV_EXCLUDE_NEWER`, see [Installation](#installation)) in your
-environment, which applies to the skill’s invocations too.
+runner ever fetches and runs is repren itself.
 
 **Scope is resolved like `git config`:** implicit when unambiguous, a clear error when
 not, so a stray `--install-skill` never silently rewrites your global agent surfaces:
 
-- Inside a git repo, `--project` is implied (so `uvx repren --install-skill` just works).
+- Inside a git repo, `--project` is implied (so `uvx repren --install-skill` just
+  works).
 - In an ambiguous spot (your home directory, or outside any repo) repren refuses and
   tells you to pass `--project` (optionally with `--dir DIR` or `--no-repo-check`) or
   `--global`.
 
 **Manual install:** run `uvx repren --skill` and save the output to
-`.agents/skills/repren/SKILL.md` (and/or `.claude/skills/repren/SKILL.md`), under `~` for
-a global install or the project root for a project install.
+`.agents/skills/repren/SKILL.md` (and/or `.claude/skills/repren/SKILL.md`), under `~`
+for a global install or the project root for a project install.
 
 **Learn more:** [Claude Code docs](https://claude.ai/code) and
 [Skills repository](https://github.com/anthropics/skills).
@@ -458,10 +454,11 @@ repren --clean-backups mydir/
 - Backups are created of all modified files, with the suffix “.orig”.
   The suffix can be customized with `--backup-suffix`.
 
-- By default, recursive searching omits paths starting with “.” (including `.git/`). This
-  may be adjusted with `--exclude`. Files ending in the backup suffix (`.orig` by default)
-  are always ignored. repren does **not** read `.gitignore`: any other paths you want to
-  skip (`node_modules/`, `build/`, `dist/`, vendored code) must be named explicitly with
+- By default, recursive searching omits paths starting with “.” (including `.git/`).
+  This may be adjusted with `--exclude`. Files ending in the backup suffix (`.orig` by
+  default) are always ignored.
+  repren does **not** read `.gitignore`: any other paths you want to skip
+  (`node_modules/`, `build/`, `dist/`, vendored code) must be named explicitly with
   `--exclude`, and richer scoping is done with `--include`/`--exclude` (preview with
   `--dry-run`).
 
@@ -479,3 +476,7 @@ the clean log changes if you submit a PR.
 ## License
 
 MIT.
+
+<!-- This document follows common-doc-guidelines.md.
+See github.com/jlevy/practical-prose and review guidelines before editing.
+-->

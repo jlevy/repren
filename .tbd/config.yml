@@ -1,5 +1,13 @@
-tbd_format: f04
-tbd_version: 0.1.22
+tbd_format: f08
+tbd_version: 0.8.0
+tbd_fallback_version: 0.8.0
+# tbd_upgrades: tbd versions that have run `tbd setup` in this repo (oldest first);
+# tbd_version above is the most recent. Informational; updated automatically by setup.
+# tbd_fallback_version is the one exact registry fallback for format-incompatible launchers.
+tbd_upgrades:
+  - version: 0.1.22
+  - version: 0.8.0
+    at: 2026-08-25T15:25:37.321Z
 display:
   id_prefix: rpy
 sync:
@@ -10,27 +18,25 @@ settings:
   auto_sync: false
   doc_auto_sync_hours: 24
   use_gh_cli: true
-# Documentation cache configuration.
-# files: Maps destination paths (relative to .tbd/docs/) to source locations.
-#   Sources can be:
-#   - internal: prefix for bundled docs (e.g., "internal:shortcuts/standard/code-review-and-commit.md")
-#   - Full URL for external docs (e.g., "https://raw.githubusercontent.com/org/repo/main/file.md")
-# lookup_path: Search paths for doc lookup (like shell $PATH). Earlier paths take precedence.
-#
-# To sync docs: tbd sync --docs
-# To check status: tbd sync --status
-#
-# Auto-sync: Docs are automatically synced when stale (default: every 24 hours).
-# Configure with settings.doc_auto_sync_hours (0 = disabled).
+# Documentation cache: the docs tbd serves (guidelines, shortcuts, templates), synced
+# into the gitignored .tbd/docs/ cache. Managed with `tbd docs` (run `tbd docs --help`).
+# files: destination path (under .tbd/docs/) -> source docref. Common source forms:
+#   - internal:<path>                          bundled with tbd (e.g. internal:guidelines/typescript-rules.md)
+#   - github:owner/repo@ref//path/to/file.md   a file in a git repo (gitlab: too; @ref optional)
+#   - https://host/path/file.md                a plain URL, kept verbatim
+#   Full docref grammar: `tbd docs show docref-format`.
+# lookup_path: doc lookup search order, like shell $PATH (earlier paths win).
+# Refresh the cache with `tbd docs sync`; it also auto-syncs when stale
+# (settings.doc_auto_sync_hours, default 24; 0 disables).
 docs_cache:
-  lookup_path:
-    - .tbd/docs/shortcuts/system
-    - .tbd/docs/shortcuts/standard
   files:
+    references/tbd-docs.md: internal:tbd-docs.md
+    references/tbd-design.md: internal:tbd-design.md
     shortcuts/system/shortcut-explanation.md: internal:shortcuts/system/shortcut-explanation.md
     shortcuts/system/skill-baseline.md: internal:shortcuts/system/skill-baseline.md
     shortcuts/system/skill-brief.md: internal:shortcuts/system/skill-brief.md
     shortcuts/system/skill-minimal.md: internal:shortcuts/system/skill-minimal.md
+    shortcuts/standard/address-pr-review.md: internal:shortcuts/standard/address-pr-review.md
     shortcuts/standard/agent-handoff.md: internal:shortcuts/standard/agent-handoff.md
     shortcuts/standard/checkout-third-party-repo.md: internal:shortcuts/standard/checkout-third-party-repo.md
     shortcuts/standard/code-cleanup-all.md: internal:shortcuts/standard/code-cleanup-all.md
@@ -50,6 +56,7 @@ docs_cache:
     shortcuts/standard/new-shortcut.md: internal:shortcuts/standard/new-shortcut.md
     shortcuts/standard/new-validation-plan.md: internal:shortcuts/standard/new-validation-plan.md
     shortcuts/standard/plan-implementation-with-beads.md: internal:shortcuts/standard/plan-implementation-with-beads.md
+    shortcuts/standard/pr-review-workflows.md: internal:shortcuts/standard/pr-review-workflows.md
     shortcuts/standard/precommit-process.md: internal:shortcuts/standard/precommit-process.md
     shortcuts/standard/review-code-python.md: internal:shortcuts/standard/review-code-python.md
     shortcuts/standard/review-code-typescript.md: internal:shortcuts/standard/review-code-typescript.md
@@ -58,9 +65,13 @@ docs_cache:
     shortcuts/standard/revise-all-architecture-docs.md: internal:shortcuts/standard/revise-all-architecture-docs.md
     shortcuts/standard/revise-architecture-doc.md: internal:shortcuts/standard/revise-architecture-doc.md
     shortcuts/standard/setup-github-cli.md: internal:shortcuts/standard/setup-github-cli.md
+    shortcuts/standard/setup-linear.md: internal:shortcuts/standard/setup-linear.md
+    shortcuts/standard/suggest-upstream-improvements.md: internal:shortcuts/standard/suggest-upstream-improvements.md
     shortcuts/standard/sync-failure-recovery.md: internal:shortcuts/standard/sync-failure-recovery.md
     shortcuts/standard/update-specs-status.md: internal:shortcuts/standard/update-specs-status.md
+    shortcuts/standard/watch-beads.md: internal:shortcuts/standard/watch-beads.md
     shortcuts/standard/welcome-user.md: internal:shortcuts/standard/welcome-user.md
+    guidelines/agent-session-bootstrap.md: internal:guidelines/agent-session-bootstrap.md
     guidelines/backward-compatibility-rules.md: internal:guidelines/backward-compatibility-rules.md
     guidelines/bun-monorepo-patterns.md: internal:guidelines/bun-monorepo-patterns.md
     guidelines/cli-agent-skill-patterns.md: internal:guidelines/cli-agent-skill-patterns.md
@@ -68,11 +79,12 @@ docs_cache:
     guidelines/common-doc-guidelines.md: internal:guidelines/common-doc-guidelines.md
     guidelines/convex-limits-best-practices.md: internal:guidelines/convex-limits-best-practices.md
     guidelines/convex-rules.md: internal:guidelines/convex-rules.md
+    guidelines/electrobun-app-development-patterns.md: internal:guidelines/electrobun-app-development-patterns.md
     guidelines/electron-app-development-patterns.md: internal:guidelines/electron-app-development-patterns.md
     guidelines/error-handling-rules.md: internal:guidelines/error-handling-rules.md
     guidelines/general-coding-rules.md: internal:guidelines/general-coding-rules.md
     guidelines/general-comment-rules.md: internal:guidelines/general-comment-rules.md
-    guidelines/general-eng-assistant-rules.md: internal:guidelines/general-eng-assistant-rules.md
+    guidelines/general-eng-agent-principles.md: internal:guidelines/general-eng-agent-principles.md
     guidelines/general-tdd-guidelines.md: internal:guidelines/general-tdd-guidelines.md
     guidelines/general-testing-rules.md: internal:guidelines/general-testing-rules.md
     guidelines/golden-testing-guidelines.md: internal:guidelines/golden-testing-guidelines.md
@@ -82,9 +94,11 @@ docs_cache:
     guidelines/python-rules.md: internal:guidelines/python-rules.md
     guidelines/release-notes-guidelines.md: internal:guidelines/release-notes-guidelines.md
     guidelines/supply-chain-hardening.md: internal:guidelines/supply-chain-hardening.md
+    guidelines/tauri-app-development-patterns.md: internal:guidelines/tauri-app-development-patterns.md
     guidelines/tbd-sync-troubleshooting.md: internal:guidelines/tbd-sync-troubleshooting.md
     guidelines/typescript-cli-tool-rules.md: internal:guidelines/typescript-cli-tool-rules.md
     guidelines/typescript-code-coverage.md: internal:guidelines/typescript-code-coverage.md
+    guidelines/typescript-lint-format-rules.md: internal:guidelines/typescript-lint-format-rules.md
     guidelines/typescript-rules.md: internal:guidelines/typescript-rules.md
     guidelines/typescript-sorting-patterns.md: internal:guidelines/typescript-sorting-patterns.md
     guidelines/typescript-yaml-handling-rules.md: internal:guidelines/typescript-yaml-handling-rules.md
@@ -92,3 +106,12 @@ docs_cache:
     templates/plan-spec.md: internal:templates/plan-spec.md
     templates/qa-playbook.md: internal:templates/qa-playbook.md
     templates/research-brief.md: internal:templates/research-brief.md
+    references/agent-platform-integration.md: internal:references/agent-platform-integration.md
+    references/agent-skill-bundle-publication.md: internal:references/agent-skill-bundle-publication.md
+    references/agent-skill-distribution.md: internal:references/agent-skill-distribution.md
+    references/docmap-format.md: internal:references/docmap-format.md
+    references/docref-format.md: internal:references/docref-format.md
+    references/linear-integration-design.md: internal:references/linear-integration-design.md
+  lookup_path:
+    - .tbd/docs/shortcuts/system
+    - .tbd/docs/shortcuts/standard

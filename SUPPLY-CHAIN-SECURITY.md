@@ -1,98 +1,132 @@
 # Supply-Chain Security
 
-This repo **adopts** the **Supply-Chain Hardening** policy (the 14-day cool-off, disabled
-install scripts, lockfile discipline). This file is the portable flag that tells any
-agent or contributor the rules *before* they add or upgrade a dependency. The full
-cross-ecosystem policy lives in `tbd guidelines supply-chain-hardening`; the complete
-playbooks are at <https://github.com/jlevy/supply-chain-hardening>.
+This repository adopts the 14-day cool-off, disabled-install-script, and lockfile
+practices from
+[Supply Chain Hardening](https://github.com/jlevy/supply-chain-hardening).
+Before adding or upgrading a dependency, also load
+`tbd guidelines supply-chain-hardening`. This is the balanced baseline.
+Use stricter source review or isolation for an untrusted repository or a runner with
+broader production or publishing authority.
 
-The runtime story is already clean (zero dependencies, below); the dev/CI toolchain is
-mostly there, with a few unpinned zero-install runners tracked as known exceptions under
-[Known exceptions](#known-exceptions).
+Repren’s published package has zero runtime dependencies.
+The development and release toolchain is separate: those tools execute with contributor
+or CI privileges and receive the full policy unless an explicit exception below says
+otherwise.
 
-## What's special about repren: zero runtime dependencies
+## Repren’s Zero-Dependency Runtime
 
-repren has **zero runtime dependencies** (`dependencies = []` in `pyproject.toml`). It is
-a single-file tool that imports only the Python standard library. So:
+`dependencies = []` in `pyproject.toml`, and the installed package imports only the
+Python standard library.
+`uv tool install repren` and `uvx repren@latest` therefore fetch Repren itself without a
+transitive runtime tree.
 
-- **For people who *run* repren, supply-chain risk is minimal.** `uvx repren@latest` (or
-  `uv tool install repren`) fetches and executes only repren itself, so there is no
-  transitive dependency tree to be compromised. This is exactly why the docs and the
-  installed agent skill use `uvx repren@latest` rather than a pinned version: with no
-  dependency tree, the usual reason to pin a zero-install runner mostly falls away.
-- **A cool-off is still recommended, just lower-stakes.** If you want an extra safety
-  margin against a compromised repren *release* itself, opt into uv's release cool-off so
-  very recent uploads are skipped:
+The README uses `@latest` deliberately so people and agents get the current
+self-documenting CLI and skill installer.
+This is an exception to the usual exact-pin rule for zero-install runners, scoped only
+to Repren’s own zero-dependency package.
+The choice favors current user-facing behavior over reproducibility.
+Zero dependencies remove transitive-package risk, but do not protect against a
+compromised Repren release or publishing account.
+Privileged or reproducible environments may impose an exact Repren version in their own
+deployment policy; the primary README stays concise.
+This exception does not relax development-tool controls.
 
-  ```bash
-  # Skip uploads newer than 14 days, then run the latest within that window:
-  UV_EXCLUDE_NEWER="14 days" uvx repren@latest --help
+## Development Dependencies
+
+Python development and build dependencies are declared in `pyproject.toml` and locked in
+`uv.lock`. Project-owned settings in `uv.toml` require uv 0.12 and exclude releases
+newer than 14 days during resolution.
+The Makefile and GitHub workflows select that configuration explicitly so ambient user
+or runner settings cannot change the lock.
+
+Use the checked-in workflows:
+
+```bash
+make install       # Install uv-locked groups and npm-locked golden-test tooling.
+make upgrade       # Resolve compatible Python upgrades through the 14-day gate.
+make lint-check
+make test
+make build
+```
+
+When changing dependencies:
+
+1. Confirm the dependency is necessary, correctly named, actively maintained, and
+   obtained from its official registry or repository.
+2. Use the ecosystem’s native lockfile and review the complete lockfile diff.
+3. Keep install scripts disabled where the toolchain permits it.
+4. Run vulnerability audits and the full test suite.
+   Audits report known advisories; they do not establish that a package is benign.
+5. Document any cool-off exception, exact version, reason, and human approval.
+
+For a reviewed fresh Python release, keep the global gate and add an absolute
+`exclude-newer-package` cutoff to `uv.toml` just after the approved release’s final
+artifact upload. Resolve only that package with
+`UV_CONFIG_FILE="$PWD/uv.toml" uv lock --upgrade-package package-name`, inspect the
+complete lock diff, and commit the configuration with `uv.lock` so locked CI sees the
+same policy. Remove the exception and relock after the release clears the normal window.
+
+CI uses `uv sync --locked --all-extras --all-groups`, which installs from the committed
+lock and fails when `pyproject.toml` would require it to change.
+The release workflow validates with the full development toolchain, then builds from a
+fresh checkout with only the exact-pinned build group.
+A third job receives only the distributions and is the only one with `id-token: write`;
+it does not check out or execute project or development code.
+The workflow runs only for a published GitHub Release and declares the `pypi`
+environment. PyPI enforces that environment only when Repren’s Trusted Publisher is
+constrained to the same name; a blank existing setting remains compatible but
+unconstrained. This separation limits credential exposure.
+The release-only trigger removes the ordinary manual-branch path, but it does not
+override repository permissions: anyone allowed to create a matching release tag may
+still invoke it. If repository writers who should not publish are added, restrict
+creation and updates of version tags to release maintainers with a tag ruleset and/or
+require an environment reviewer.
+It does not make the source or distributions safe: the build job executes repository and
+build-backend code, and the final job publishes its output.
+
+## Non-Python Development Tools
+
+Flowmark is an exact-pinned zero-install tool:
+
+- `flowmark-rs==0.3.2` runs through `uvx` and the project cool-off.
+
+- The checked-in agent skill comes from the reviewed `flowmark==0.7.3` release.
+  Its Python installer has transitive dependencies, so refresh it with an exact version,
+  isolated configuration, and the cool-off; then review the generated instruction diff
+  as code:
+
+  ```shell
+  uvx --no-config --exclude-newer "14 days" --isolated \
+    --from flowmark==0.7.3 flowmark --install-skill
   ```
 
-  Set `UV_EXCLUDE_NEWER` in your environment and it applies to every `uvx`/`uv` call,
-  including the agent skill's invocations.
+  The `flowmark-rs==0.3.2` skill installer is not used because its embedded Python
+  fallback still names 0.7.2; bead `rpy-r7iu` tracks the upstream correction.
+  Bead `rpy-ncar` tracks stronger upstream installer guidance.
 
-> **Deliberate exception to the "no unpinned runners" rule.** The hardening policy says to
-> pin zero-install runners (`uvx pkg@version`, not `@latest`). repren takes the documented
-> exception: because it has no dependency tree, `@latest` + the cool-off above gives the
-> protection that pinning is meant to provide, with less version-management complexity.
-> This exception is scoped to repren's *own* runner. It does **not** relax the cool-off
-> for the development dependencies below.
+Tryscript is installed through npm:
 
-## Development dependencies: the cool-off applies here
+- `tryscript==0.2.1` is exact-pinned in `package.json`.
+- `package-lock.json` fixes its transitive graph.
+- `npm ci --ignore-scripts` installs that graph locally and in CI.
+- Version 0.2.1 was published inside the normal cool-off window.
+  The user explicitly approved it as a first-party exception because they maintain
+  Tryscript. The exception applies only to the release-age gate; the exact pin, lockfile
+  review, disabled scripts, audit, and tests still apply.
+- The exception does not cover third-party transitive packages.
+  `ansi-regex` is overridden to exact version 6.2.2 because 6.3.0 had not cleared the
+  14-day gate when this lockfile was created.
 
-The zero-deps story is about *runtime*. The **dev toolchain** (in `[dependency-groups]`:
-pytest, ruff, basedpyright, jinja2, rich, etc.) runs with full privileges during local
-development, tests, and CI, historically the *more* dangerous surface, since build and
-test tooling execute arbitrary code. The 14-day cool-off and the other install rules
-apply in full here:
-
-- **Cool-off (resolution-time gate).** Resolve dev dependencies with a release-age gate:
-
-  ```bash
-  export UV_EXCLUDE_NEWER="14 days"   # never resolve a version less than 14 days old
-  uv sync --frozen                    # install the dev group from the committed lockfile
-  ```
-
-  Keep `UV_EXCLUDE_NEWER` in your shell profile (and in CI) so it covers every resolve.
-- **Lockfile discipline.** `uv.lock` is committed. Install frozen (`uv sync --frozen` /
-  `uv run --frozen`); never re-resolve in CI. Review a lockfile diff like a code diff.
-- **Don't update for its own sake.** The safest upgrade is the one you skip. Bump a dev
-  dependency only for a concrete reason, let it clear the cool-off, and review the diff.
-- **Audit.** Run `uvx pip-audit` (or `uv run pip-audit`) and address findings before
-  continuing. Prefer wheels over building sdists from source (`UV_NO_BUILD` /
-  `--only-binary`) where feasible.
-- **Exceptions are explicit and human-approved.** If a dev dependency version inside the
-  14-day window is genuinely needed (e.g. a CVE patch), pin the exact version, record the
-  reason and a `Reviewed-by:` sign-off in the PR, and confirm afterward it wasn't yanked.
-  Agents never self-approve an exception.
-
-## Known exceptions
-
-Being honest about where the repo does not yet meet the policy, so agents don't read a
-standard the workflow silently breaks:
-
-- **`repren`'s own runner uses `@latest`, unpinned** (docs, README, and the installed
-  `SKILL.md`). This is deliberate: repren has zero runtime dependencies, so `@latest`
-  fetches only repren itself, and the recommended `UV_EXCLUDE_NEWER` cool-off covers the
-  compromised-release case. See "What's special about repren," above.
-- **Unpinned zero-install dev/CI runners.** A few development and CI commands still invoke
-  zero-install runners without a version pin: `uvx flowmark@latest` (formatting, in the
-  `Makefile`) and `npx tryscript@latest` (the golden test harness, in `.github/workflows/`
-  and the dev docs). These run only at development/CI time, never for users of repren, but
-  they do bypass the cool-off. They are tracked here to be pinned (or run under a CI-level
-  `UV_EXCLUDE_NEWER`/`npm` release-age gate) in a follow-up; until then they are recorded
-  exceptions, not an oversight.
-
-## Quick reference
+## Quick Reference
 
 | Context | Rule |
 | --- | --- |
-| Running repren | Zero deps; `uvx repren@latest` is fine. Optional: `UV_EXCLUDE_NEWER="14 days"`. |
-| Adding/upgrading a **dev** dependency | 14-day cool-off, lockfile-pinned, audited, reason on the record. |
-| Dev/CI zero-install runners (flowmark, tryscript) | Tracked exception, to be pinned; see [Known exceptions](#known-exceptions). |
-| Publishing repren | Build from a clean tag; prefer trusted publishing / provenance (see the guidebook). |
+| Running Repren | Zero runtime dependencies; the documented `uvx repren@latest` is deliberate. |
+| Python development tools | Resolve through `uv.toml`, commit `uv.lock`, and install with `--locked` in CI. |
+| Flowmark | Formatter exact-pinned at 0.3.2; agent skill installed from reviewed 0.7.3; both are subject to the uv cool-off. |
+| Tryscript | Exact-pinned and npm-locked at 0.2.1; first-party release-age exception approved on 2026-08-25, with third-party transitive packages still gated. |
+| Publishing | Build from a clean, tested release tag; publish only through the `pypi` environment, with OIDC isolated from project code. |
 
-<!-- This document follows the Supply-Chain Hardening guideline
-(tbd guidelines supply-chain-hardening) and common-doc-guidelines.md.
-See github.com/jlevy/supply-chain-hardening before editing. -->
+<!-- This document follows common-doc-guidelines.md.
+See github.com/jlevy/practical-prose and review guidelines before editing.
+-->

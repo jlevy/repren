@@ -13,7 +13,7 @@ to regular expression patterns.
 When files are modified, repren creates backups with the `.orig` suffix.
 This is documented in the README and code:
 
-> "Backups are created of all modified files, with the suffix `.orig`."
+> “Backups are created of all modified files, with the suffix `.orig`.”
 
 The existing codebase already has TODOs for these features at
 [repren.py:1066-1069](repren/repren.py#L1066-L1069):
@@ -395,7 +395,8 @@ Tasks:
 
   - File renames (e.g., `foo.txt` → `bar.txt`)
 
-  - Path/directory renames (e.g., `src/old_name/file.txt` → `src/new_name/file.txt`) - deferred
+  - Path/directory renames (e.g., `src/old_name/file.txt` → `src/new_name/file.txt`) -
+    deferred
 
   - Edge cases (missing files, ambiguous matches, bad timestamps)
 
@@ -473,7 +474,7 @@ Tasks:
 
   3. Use pattern that matches multiple times, verify warning and skip
 
-- [x] Manual testing of "run twice" safety (covered by existing integration tests):
+- [x] Manual testing of “run twice” safety (covered by existing integration tests):
 
   1. Run repren on a directory
   2. Run repren again with same patterns on same directory
@@ -481,3 +482,7 @@ Tasks:
   4. Verify no `.orig.orig` files are created
 
 - [x] Help text is clear and explains that `--undo` requires same patterns
+
+<!-- This document follows common-doc-guidelines.md.
+See github.com/jlevy/practical-prose and review guidelines before editing.
+-->

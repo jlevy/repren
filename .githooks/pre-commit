@@ -1,0 +1,49 @@
+#!/usr/bin/env bash
+
+set -euo pipefail
+
+readonly flowmark_version="0.3.2"
+readonly flowmark_exclude_newer="${UV_EXCLUDE_NEWER:-14 days}"
+staged_files=()
+regenerate_docs=false
+
+while IFS= read -r -d '' file; do
+    if ! git diff --quiet -- "$file"; then
+        printf >&2 '%s\n' \
+            "Flowmark did not run because '$file' is only partially staged." \
+            "Format the complete file, review it, and stage the intended result."
+        exit 1
+    fi
+    staged_files+=("$file")
+    if [[ "$file" == "docs/repren-docs.md" ]]; then
+        regenerate_docs=true
+    fi
+done < <(
+    git diff --cached --name-only --diff-filter=ACMR -z -- \
+        '*.md' '*.markdown' '*.mdc'
+)
+
+if (( ${#staged_files[@]} == 0 )); then
+    exit 0
+fi
+
+if "$regenerate_docs"; then
+    for generated_file in README.md repren/repren.py; do
+        if ! git diff --quiet -- "$generated_file"; then
+            printf >&2 '%s\n' \
+                "Flowmark did not regenerate docs because '$generated_file' has unstaged changes." \
+                "Review and stage or discard those changes, then retry the commit."
+            exit 1
+        fi
+    done
+fi
+
+uvx --no-config --exclude-newer "$flowmark_exclude_newer" \
+    --from "flowmark-rs==${flowmark_version}" flowmark \
+    --auto --force-exclude "${staged_files[@]}"
+git add -- "${staged_files[@]}"
+
+if "$regenerate_docs"; then
+    python3 devtools/gendocs.py
+    git add -- README.md repren/repren.py
+fi
