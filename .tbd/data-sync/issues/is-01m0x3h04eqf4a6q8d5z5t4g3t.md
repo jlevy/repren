@@ -3,9 +3,9 @@ type: is
 id: is-01m0x3h04eqf4a6q8d5z5t4g3t
 title: Upgrade Repren to the current Flowmark process
 kind: task
-status: in_progress
+status: closed
 priority: 1
-version: 9
+version: 10
 docs:
   - path: docs/project/research/current/review-2026-08-25-simple-modern-uv-v0.5.0.md
     role: qa
@@ -22,10 +22,10 @@ dependencies: []
 hold: null
 hold_until: null
 created_at: 2026-08-25T18:39:36.588Z
-updated_at: 2026-08-26T02:46:51.200Z
+updated_at: 2026-08-26T02:47:31.841Z
 started_at: 2026-08-26T02:45:50.582Z
-closed_at: null
-close_reason: null
+closed_at: 2026-08-26T02:47:31.825Z
+close_reason: "Repren PR #53 was created with the required tbd shortcut; all five Ubuntu/Python 3.10-3.14 CI jobs passed."
 resolution: null
 duplicate_of: null
 ---
